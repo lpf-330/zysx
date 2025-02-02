@@ -1,34 +1,27 @@
 <script setup>
-import { RouterLink } from 'vue-router';
 
-let account,password
-
-const login=()=>{
-    console.log(account+"  "+password);
-    
-}
 
 </script>
 
 <template>
     <div class="backgrand">
         <div class="box">
-            <span class="title">登录</span>
-            <form action="" class="loginForm">
+            <span class="title">注册</span>
+            <form action="" class="registerForm">
                 <div class="content">
                     <div>
                         <h5>账号</h5>
-                        <input v-model="account" type="text" name="" id="" class="account">
+                        <input type="text" name="" id="" class="account">
                     </div>
                     <div>
                         <h5>密码</h5>
-                        <input v-model="password" type="password" name="" id="" class="password">
+                        <input type="password" name="" id="" class="password">
                     </div>
                 </div>
                 <div class="opt">
                     <div>
-                        <input @click="login()" type="button" value="登录" class="loginButton">
-                        <RouterLink to="/register" class="router"><p class="toRegister">若无账号，点此前往注册</p></RouterLink>
+                        <input type="button" value="注册" class="registerButton">
+                        <RouterLink to="/login" class="router"><p class="toLogin">返回登录</p></RouterLink>
                     </div>
                 </div>
             </form>
@@ -72,13 +65,13 @@ const login=()=>{
     letter-spacing: 0.1rem;
 }
 
-.loginForm {
+.registerForm {
     height: 1.8rem;
     width: 3rem;
 }
 
 
-.loginButton {
+.registerButton {
     height: 0.25rem;
     width: 2rem;
     background:linear-gradient(160deg,rgb(142, 213, 189),rgb(91, 213, 172),rgb(67, 203, 158),rgb(46, 202, 150),rgb(62, 193, 149));
@@ -121,7 +114,7 @@ h5 {
     justify-content: space-around;
 }
 
-.toRegister{
+.toLogin{
     margin: 0;
     margin-top: 0.05rem;
     font-size: 0.1rem;
@@ -133,5 +126,4 @@ h5 {
 .router{
     text-decoration: none;
 }
-
 </style>
