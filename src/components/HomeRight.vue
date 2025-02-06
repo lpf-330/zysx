@@ -1,0 +1,160 @@
+<script setup>
+import Calendar from './Calendar.vue';
+import Memo from './Memo.vue';
+</script>
+
+<template>
+    <div class="content">
+        <div class="message">
+            <div class="title">
+                <div></div>
+                <span>信息</span>
+            </div>
+            <div class="user">
+                <div class="userImg"></div>
+                <span class="userName">用户名</span>
+                <div class="userMes">
+                    <div class="age">
+                        <span>年龄</span>
+                        <span>&nbsp;&nbsp;</span>
+                    </div>
+                    <div class="height">
+                        <span>身高</span>
+                        <span>&nbsp;&nbsp;</span>
+                    </div>
+                    <div class="weight">
+                        <span>体重</span>
+                        <span>&nbsp;&nbsp;</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="calendarBox">
+            <div class="title">
+                <div></div>
+                <span>日历</span>
+            </div>
+            <div class="calendar">
+                <Calendar></Calendar>
+            </div>
+        </div>
+        <div class="memoBox">
+            <div class="title">
+                <div></div>
+                <span>待办</span>
+            </div>
+            <div class="memo">
+                <Memo></Memo>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+.content {
+    height: 100%;
+    width: 20%;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.message {
+    width: 85%;
+    height: 25%;
+    margin-top: 0.15rem;
+}
+
+.title {
+    height: 0.20rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.title div {
+    height: 100%;
+    width: 0.06rem;
+    background-color: #4B686F;
+    border-radius: 0.02rem;
+}
+
+.title span {
+    font-size: 0.12rem;
+    font-family: 'SiYuanHeiTi';
+    color: rgba(75, 104, 111, 1);
+    margin-left: 0.03rem;
+}
+
+.user {
+    width: 100%;
+    padding-left: 8%;
+    padding-right: 8%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.userImg {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 50%;
+    background-color: cadetblue;
+}
+
+.userMes {
+    height: 0.4rem;
+    width: 1.4rem;
+    background-color: rgba(239, 239, 239, 1);
+    margin-top: 0.08rem;
+    border-radius: 0.06rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.userName {
+    font-size: 0.13rem;
+    color: rgba(96, 125, 139, 1);
+    font-family: 'SiYuanHeiTi';
+}
+
+.userMes div {
+    height: 100%;
+    width: 33%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.userMes span {
+    font-family: 'SiYuanHeiTi';
+    font-size: 0.1rem;
+    color: rgba(75, 104, 111, 1);
+}
+
+.calendarBox {
+    width: 100%;
+    padding-left: 8%;
+    padding-right: 8%;
+    box-sizing: border-box;
+    margin-top: 0.12rem;
+}
+
+.memoBox {
+    width: 100%;
+    padding-left: 8%;
+    padding-right: 8%;
+    box-sizing: border-box;
+    margin-top: 0.15rem;
+}
+
+.memo {
+    width: 100%;
+    height: 1.7rem;
+    margin-top: 0.08rem;
+}
+</style>

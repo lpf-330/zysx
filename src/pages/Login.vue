@@ -1,11 +1,13 @@
 <script setup>
 import { RouterLink } from 'vue-router';
+import router from '../router';
 
-let account,password
+let account, password
 
-const login=()=>{
-    console.log(account+"  "+password);
-    
+const login = () => {
+    console.log(account + "  " + password);
+
+    router.push('/index')
 }
 
 </script>
@@ -27,8 +29,10 @@ const login=()=>{
                 </div>
                 <div class="opt">
                     <div>
-                        <input @click="login()" type="button" value="登录" class="loginButton">
-                        <RouterLink to="/register" class="router"><p class="toRegister">若无账号，点此前往注册</p></RouterLink>
+                        <input @click="login" type="button" value="登录" class="loginButton">
+                        <RouterLink to="/register" class="router">
+                            <p class="toRegister">若无账号，点此前往注册</p>
+                        </RouterLink>
                     </div>
                 </div>
             </form>
@@ -81,7 +85,7 @@ const login=()=>{
 .loginButton {
     height: 0.25rem;
     width: 2rem;
-    background:linear-gradient(160deg,rgb(142, 213, 189),rgb(91, 213, 172),rgb(67, 203, 158),rgb(46, 202, 150),rgb(62, 193, 149));
+    background: linear-gradient(160deg, rgb(142, 213, 189), rgb(91, 213, 172), rgb(67, 203, 158), rgb(46, 202, 150), rgb(62, 193, 149));
     border-radius: 0.03rem;
     border-color: rgb(67, 203, 158);
     font-size: 0.13rem;
@@ -96,7 +100,7 @@ const login=()=>{
     font-size: 0.1rem;
     margin-top: 0.01rem;
     border: none;
-    border:0.013rem solid rgb(172, 172, 172);
+    border: 0.013rem solid rgb(172, 172, 172);
 }
 
 h5 {
@@ -105,7 +109,7 @@ h5 {
     margin: 0;
 }
 
-.content{
+.content {
     height: 60%;
     display: flex;
     flex-direction: column;
@@ -113,7 +117,7 @@ h5 {
     justify-content: space-around;
 }
 
-.opt{
+.opt {
     height: 40%;
     display: flex;
     flex-direction: column;
@@ -121,7 +125,7 @@ h5 {
     justify-content: space-around;
 }
 
-.toRegister{
+.toRegister {
     margin: 0;
     margin-top: 0.05rem;
     font-size: 0.1rem;
@@ -130,8 +134,7 @@ h5 {
     cursor: pointer;
 }
 
-.router{
+.router {
     text-decoration: none;
 }
-
 </style>

@@ -12,7 +12,30 @@ const routes = [
     },
     {
         path: "/register",
-        component: () => import("../pages/register.vue")
+        component: () => import("../pages/Register.vue")
+    },
+    {
+        path: "/index",
+        name: "index",
+        component: () => import("../pages/Index.vue"),
+        redirect: "/index/home",
+        children: [
+            {
+                path: "home",
+                name: "home",
+                component: () => import("../pages/Home.vue")
+            },
+            {
+                path: "health",
+                name: "health",
+                component: () => import("../pages/Health.vue")
+            },
+            {
+                path: "person",
+                name: "person",
+                component: () => import("../pages/Person.vue")
+            }
+        ]
     }
 ]
 
