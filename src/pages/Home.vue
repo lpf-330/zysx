@@ -17,7 +17,7 @@ import HomeRight from '../components/HomeRight.vue'
 
 <style scoped>
 .mid {
-    width: 65%;
+    width: 60%;
     height: 100%;
 }
 </style>

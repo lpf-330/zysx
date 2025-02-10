@@ -1,34 +1,3 @@
-<template>
-    <div class="calendar-container">
-        <div class="header">
-            <button @click="prevMonth">
-                < </button>
-                    <span>{{ formattedMonth }}</span>
-                    <button @click="nextMonth"> > </button>
-        </div>
-
-        <table class="calendar-grid">
-            <thead>
-                <tr>
-                    <th v-for="(day, index) in weekDays" :key="index">{{ day }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
-                    <td v-for="(day, dayIndex) in week" :key="dayIndex" :class="[
-                        { 'current-month': day.isCurrentMonth },
-                        { 'today': day.isToday },
-                        { 'has-event': day.hasEvent }
-                    ]">
-                        <div class="date">{{ day.date }}</div>
-                        <div v-if="day.hasEvent" class="event-indicator"></div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</template>
-
 <script setup>
 import { ref, computed } from 'vue';
 
@@ -120,11 +89,44 @@ const formattedMonth = computed(() => {
 const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 </script>
 
+<template>
+    <div class="calendar-container">
+        <div class="header">
+            <button @click="prevMonth">
+                < </button>
+                    <span>{{ formattedMonth }}</span>
+                    <button @click="nextMonth"> > </button>
+        </div>
+
+        <table class="calendar-grid">
+            <thead>
+                <tr>
+                    <th v-for="(day, index) in weekDays" :key="index">{{ day }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
+                    <td v-for="(day, dayIndex) in week" :key="dayIndex" :class="[
+                        { 'current-month': day.isCurrentMonth },
+                        { 'today': day.isToday },
+                        { 'has-event': day.hasEvent }
+                    ]">
+                        <div class="date">{{ day.date }}</div>
+                        <div v-if="day.hasEvent" class="event-indicator"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</template>
+
+
+
 <style scoped>
 .calendar-container {
-    max-width: 1.6rem;
-    margin: 0.1rem auto 0 0.08rem;
+    width: 2rem;
     font-family: Arial, sans-serif;
+    /* margin-top: 0.08rem; */
 }
 
 .header {

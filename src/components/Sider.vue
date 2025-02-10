@@ -39,7 +39,7 @@ const exit = () => {
                     <span class="menuText" :class="{ active: selected === 2 }">用户</span>
                 </div>
             </div>
-            <span class="iconfont YLine" :style="{ top: `${1.37 + selected * 0.72}rem` }"></span>
+            <span class="iconfont YLine" :style="{ top: `${1.35 + selected * 0.68}rem` }"></span>
         </div>
         <div class="exit">
             <span class="iconfont icon-tuichu" @click="exit"></span>
@@ -51,7 +51,7 @@ const exit = () => {
 .content {
     background-color: #fff;
     height: 100%;
-    width: 15%;
+    width: 13%;
     display: flex;
     flex-direction: column;
 }
@@ -123,7 +123,7 @@ const exit = () => {
     width: 10%;
     color: #6EB4FF;
     position: absolute;
-    left: 1.25rem;
+    left: 1.05rem;
     transition-duration: 0.5s;
 }
 

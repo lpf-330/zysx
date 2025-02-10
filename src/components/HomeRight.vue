@@ -53,7 +53,7 @@ import Memo from './Memo.vue';
 <style scoped>
 .content {
     height: 100%;
-    width: 20%;
+    width: 27%;
     background-color: #fff;
     display: flex;
     flex-direction: column;
@@ -105,8 +105,8 @@ import Memo from './Memo.vue';
 }
 
 .userMes {
-    height: 0.4rem;
-    width: 1.4rem;
+    height: 0.45rem;
+    width: 1.8rem;
     background-color: rgba(239, 239, 239, 1);
     margin-top: 0.08rem;
     border-radius: 0.06rem;
@@ -141,7 +141,7 @@ import Memo from './Memo.vue';
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
-    margin-top: 0.12rem;
+    margin-top: 0.16rem;
 }
 
 .memoBox {
@@ -149,12 +149,18 @@ import Memo from './Memo.vue';
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
-    margin-top: 0.15rem;
+    margin-top: 0.2rem;
 }
 
 .memo {
     width: 100%;
     height: 1.7rem;
     margin-top: 0.08rem;
+}
+
+.calendar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>

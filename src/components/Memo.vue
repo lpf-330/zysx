@@ -10,7 +10,7 @@ const items = ref([
 </script>
 
 <template>
-    <el-scrollbar height="3rem">
+    <el-scrollbar height="1.3rem">
         <div class="content">
             <!-- 长内容 -->
             <div class="note" v-for="item in items" :key="item">
