@@ -1,129 +1,171 @@
-<script setup>
+<!-- <script setup>
+import { ref } from 'vue';
+import router from '../router'
+import { RouterLink } from 'vue-router';
+import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
+let userInfoStore=storeToRefs(useUserInfoStore())
+
+const username = ref('')
+const password = ref('')
+const passwordTest = /^[a-zA-Z0-_]{2,11}$/
+
+
+let fetchUser=async()=>{
+
+
+try {
+    
+  
+     const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
+        
+        // 发送 GET 请求  
+        const response = await axios.get(url);  
+        
+    if(response.data.code===1){
+        userInfoStore.user.value = response.data;
+        console.log("响应",response.data);
+        router.push('/index/indexView')
+
+         
+    }else{
+      alert(user.value.msg)
+    }
+
+
+
+  } catch (error) {
+     console.error("出错", error);  
+    alert("加载失败，请稍后再试。"); // 友好的错误提示  
+    
+  }
+  
+
+
+}
+
+
+
+const LoginTest = () => {
+  console.log(122);
+  
+  if (username.value) {
+    if (password.value) {
+      if(passwordTest.test(password.value)){
+        console.log(123);
+        
+        fetchUser()
+        
+
+        }else{
+          alert("密码必须在12个字符内，且仅限英文字母，数字和下划线")
+        }
+    } else {
+      alert("请输入密码")
+    }
+  } else {
+    alert("请输入账号")
+  }
+}
 
 </script>
 
 <template>
-    <div class="backgrand">
-        <div class="box">
-            <span class="title">注册</span>
-            <form action="" class="registerForm">
-                <div class="content">
-                    <div>
-                        <h5>账号</h5>
-                        <input type="text" name="" id="" class="account">
-                    </div>
-                    <div>
-                        <h5>密码</h5>
-                        <input type="password" name="" id="" class="password">
-                    </div>
-                </div>
-                <div class="opt">
-                    <div>
-                        <input type="button" value="注册" class="registerButton">
-                        <RouterLink to="/login" class="router"><p class="toLogin">返回登录</p></RouterLink>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+  <div class="backgrand">
+    <form class="from">
+      <h1>登录</h1>
+      <input type="text" name="AccountNumber" id="account" class="account" placeholder="&nbsp&nbsp请输入账号"
+        v-model="username">
+      <input type="text" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp请输入密码" v-model="password">
+      <input type="submit" id="login" class="login" value="登录" @click="LoginTest">
+      <div class="linkBox">
+        <router-link to="/admLogin" class="link">管理员登录</router-link>
+      <router-link to="/register" class="link">用户注册</router-link>
+      </div>
+    </form>
+
+  </div>
 </template>
 
 <style scoped>
 .backgrand {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    background-color: aliceblue;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  width: 100%;
+  height: 100%;
+  background-color: #acacac57;
 }
 
-.box {
-    height: 3rem;
-    width: 4rem;
-    background-color: white;
-    border-radius: 0.2rem;
-    border: 0.8px solid rgba(196, 196, 196, 0.637);
-    box-shadow: 0 0.03rem 0.05rem rgba(98, 98, 98, 0.378);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.from {
+  padding-top: 10%;
+  border: 1%;
+  border-radius: 1rem;
+  display: inline-block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  right: 50%;
+  transform: translate(-50%, -50%);
+  height: 50%;
+  width: 38%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 0.5vh 1vh 0 #acacac;
 }
 
-.title {
-    font-size: 0.3rem;
-    font-weight: 600;
-    font-family: 'FanYuanTi';
-    background: linear-gradient(45deg, #5b94ff, #b5f3ff, #acf1ff, #5db1ff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    margin-bottom: 0.1rem;
-    letter-spacing: 0.1rem;
-}
-
-.registerForm {
-    height: 1.8rem;
-    width: 3rem;
-}
-
-
-.registerButton {
-    height: 0.25rem;
-    width: 2rem;
-    background:linear-gradient(160deg,rgb(142, 213, 189),rgb(91, 213, 172),rgb(67, 203, 158),rgb(46, 202, 150),rgb(62, 193, 149));
-    border-radius: 0.03rem;
-    border-color: rgb(67, 203, 158);
-    font-size: 0.13rem;
-    color: white;
+.from h1 {
+  font-size: 2.5rem;
+  position: relative;
+  top: -8%;
 }
 
 .account,
 .password {
-    width: 2rem;
-    height: 0.17rem;
-    border-radius: 0.03rem;
-    font-size: 0.1rem;
-    margin-top: 0.01rem;
-    border: none;
-    border:0.013rem solid rgb(172, 172, 172);
+  position: relative;
+  top: -5%;
+  width: 40%;
+  height: 6%;
+  border-radius: 2rem;
+  border-width: 0.2rem;
+  padding-left: 2%;
+  margin-bottom: 4%;
+  font-size: 1rem;
+  border-color: #e1e1e13e;
 }
 
-h5 {
-    font-size: 0.1rem;
-    color: black;
-    margin: 0;
+.login {
+  width: 40%;
+  height: 8%;
+  font-size: 1.4rem;
+  color: #fff;
+  border-radius: 2rem;
+  background-color: rgb(0, 140, 255);
+  box-shadow: 0px 0.5vh 0.5vh 0 rgba(0, 140, 255, 0.63);
+  border: 0;
+  cursor: pointer;
 }
 
-.content{
-    height: 60%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
+.link{
+  font-size: 0.8rem;
+  text-decoration: none;
 }
 
-.opt{
-    height: 40%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
+.linkBox{
+  width: 30%;
+  margin-top: 2%;
 }
 
-.toLogin{
-    margin: 0;
-    margin-top: 0.05rem;
-    font-size: 0.1rem;
-    color: rgb(0, 108, 209);
-    text-align: center;
-    cursor: pointer;
+.linkBox a:nth-of-type(1){
+  margin-right: 5%;
 }
 
-.router{
-    text-decoration: none;
+.linkBox a:nth-of-type(2){
+  margin-left: 5%;
 }
-</style>
+</style> -->

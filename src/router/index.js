@@ -12,7 +12,7 @@ const routes = [
     },
     {
         path: "/register",
-        component: () => import("../pages/Register.vue")
+        component: () => import("../pages/register.vue")
     },
     {
         path: "/index",
@@ -46,4 +46,5 @@ const router = createRouter({
 });
 
 
-export default router;
+
+export default router ;

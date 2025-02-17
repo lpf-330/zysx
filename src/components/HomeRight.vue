@@ -1,6 +1,56 @@
 <script setup>
 import Calendar from './Calendar.vue';
 import Memo from './Memo.vue';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+import axios from 'axios';
+
+
+
+const user = storeToRefs(useUserInfoStore()).user.value.data
+
+
+let updateUser = async (user_id, username) => {
+    try {
+
+
+        const url = `http://localhost:8081/userInfo?user_id=${encodeURIComponent(user_id)}&username=${encodeURIComponent(username)}`; // 通过查询字符串拼接 URL  
+
+        // 发送 GET 请求  
+        const response = await axios.post(url);
+
+
+
+        console.log("响应", response.data);
+
+
+
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+    }
+
+
+
+}
+
+
+const updateUserName = () => {
+    const user_id = user.user_id
+    const username = document.querySelector('#userName').value
+
+    updateUser(user_id, username)
+    user.username = username
+}
+
+
+//计算年龄
+const today=new Date();
+const birthdate = new Date(user.birthdate);
+let age=today.getFullYear()-birthdate.getFullYear();
+
 </script>
 
 <template>
@@ -12,19 +62,22 @@ import Memo from './Memo.vue';
             </div>
             <div class="user">
                 <div class="userImg"></div>
-                <span class="userName">用户名</span>
+                <span class="userName">{{ user.username }}</span>
                 <div class="userMes">
                     <div class="age">
                         <span>年龄</span>
-                        <span>&nbsp;&nbsp;</span>
+                        <span>{{ age }}岁</span>
+
                     </div>
                     <div class="height">
                         <span>身高</span>
-                        <span>&nbsp;&nbsp;</span>
+                        <span>{{ user.height }}</span>
+
                     </div>
                     <div class="weight">
                         <span>体重</span>
-                        <span>&nbsp;&nbsp;</span>
+                        <span>{{ user.weight }}</span>
+
                     </div>
                 </div>
             </div>
