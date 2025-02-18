@@ -1,6 +1,8 @@
 <template>
   <div class="background">
-    <HeartDataClear></HeartDataClear>
+    <div class="chart">
+        <HeartDataClear></HeartDataClear>
+    </div>   
   </div>
 </template>
 
@@ -12,9 +14,13 @@ import HeartDataClear from './HeartDataClear.vue';
     .background {
     width: 100%;
     height: 100%;
-    background-color: rgb(150, 203, 215);
+    background-color: rgb(255, 255, 255);
     display: flex;
     justify-content: center;  
     align-items: center;    
+    }
+    .chart {
+        width: 100%;
+        height: 100%;
     }
 </style>

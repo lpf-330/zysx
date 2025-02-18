@@ -1,20 +1,21 @@
 <script setup>
-import HealthMid from '../components/HealthMid.vue';
-import HealthRight from '../components/HealthRight.vue';
-
-
+// import PressureDataClear from '../components/PressureDataClear.vue';
+// import SleepDataClear from '../components/SleepDataClear.vue';
+// import OxygenDataClear from '../components/OxygenDataClear.vue';
+// import PiDataClear from '../components/PiDataClear.vue';
+// import BloodDataClear from '../components/BloodDataClear.vue';
+import HeartDataClear from '../components/HeartDataClear.vue';
 </script>
 
 <template>
-    <div class="mid">
-        <HealthMid></HealthMid>
+     <div class="health">
+        <HeartDataClear></HeartDataClear>
     </div>
-    <HealthRight></HealthRight>
 </template>
 
 <style scoped>
-.mid {
-    width: 60%;
-    height: 100%;
+.health {
+    width: 70%;
+    height: 90%;
 }
 </style>
