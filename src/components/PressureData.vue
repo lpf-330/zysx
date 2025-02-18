@@ -2,7 +2,7 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -16,6 +16,7 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
+import { defineProps } from 'vue';
 
 echarts.use([
     LineChart,
@@ -29,9 +30,14 @@ echarts.use([
     CanvasRenderer
 ]);
 
-export default {
-    setup() {
-        const chart = ref(null);
+const props = defineProps({
+    data: {
+        type: Array,
+        required: true
+    }
+})
+
+const chart = ref(null);
         let myChart = null;
 
         const initChart = () => {
@@ -107,7 +113,7 @@ export default {
                     name: 'B',
                     type: 'bar',
                     barWidth: 20,
-                    data: [20, 40, 60, 80],
+                    data: props.data,
                     barGap: '-98%',
                     itemStyle: {
                         barBorderRadius: 100
@@ -128,16 +134,5 @@ export default {
             window.removeEventListener('resize', () => myChart.resize());
             myChart.dispose();
         });
-
-        return {
-            chart
-        };
-    }
-};
 </script>
 
-<style>
-.kl {
-    background-color: rgb(255, 177, 33);
-}
-</style>

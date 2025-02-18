@@ -2,56 +2,56 @@
     <div class="Box">
         <div class="item">
             <div class="data">
-                <div class="dataNum">77&nbsp;&nbsp;&nbsp;bpm</div>
+                <div class="dataNum">{{heartData[heartData.length-1]}}&nbsp;bpm</div>
                 <div class="title">心率</div>
             </div>
             <div class="chart">
-                <HeartData></HeartData>
+                <HeartData :data="heartData"></HeartData>
             </div>
         </div>
         <div class="item">
             <div class="data">
-                <div class="dataNum">77&nbsp;&nbsp;&nbsp;</div>
+                <div class="dataNum">{{bloodData[bloodData.length-1]}}&nbsp;&nbsp;&nbsp;</div>
                 <div class="title">血糖</div>
             </div>
             <div class="chart">
-                <BloodData></BloodData>
+                <BloodData :data="bloodData"></BloodData>
             </div>
         </div>
         <div class="item">
             <div class="data">
-                <div class="dataNum">77&nbsp;&nbsp;&nbsp;pi</div>
+                <div class="dataNum">{{piData[piData.length-1]}}&nbsp;&nbsp;pi</div>
                 <div class="title">灌注指数</div>
             </div>
             <div class="chart">
-                <PiData></PiData>
+                <PiData :data="piData"></PiData>
             </div>
         </div>
         <div class="item">
             <div class="data">
-                <div class="dataNum">77&nbsp;&nbsp;&nbsp;%</div>
+                <div class="dataNum">{{oxygenData*100}}&nbsp;%</div>
                 <div class="title">血氧</div>
             </div>
             <div class="chart">
-                <OxygenData></OxygenData>
+                <OxygenData :data="oxygenData"></OxygenData>
             </div>
         </div>
         <div class="item">
             <div class="data">
-                <div class="dataNum">7h7min&nbsp;&nbsp;&nbsp;</div>
+                <div class="dataNum">{{Math.floor(sleepData[sleepData.length-1]/60)}}h{{sleepData[sleepData.length-1]%60}}min</div>
                 <div class="title">睡眠</div>
             </div>
             <div class="chart">
-                <SleepData></SleepData>
+                <SleepData :data="sleepData"></SleepData>
             </div>
         </div>
         <div class="item">
             <div class="data">
-                <div class="dataNum">77&nbsp;&nbsp;&nbsp;mmhg</div>
+                <div class="dataNum">{{pressureData[pressureData.length-1]}}&nbsp;mmhg</div>
                 <div class="title">血压</div>
             </div>
             <div class="chart">
-                <PressureData></PressureData>
+                <PressureData :data="pressureData"></PressureData>
             </div>
         </div>
     </div>
@@ -64,6 +64,17 @@ import PiData from './PiData.vue';
 import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
+import { ref } from 'vue';
+
+//从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
+const heartData = ref([86, 87, 87, 90])
+const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
+const piData = ref([62, 65, 59, 52, 78])
+const oxygenData = ref(0.6)
+const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
+const pressureData = ref([20, 40, 60, 80])
+
+
 </script>
 
 <style scoped>
