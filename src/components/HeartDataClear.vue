@@ -34,6 +34,26 @@ export default {
         const chart = ref(null);
         let myChart = null;
 
+        let color = [
+            "#FF0000",
+            "#00CA69"
+        ];
+
+        let xAxisData = ["5", "10", "15", "20", "25", "30", "35", "40","45","50","55","60"];
+        let yAxisData1 = [100, 138, 187, 173, 180, 150, 180, 230,213,200,178,169];
+        let yAxisData2 = [45, 23, 14, 34, 22, 56, 44, 12,67,87,43,32];
+
+        const hexToRgba = (hex, opacity) => {
+            let rgbaColor = "";
+            let reg = /^#[\da-f]{6}$/i;
+            if (reg.test(hex)) {
+                rgbaColor = `rgba(${parseInt("0x" + hex.slice(1, 3))},${parseInt(
+            "0x" + hex.slice(3, 5)
+            )},${parseInt("0x" + hex.slice(5, 7))},${opacity})`;
+            }
+            return rgbaColor;
+        }
+
         const initChart = () => {
             if (chart.value) {
                 myChart = echarts.init(chart.value);
@@ -43,121 +63,139 @@ export default {
 
         const updateChart = () => {
             const option = {
-            name:'心率',
-            // backgroundColor: '#ffc3a5',
-            title: {
-                // text: '88次', //最近一次体重
-                // subtext: '      心率',
-                textStyle: {
-                    fontWeight: 'bolder',
-                    fontSize: 48,
-                    // color: '#FFFFFF',
+            //backgroundColor: '#fff',
+            color: color,
+            legend: {
+            top: 20,
+            
+            },
+            tooltip: {
+                trigger: "axis",
+                formatter: function(params) {
+                    let html = '';
+                    params.forEach(v => {
+                        html += `<div style="color: #666;font-size: 14px;line-height: 24px">
+                        <span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${color[v.componentIndex]};"></span>
+                        ${v.seriesName}2020.${v.name}  
+                        <span style="color:${color[v.componentIndex]};font-weight:700;font-size: 18px;margin-left:5px">${v.value}</span>
+                        次`;
+                    })
+                    return html
                 },
-                subtextStyle: {
-                    fontWeight: 'bolder',
-                    fontSize: 24,
-                    // color: '#fa8d55',
-                },
-                right: '5%',
-                top: '5%'
+                extraCssText: 'background: #fff; border-radius: 0;box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);color: #333;',
+                axisPointer: {
+                    type: 'shadow',
+                    shadowStyle: {
+                        color: '#ffffff',
+                        shadowColor: 'rgba(225,225,225,1)',
+                        shadowBlur: 5
+                    }
+                }
             },
             grid: {
-                left: '1%',
-                right: '5%',
-                bottom: '15%',
+                top: 100,
                 containLabel: true
             },
             xAxis: [{
-                type: 'category',
+                type: "category",
                 boundaryGap: false,
-                data: ['9.23', '10.3', '10.11', '10.15', '10.26', '12.26'],
                 axisLabel: {
-                    show: true,
-                    interval:0,
-                    fontSize: 20,
-                    // color: '#ffffff',
-                    fontWeight: 'bold'
-
+                    formatter: '{value}',
+                    textStyle: {
+                        color: "#333"
+                    }//,
+                    //rotate:20
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: "#D9D9D9"
+                    }
+                },
+                data: xAxisData,
+            }],
+            yAxis: [{
+                type: "value",
+                name: '心率',
+                axisLabel: {
+                    textStyle: {
+                        color: "#666"
+                    }
+                },
+                nameTextStyle: {
+                    color: "#666",
+                    fontSize: 12,
+                    lineHeight: 40
+                },
+                // 分割线
+                splitLine: {
+                    lineStyle: {
+                        type: "dashed",
+                        color: "#E9E9E9"
+                    }
                 },
                 axisLine: {
                     show: false
                 },
                 axisTick: {
                     show: false
-                },
-            }],
-            yAxis: [{
-                show: false,
-                min: 80, //最低为最低减5
-                max: 90, //最高为最高值加5
+                }
             }],
             series: [{
-                name: '心率',
-                type: 'line',
+                // name: "2018",
+                // name: "一般隐患",
+                type: "line",
                 smooth: true,
-                // shadowColor: 'transparent',
-                symbol: 'circle',
-                //        symbolSize: 2,
-                showSymbol: true,
-                //       color:'#ffffff',
-                itemStyle: {  
-                normal: {  
-                    color: 'black', // 数据点颜色改为黑色  
-                    borderColor: '#000000', // 数据点边框颜色也改为黑色  
-                    }  
-                }  ,  
-                areaStyle: {  
-                normal: {  
-                    color: 'transparent'  // 删除阴影效果  
-                    }  
-                },  
-                itemStyle: {
+                symbolSize: 8,
+                zlevel: 3,
+                lineStyle: {
                     normal: {
-                        color: '#fa8d55',
-                        borderColor: 'red',
-                        borderWidth: 12,
+                        color: color[0],
+                        shadowBlur: 3,
+                        shadowColor: hexToRgba(color[0], 0.5),
+                        shadowOffsetY: 8
                     }
                 },
-                label: {
+                symbol: 'circle',//数据交叉点样式
+                data: yAxisData1
+            }, {
+                // name: "重大隐患",
+                type: "line",
+                smooth: true,
+                symbolSize: 8,
+                zlevel: 3,
+                lineStyle: {
                     normal: {
-                        show: true,
-                        position: 'top',
-                        color: 'black',
-                        fontSize: 24,
+                        color: color[1],
+                        shadowBlur: 3,
+                        // shadowColor: hexToRgba(color[1], 0.5),
+                        shadowOffsetY: 8
                     }
                 },
-                markLine: {
-                    lineStyle: {
-                        normal: {
-                            color: 'rgba(0,0,0,0.3)',
-                        },
-                    },
-                    data: [{
-                        name: '最高',
-                        label: {
-                            normal: {
-                                formatter: '正常心率 100次/分',
-                                position: 'middle',
-                                fontSize:18,
-                            }
-                        },
-                        yAxis: 100,//高100为界
-                    },
-                {
-                        name: '最低',
-                        label: {
-                            normal: {
-                                formatter: '正常心率 60次/分',
-                                position: 'middle',
-                                fontSize:18,
-                            }
-                        },
-                        yAxis: 60,//高100为界
-
-                    }]
+                symbol: 'circle',//数据交叉点样式 (实心点)
+                areaStyle: {
+                    normal: {
+                        color: new echarts.graphic.LinearGradient(
+                            0,
+                            0,
+                            0,
+                            1,
+                            [{
+                                    offset: 0,
+                                    color: hexToRgba(color[1], 0.3)
+                                },
+                                {
+                                    offset: 1,
+                                    color: hexToRgba(color[1], 0.1)
+                                }
+                            ],
+                            false
+                        ),
+                        shadowColor: hexToRgba(color[1], 0.1),
+                        shadowBlur: 10
+                    }
                 },
-                data: [86, 87, 87, 87, 86, 85]
-            }, ]
+                // data: yAxisData2
+            }]
         };
             myChart.setOption(option);
         };
