@@ -37,8 +37,8 @@ export default {
         const textColor = '#666'
         const seriesData = [62, 65, 59, 52, 78]
         const xAxisList = [
-        
-        
+
+
         ]
 
         const initChart = () => {
@@ -49,92 +49,92 @@ export default {
         };
 
         const updateChart = () => {
-                    const option = {
-        
-        tooltip: {
-            trigger: 'axis'
-        },
-        grid: {
-            top: '15%',
-            left: '15%',
-            right: '15%',
-            bottom: '15%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            data: xAxisList,
-            axisLabel: {
-                // 坐标轴字体颜色
-                color: textColor,
-                fontSize: 18,
-                show:false
-            },
-            axisLine: {
-                // lineStyle: {
-                //     color: textColor
-                // }
-                show:false
-            },
-            axisTick: {
-                // y轴刻度线
-                show: false
-            },
-            splitLine: {
-                // 网格
-                show: false
-            },
-            boundaryGap: false
-        },
-        yAxis: {
-            type: 'value',
-            min: 30,
-            // name: '成绩（分）',
-            nameTextStyle: {
-                color: '#333',
-                fontSize: 18,
-                padding: [0, 0, 0, 80]
-            },
-            axisLabel: {
-                // 坐标轴字体颜色
-                color: textColor,
-                fontSize: 18,
-                show:false
-            },
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                // y轴刻度线
-                show: false
-            },
-            splitLine: {
-                // 网格
-                show: false,
-                lineStyle: {
-                    color: '#CCCCCC',
-                    type: 'dashed'
-                }
-            }
-        },
+            const option = {
 
-        series: [
-            {
-                // name: '成绩（分）',
-                type: 'line',
-                symbol: 'circle',
-                symbolSize: 10,
-                z: 1,
-                itemStyle: {
-                    color: '#5487FF'
+                tooltip: {
+                    trigger: 'axis'
                 },
-                lineStyle: {
-                    color: '#5487FF'
+                grid: {
+                    top: '20%',
+                    left: '2%',
+                    right: '15%',
+                    bottom: '0%',
+                    containLabel: true
                 },
-                data: seriesData
-            }
-        ]
-        };
+                xAxis: {
+                    type: 'category',
+                    data: xAxisList,
+                    axisLabel: {
+                        // 坐标轴字体颜色
+                        color: textColor,
+                        fontSize: 18,
+                        show: false
+                    },
+                    axisLine: {
+                        // lineStyle: {
+                        //     color: textColor
+                        // }
+                        show: false
+                    },
+                    axisTick: {
+                        // y轴刻度线
+                        show: false
+                    },
+                    splitLine: {
+                        // 网格
+                        show: false
+                    },
+                    boundaryGap: false
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 30,
+                    // name: '成绩（分）',
+                    nameTextStyle: {
+                        color: '#333',
+                        fontSize: 18,
+                        padding: [0, 0, 0, 80]
+                    },
+                    axisLabel: {
+                        // 坐标轴字体颜色
+                        color: textColor,
+                        fontSize: 18,
+                        show: false
+                    },
+                    axisLine: {
+                        show: false
+                    },
+                    axisTick: {
+                        // y轴刻度线
+                        show: false
+                    },
+                    splitLine: {
+                        // 网格
+                        show: false,
+                        lineStyle: {
+                            color: '#CCCCCC',
+                            type: 'dashed'
+                        }
+                    }
+                },
+
+                series: [
+                    {
+                        // name: '成绩（分）',
+                        type: 'line',
+                        symbol: 'circle',
+                        symbolSize: 10,
+                        z: 1,
+                        itemStyle: {
+                            color: '#5487FF'
+                        },
+                        lineStyle: {
+                            color: '#5487FF'
+                        },
+                        data: seriesData
+                    }
+                ]
+            };
 
             myChart.setOption(option);
         };

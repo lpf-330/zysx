@@ -42,170 +42,79 @@ export default {
         };
 
         const updateChart = () => {
-                    const option = {
-            backgroundColor: '#fff',
-            tooltip: {
-                trigger: 'axis',
-                formatter: '{b0}: {c0}℃',
-            },
-            grid: {
-                top: '15%',
-                left: '5%',
-                right: '5%',
-                bottom: '2%',
-                containLabel: true,
-            },
-            yAxis: {
-                axisLine: {
-                    show: false,
-                    color: '#ffffff',
+            const option = {
+                color: ['transparent', '#3398DB'],
+                grid: {
+                    left: '20%',
+                    right: '35%',
+                    bottom: '20%',
+                    top: '20%'
                 },
-                axisLabel: {
-                    textStyle: {
-                        color: '#fff',
-                        fontSize: '14',
+                xAxis: [{
+                    type: 'category',
+                    axisLine: {
+                        show: false
                     },
-                },
-                axisTick: {
-                    show: false,
-                    lineStyle: {
-                        color: '#285abc',
+                    axisTick: {
+                        show: false
                     },
-                },
-                splitLine: {
-                    show: false,
-                },
-            },
-            xAxis: [{
-                    axisTick: 'none',
-                    axisLine: 'none',
-                    offset: '27',
-                    data: ['01日', '02日', '03日'],
                     axisLabel: {
-                        show: true,
-                        textStyle: {
-                            color: '#285abc',
-                            fontSize: '14',
-                        },
-                        lineHeight: 55,
+                        show: false
                     },
-                },
-                {
-                    axisTick: 'none',
-                    axisLine: 'none',
+                }],
+                yAxis: [{
+                    type: 'value',
+                    splitLine: {
+                        show: false
+                    },
+                    axisLine: {
+                        show: false
+                    },
+                    axisTick: {
+                        show: false
+                    },
                     axisLabel: {
+                        show: false
+                    }
+                }],
+                series: [{
+                    name: 'A',
+                    type: 'bar',
+                    data: [{
+                        value: 100, percent: '10'
+                    }, {
+                        value: 100, percent: '20'
+                    }, {
+                        value: 100, percent: '30'
+                    }, {
+                        value: 100, percent: '40'
+                    }],
+                    barWidth: 20,
+                    itemStyle: {
+                        borderColor: '#999',
+                        barBorderRadius: 100
+                    },
+                    label: {
                         show: false,
-                    },
-                    data: [0, 0, 0],
+                        // position: 'top',
+                        // color: '#999',
+                        // formatter: function (item) {
+                        //     return item.data.percent + '%';
+                        // }
+                    }
                 },
                 {
-                    name: '单位：件',
-                    nameGap: '50',
-                    data: [],
-                },
-            ],
-            series: [{
-                    name: '℃',
+                    name: 'B',
                     type: 'bar',
-                    xAxisIndex: 0,
-                    data: [52, 60, 22],
-                    barWidth: 5,
+                    barWidth: 20,
+                    data: [20, 40, 60, 80],
+                    barGap: '-98%',
                     itemStyle: {
-                        normal: {
-                            color: new echarts.graphic.LinearGradient(0, 1, 0, 0, [{
-                                    offset: 0,
-                                    color: '#93FE94',
-                                },
-                                {
-                                    offset: 0.5,
-                                    color: '#E4D225',
-                                },
-                                {
-                                    offset: 1,
-                                    color: '#E01F28',
-                                },
-                            ]),
-                        },
-                    },
-                    z: 2,
-                },
-                {
-                    name: '温度背景框',
-                    type: 'bar',
-                    xAxisIndex: 1,
-                    barGap: '-100%',
-                    data: [99, 99.5, 99.5],
-                    barWidth: 8,
-                    itemStyle: {
-                        normal: {
-                            // color: '#0e2147',
-                            barBorderRadius: 5,
-                        },
-                    },
-                    z: 1,
-                },
-                {
-                    name: '外框',
-                    type: 'bar',
-                    xAxisIndex: 2,
-                    barGap: '-100%',
-                    data: [100, 100, 100],
-                    barWidth: 10,
-                    itemStyle: {
-                        normal: {
-                            color: '#4577BA',
-                            barBorderRadius: 50,
-                        },
-                    },
-                    z: 0,
-                },
-                {
-                    name: '外圆',
-                    type: 'scatter',
-                    hoverAnimation: false,
-                    data: [0, 0, 0],
-                    xAxisIndex: 2,
-                    symbolSize: 15,
-                    itemStyle: {
-                        normal: {
-                            color: '#93FE94',
-                            opacity: 1,
-                        },
-                    },
-                    z: 2,
-                },
-                {
-                    name: '白圆',
-                    type: 'scatter',
-                    hoverAnimation: false,
-                    data: [0, 0, 0],
-                    xAxisIndex: 1,
-                    symbolSize: 20,
-                    itemStyle: {
-                        normal: {
-                            color: '#0C2E6D',
-                            opacity: 1,
-                        },
-                    },
-                    z: 1,
-                },
-                {
-                    name: '外圆',
-                    type: 'scatter',
-                    hoverAnimation: false,
-                    data: [0, 0, 0],
-                    xAxisIndex: 2,
-                    symbolSize: 23,
-                    itemStyle: {
-                        normal: {
-                            color: '#4577BA',
-                            opacity: 1,
-                        },
-                    },
-                    z: 0,
-                },
-            ],
-        };
+                        barBorderRadius: 100
+                    }
+                }
+                ]
+            };
             myChart.setOption(option);
         };
 
@@ -226,3 +135,9 @@ export default {
     }
 };
 </script>
+
+<style>
+.kl {
+    background-color: rgb(255, 177, 33);
+}
+</style>

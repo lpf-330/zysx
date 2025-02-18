@@ -34,9 +34,8 @@ export default {
         const chart = ref(null);
         let myChart = null;
 
-        const dataX = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
-        const y = [40, 58, 40, 44, 61, 58, 77, 60, 78, 53, 70, 53];
-        const y1 = [50, 48, 44, 62, 41, 78, 57, 70, 68, 93, 60, 73];
+        const dataX = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+        const y = [40, 58, 40, 44, 61, 58, 77, 60, 78, 53, 70];
 
         const initChart = () => {
             if (chart.value) {
@@ -46,145 +45,146 @@ export default {
         };
 
         const updateChart = () => {
-                    const option = {
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(33,56,77,1)',
-            borderColor: 'rgba(33,56,77,1)',
-            textStyle: {
-                color: '#fff',
-                fontSize: 14
-            },
-            axisPointer: {
-                lineStyle: {
-                    color: 'rgba(19,255,241,1)',
-                    type: 'dashed',
-                    width: 2
-                }
-            }
-        },
-        legend: {
-            right: 'center',
-            top: '5%',
-            itemWidth: 16,
-            itemHeight: 16,
-            itemGap: 25,
-            icon: 'stack',
-            textStyle: {
-                color: '#E1E5E6'
-            }
-        },
-        grid: {
-            top: '16%',
-            right: '4%',
-            bottom: '4%',
-            left: '6%',
-            containLabel: true
-        },
-        xAxis: {
-            data: dataX,
-            type: 'category',
-            boundaryGap: false,
-            axisLabel: {
-                show:false
-            },
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                show: false // 去除刻度线
-            }
-        },
-        yAxis: {
-            type: 'value',
-            axisTick: { show: false },
-            axisLine: {
-                show: false
-            },
-            axisLabel: {
-                show:false
-            },
-            // y轴分割线的颜色
-            splitLine: {
-                // lineStyle: {
-                //     color: '#9EA6B4',
-                //     type: 'solid',
-                // }
-                show:false
-            }
-        },
-        series: [
-            {
-                // name: '总流量',
-                smooth: true,
-                type: 'line',
-                // 填充颜色设置
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(
-                    0,
-                    0,
-                    0,
-                    1,
-                    [
-                        {
-                            offset: 0,
-                            color: 'rgba(253, 190, 93,.4)' // 渐变色的起始颜色
+            const option = {
+                tooltip: {
+                    show: false
+                    // trigger: 'axis',
+                    // backgroundColor: 'rgba(33,56,77,1)',
+                    // borderColor: 'rgba(33,56,77,1)',
+                    // textStyle: {
+                    //     color: '#fff',
+                    //     fontSize: 14
+                    // },
+                    // axisPointer: {
+                    //     lineStyle: {
+                    //         color: 'rgba(19,255,241,1)',
+                    //         type: 'dashed',
+                    //         width: 2
+                    //     }
+                    // }
+                },
+                legend: {
+                    right: 'center',
+                    top: '5%',
+                    itemWidth: 16,
+                    itemHeight: 16,
+                    itemGap: 25,
+                    icon: 'stack',
+                    textStyle: {
+                        color: '#E1E5E6'
+                    }
+                },
+                grid: {
+                    top: '16%',
+                    right: '4%',
+                    bottom: '4%',
+                    left: '1%',
+                    containLabel: true
+                },
+                xAxis: {
+                    data: dataX,
+                    type: 'category',
+                    boundaryGap: false,
+                    axisLabel: {
+                        show: false
+                    },
+                    axisLine: {
+                        show: false
+                    },
+                    axisTick: {
+                        show: false // 去除刻度线
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisTick: { show: false },
+                    axisLine: {
+                        show: false
+                    },
+                    axisLabel: {
+                        show: false
+                    },
+                    // y轴分割线的颜色
+                    splitLine: {
+                        // lineStyle: {
+                        //     color: '#9EA6B4',
+                        //     type: 'solid',
+                        // }
+                        show: false
+                    }
+                },
+                series: [
+                    {
+                        // name: '总流量',
+                        smooth: true,
+                        type: 'line',
+                        // 填充颜色设置
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(
+                                0,
+                                0,
+                                0,
+                                1,
+                                [
+                                    {
+                                        offset: 0,
+                                        color: 'rgba(253, 190, 93,.4)' // 渐变色的起始颜色
+                                    },
+                                    {
+                                        offset: 0.9,
+                                        color: 'rgba(253, 190, 93,0)' // 渐变线的结束颜色
+                                    }
+                                ],
+                                false
+                            ),
+                            shadowColor: 'rgba(0, 0, 0, 0.1)'
                         },
-                        {
-                            offset: 0.9,
-                            color: 'rgba(253, 190, 93,0)' // 渐变线的结束颜色
-                        }
-                    ],
-                    false
-                    ),
-                    shadowColor: 'rgba(0, 0, 0, 0.1)'
-                },
-                // 开始不显示拐点， 鼠标经过显示
-                showSymbol: false,
-                symbolSize: 8,
-                // 设置拐点颜色以及边框
-                itemStyle: {
-                    color: 'rgba(253, 190, 93, 1)'
-                },
-                // data: y1
-            },
-            {
-                // name: '进园',
-                smooth: true,
-                type: 'line',
-                // 填充颜色设置
-                // areaStyle: {
-                //     color: new echarts.graphic.LinearGradient(
-                //     0,
-                //     0,
-                //     0,
-                //     1,
-                //     [
-                //         {
-                //             offset: 0,
-                //             color: 'rgba(26, 119, 221,.4)' // 渐变色的起始颜色
-                //         },
-                //         {
-                //             offset: 0.9,
-                //             color: 'rgba(26, 119, 221,0)' // 渐变线的结束颜色
-                //         }
-                //     ],
-                //     false
-                //     ),
-                //     shadowColor: 'rgba(0, 0, 0, 0.1)'
-                // },
-                // 开始不显示拐点， 鼠标经过显示
-                showSymbol: false,
-                symbolSize: 4,
-                // 设置拐点颜色以及边框
-                itemStyle: {
-                    // color: "rgba(241,162,42,1)",
-                    color: 'rgba(26, 119, 221, 1)'
-                },
-                data: y
-            }
-        ]
-        };
+                        // 开始不显示拐点， 鼠标经过显示
+                        showSymbol: false,
+                        symbolSize: 8,
+                        // 设置拐点颜色以及边框
+                        itemStyle: {
+                            color: 'rgba(253, 190, 93, 1)'
+                        },
+                        // data: y1
+                    },
+                    {
+                        // name: '进园',
+                        smooth: true,
+                        type: 'line',
+                        // 填充颜色设置
+                        // areaStyle: {
+                        //     color: new echarts.graphic.LinearGradient(
+                        //     0,
+                        //     0,
+                        //     0,
+                        //     1,
+                        //     [
+                        //         {
+                        //             offset: 0,
+                        //             color: 'rgba(26, 119, 221,.4)' // 渐变色的起始颜色
+                        //         },
+                        //         {
+                        //             offset: 0.9,
+                        //             color: 'rgba(26, 119, 221,0)' // 渐变线的结束颜色
+                        //         }
+                        //     ],
+                        //     false
+                        //     ),
+                        //     shadowColor: 'rgba(0, 0, 0, 0.1)'
+                        // },
+                        // 开始不显示拐点， 鼠标经过显示
+                        showSymbol: false,
+                        symbolSize: 4,
+                        // 设置拐点颜色以及边框
+                        itemStyle: {
+                            // color: "rgba(241,162,42,1)",
+                            color: 'rgba(26, 119, 221, 1)'
+                        },
+                        data: y
+                    }
+                ]
+            };
 
 
             myChart.setOption(option);

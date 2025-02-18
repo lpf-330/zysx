@@ -1,15 +1,16 @@
 <script setup>
+
 </script>
 
 <template>
-    <div class="person">
+    <div class="content">
 
     </div>
 </template>
 
 <style scoped>
-.person {
+.content {
     height: 100%;
-    width: 70%;
+    width: 100%;
 }
 </style>

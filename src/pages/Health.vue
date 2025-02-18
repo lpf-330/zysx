@@ -1,16 +1,20 @@
 <script setup>
-import HeartPage from '../components/HeartPage.vue';
+import HealthMid from '../components/HealthMid.vue';
+import HealthRight from '../components/HealthRight.vue';
+
+
 </script>
 
 <template>
-    <div class="Health">
-         <HeartPage></HeartPage>
+    <div class="mid">
+        <HealthMid></HealthMid>
     </div>
+    <HealthRight></HealthRight>
 </template>
 
 <style scoped>
-.Health{
+.mid {
+    width: 60%;
     height: 100%;
-    width: 70%;
-}  
+}
 </style>

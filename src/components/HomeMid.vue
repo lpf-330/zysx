@@ -1,11 +1,14 @@
 <script setup>
-
+import DataBox from './DataBox.vue';
 </script>
 
 <template>
     <div class="content">
         <div class="headBox">
             <div class="headImg"></div>
+        </div>
+        <div class="DataBox">
+            <DataBox></DataBox>
         </div>
     </div>
 </template>
@@ -36,5 +39,13 @@
     background-repeat: no-repeat;
     background-size: contain;
     background-position: 0.13rem center;
+}
+
+.DataBox {
+    width: 100%;
+    height: 63%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
