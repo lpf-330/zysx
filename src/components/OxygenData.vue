@@ -2,7 +2,7 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -16,6 +16,7 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import 'echarts-liquidfill'
+import { defineProps } from 'vue';
 
 echarts.use([
     LineChart,
@@ -29,12 +30,17 @@ echarts.use([
     CanvasRenderer
 ]);
 
-export default {
-    setup() {
-        const chart = ref(null);
+const props = defineProps({
+    data: {
+        type: Number,
+        required: true
+    }
+})
+
+const chart = ref(null);
         let myChart = null;
 
-        var value = 0.6;
+        var value = props.data;
 
         const initChart = () => {
             if (chart.value) {
@@ -109,12 +115,6 @@ export default {
             window.removeEventListener('resize', () => myChart.resize());
             myChart.dispose();
         });
-
-        return {
-            chart
-        };
-    }
-};  
 </script>
 
 <style>
