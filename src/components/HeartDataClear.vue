@@ -61,7 +61,6 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
 
 echarts.use([
     LineChart,
