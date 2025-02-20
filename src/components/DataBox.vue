@@ -80,32 +80,32 @@ const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
 const pressureData = ref([20, 40, 60, 80])
 
 
-let data=ref([])
-let user_id=1
+// let data=ref([])
+// let user_id=1
 
 
-const fetchData=async()=>{
+// const fetchData=async()=>{
 
-  try {
+//   try {
     
-    //获取id
-    const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-    const response = await axios.get(url);  
+//     //获取id
+//     const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
+//     const response = await axios.get(url);  
   
-      data.value = response.data;
-    console.log('响应综合数据',data.value);
+//       data.value = response.data;
+//     console.log('响应综合数据',data.value);
 
 
-  } catch (error) {
-     console.error("出错", error);  
-    alert("加载失败，请稍后再试。");  
+//   } catch (error) {
+//      console.error("出错", error);  
+//     alert("加载失败，请稍后再试。");  
     
-  }
+//   }
 
 
-}
+// }
 
-onBeforeMount(fetchData)
+// onBeforeMount(fetchData)
 
 
 

@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeMount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -61,6 +61,7 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
+import axios from 'axios';
 
 echarts.use([
     LineChart,
@@ -74,10 +75,37 @@ echarts.use([
     CanvasRenderer
 ]);
 
+let user_id=1
 //数据
 const data = ref([100, 138, 127, 113, 120, 100, 110]);
+let heartData=ref([]);
 //日期
 const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
+
+const fetchHeartData=async()=>{
+
+  try {
+    
+    // 获取帖子 ID  
+    const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
+    const response = await axios.get(url);  
+  
+      heartData.value = response.data;
+    console.log('响应心率',heartData.value);
+
+
+  } catch (error) {
+     console.error("出错", error);  
+    alert("加载失败，请稍后再试。"); // 友好的错误提示  
+    
+  }
+
+
+}
+
+
+onMounted(fetchHeartData)
+
 
 const chart = ref(null);
 let myChart = null;
@@ -263,7 +291,8 @@ const updateChart = () => {
 onMounted(() => {
     initChart();
     window.addEventListener('resize', () => myChart.resize());
-});
+},fetchHeartData()
+);
 
 onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
