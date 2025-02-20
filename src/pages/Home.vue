@@ -12,7 +12,7 @@ import HomeRight from '../components/HomeRight.vue'
         <TimeBox></TimeBox>
         <HomeMid></HomeMid>
     </div>
-    <!-- <HomeRight></HomeRight> -->
+    <HomeRight></HomeRight>
 </template>
 
 <style scoped>
