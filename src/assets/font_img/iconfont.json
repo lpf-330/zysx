@@ -6,6 +6,13 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "13456131",
+      "name": "拉出",
+      "font_class": "lachu",
+      "unicode": "e951",
+      "unicode_decimal": 59729
+    },
+    {
       "icon_id": "35261000",
       "name": "vertical-line",
       "font_class": "vertical-line",

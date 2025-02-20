@@ -1,53 +1,55 @@
 <template>
     <div class="Box">
-        <div class="item">
+        <div class="item" @click="toggleRouter('heartData')">
             <div class="data">
-                <div class="dataNum">{{heartData[heartData.length-1]}}&nbsp;bpm</div>
+                <div class="dataNum">{{ heartData[heartData.length - 1] }}&nbsp;bpm</div>
                 <div class="title">心率</div>
             </div>
             <div class="chart">
                 <HeartData :data="heartData"></HeartData>
             </div>
         </div>
-        <div class="item">
+        <div class="item" @click="toggleRouter('bloodData')">
             <div class="data">
-                <div class="dataNum">{{bloodData[bloodData.length-1]}}&nbsp;&nbsp;&nbsp;</div>
+                <div class="dataNum">{{ bloodData[bloodData.length - 1] }}&nbsp;&nbsp;&nbsp;</div>
                 <div class="title">血糖</div>
             </div>
             <div class="chart">
                 <BloodData :data="bloodData"></BloodData>
             </div>
         </div>
-        <div class="item">
+        <div class="item" @click="toggleRouter('piData')">
             <div class="data">
-                <div class="dataNum">{{piData[piData.length-1]}}&nbsp;&nbsp;pi</div>
+                <div class="dataNum">{{ piData[piData.length - 1] }}&nbsp;&nbsp;pi</div>
                 <div class="title">灌注指数</div>
             </div>
             <div class="chart">
                 <PiData :data="piData"></PiData>
             </div>
         </div>
-        <div class="item">
+        <div class="item" @click="toggleRouter('oxygenData')">
             <div class="data">
-                <div class="dataNum">{{oxygenData*100}}&nbsp;%</div>
+                <div class="dataNum">{{ oxygenData * 100 }}&nbsp;%</div>
                 <div class="title">血氧</div>
             </div>
             <div class="chart">
                 <OxygenData :data="oxygenData"></OxygenData>
             </div>
         </div>
-        <div class="item">
+        <div class="item" @click="toggleRouter('sleepData')">
             <div class="data">
-                <div class="dataNum">{{Math.floor(sleepData[sleepData.length-1]/60)}}h{{sleepData[sleepData.length-1]%60}}min</div>
+                <div class="dataNum">
+                    {{ Math.floor(sleepData[sleepData.length - 1] / 60) }}h{{ sleepData[sleepData.length - 1] % 60 }}min
+                </div>
                 <div class="title">睡眠</div>
             </div>
             <div class="chart">
                 <SleepData :data="sleepData"></SleepData>
             </div>
         </div>
-        <div class="item">
+        <div class="item" @click="toggleRouter('pressureData')">
             <div class="data">
-                <div class="dataNum">{{pressureData[pressureData.length-1]}}&nbsp;mmhg</div>
+                <div class="dataNum">{{ pressureData[pressureData.length - 1] }}&nbsp;mmhg</div>
                 <div class="title">血压</div>
             </div>
             <div class="chart">
@@ -65,6 +67,8 @@ import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
 import { ref } from 'vue';
+import { defineProps } from 'vue';
+import router from '../router';
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
 const heartData = ref([86, 87, 87, 90])
@@ -74,6 +78,14 @@ const oxygenData = ref(0.6)
 const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
 const pressureData = ref([20, 40, 60, 80])
 
+const props = defineProps({
+    onClick: Function
+})
+
+const toggleRouter = (str) => {
+    props.onClick()
+    router.push({ name: str })
+}
 
 </script>
 
@@ -95,6 +107,12 @@ const pressureData = ref([20, 40, 60, 80])
     flex-direction: row;
     border-radius: 0.2rem;
     overflow: hidden;
+    /* background-color: aquamarine; */
+    box-sizing: border-box;
+}
+
+.item:hover {
+    border: 0.02rem solid rgb(148, 199, 255);
 }
 
 .data {
@@ -119,5 +137,6 @@ const pressureData = ref([20, 40, 60, 80])
 
 .title {
     font-size: 0.1rem;
+    color: rgba(0, 122, 255, 1);
 }
 </style>

@@ -47,9 +47,9 @@ const updateUserName = () => {
 
 
 //计算年龄
-const today=new Date();
+const today = new Date();
 const birthdate = new Date(user.birthdate);
-let age=today.getFullYear()-birthdate.getFullYear();
+let age = today.getFullYear() - birthdate.getFullYear();
 
 </script>
 
@@ -71,12 +71,12 @@ let age=today.getFullYear()-birthdate.getFullYear();
                     </div>
                     <div class="height">
                         <span>身高</span>
-                        <span>{{ user.height }}</span>
+                        <span>{{ user.height }}米</span>
 
                     </div>
                     <div class="weight">
                         <span>体重</span>
-                        <span>{{ user.weight }}</span>
+                        <span>{{ user.weight }}公斤</span>
 
                     </div>
                 </div>
