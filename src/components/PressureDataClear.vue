@@ -71,7 +71,7 @@
 }
 </style>
 
-<script>
+<script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -98,186 +98,186 @@ echarts.use([
     CanvasRenderer
 ]);
 
-export default {
-    setup() {
-        const chart = ref(null);
-        let myChart = null;
-
-        let xData = [1, 2, 3, 4, 5, 6, 7]
-
-        const initChart = () => {
-            if (chart.value) {
-                myChart = echarts.init(chart.value);
-                updateChart();
-            }
-        };
-
-        const updateChart = () => {
-            const option = {
-                // backgroundColor: '#344b58',
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'shadow',
-                        textStyle: {
-                            color: '#fff',
-                        },
-                    },
-                },
-                grid: {
-                    top: '2%',
-                    bottom: '10%',
-                    left: '10%',
-                    containLabel: true,
-                    textStyle: {
-                        color: '#fff',
-                    },
-                },
-                calculable: true,
-                xAxis: [
-                    {
-                        type: 'category',
-                        // axisLine: {
-                        //     lineStyle: {
-                        //         color: 'rgba(255,255,255,.5)',
-                        //     },
-                        // },
-                        splitLine: {
-                            show: false,
-                        },
-                        axisTick: {
-                            show: false,
-                        },
-                        splitArea: {
-                            show: false,
-                        },
-                        axisLabel: {
-                            interval: 0,
-                            // color: 'rgba(255,255,255,0.7)',
-                            fontSize: 18,
-                        },
-                        data: xData,
-                    },
-                ],
-                yAxis: [
-                    {
-                        type: 'value',
-                        splitLine: {
-                            show: false,
-                        },
-                        axisLine: {
-                            show: false,
-                        },
-                        axisTick: {
-                            show: false,
-                        },
-                        axisLabel: {
-                            interval: 0,
-                            // color: 'rgba(255,255,255,0.5)',
-                            fontSize: 20,
-                            formatter: (m) => {
-                                return Math.abs(m);
-                            },
-                        },
-                        splitArea: {
-                            show: false,
-                        },
-                    },
-                ],
-                series: [
-                    {
-                        name: '女',
-                        type: 'bar',
-                        barWidth: 20,
-                        gridIndex: 0,
-                        yAxisIndex: 0,
-                        label: {
-                            show: true,
-                            position: 'top',
-                        },
-                        itemStyle: {
-                            normal: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0,
-                                    y: 0,
-                                    x2: 0,
-                                    y2: 1,
-                                    colorStops: [
-                                        {
-                                            offset: 0,
-                                            color: 'rgba(35, 157, 250, 1)', // 0% 处的颜色
-                                        },
-                                        {
-                                            offset: 1,
-                                            color: 'rgba(35, 157, 250, 0.5)', // 100% 处的颜色
-                                        },
-                                    ],
-                                    global: false, // 缺省为 false
-                                },
-                            },
-                        },
-                        data: [709, 1917, 2455, 2610, 1719, 1433],
-                    },
-
-                    {
-                        name: '男',
-                        type: 'bar',
-                        barWidth: 20,
-                        barGap: '-100%',
-                        gridIndex: 0,
-                        yAxisIndex: 0,
-                        label: {
-                            show: true,
-                            position: 'bottom',
-                            formatter: (m) => {
-                                return Math.abs(m.value);
-                            },
-                        },
-                        itemStyle: {
-                            normal: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0,
-                                    y: 0,
-                                    x2: 0,
-                                    y2: 1,
-                                    colorStops: [
-                                        {
-                                            offset: 1,
-                                            color: 'rgba(35, 250, 187, 1)', // 0% 处的颜色
-                                        },
-                                        {
-                                            offset: 0,
-                                            color: 'rgba(35, 250, 187, 0.5)', // 100% 处的颜色
-                                        },
-                                    ],
-                                    global: false, // 缺省为 false
-                                },
-                                barBorderRadius: 0,
-                            },
-                        },
-                        data: [-327, -1776, -507, -1200, -800, -482],
-                    },
-                ],
-            };
-            myChart.setOption(option);
-        };
+//收缩压
+const data1 = ref([709, 1917, 2455, 2610, 1719, 1433, 1009])
+//伸缩压
+const data2 = ref([-327, -1776, -507, -1200, -800, -482, -998])
+//日期
+const date = ref([1, 2, 3, 4, 5, 6, 7])
 
 
-        onMounted(() => {
-            initChart();
-            window.addEventListener('resize', () => myChart.resize());
-        });
+const chart = ref(null);
+let myChart = null;
 
-        onUnmounted(() => {
-            window.removeEventListener('resize', () => myChart.resize());
-            myChart.dispose();
-        });
 
-        return {
-            chart
-        };
+const initChart = () => {
+    if (chart.value) {
+        myChart = echarts.init(chart.value);
+        updateChart();
     }
-};  
+};
+
+const updateChart = () => {
+    const option = {
+        // backgroundColor: '#344b58',
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow',
+                textStyle: {
+                    color: '#fff',
+                },
+            },
+        },
+        grid: {
+            top: '2%',
+            bottom: '10%',
+            left: '10%',
+            containLabel: true,
+            textStyle: {
+                color: '#fff',
+            },
+        },
+        calculable: true,
+        xAxis: [
+            {
+                type: 'category',
+                // axisLine: {
+                //     lineStyle: {
+                //         color: 'rgba(255,255,255,.5)',
+                //     },
+                // },
+                splitLine: {
+                    show: false,
+                },
+                axisTick: {
+                    show: false,
+                },
+                splitArea: {
+                    show: false,
+                },
+                axisLabel: {
+                    interval: 0,
+                    // color: 'rgba(255,255,255,0.7)',
+                    fontSize: 18,
+                },
+                data: date.value,
+            },
+        ],
+        yAxis: [
+            {
+                type: 'value',
+                offset: 15,
+                splitLine: {
+                    show: false,
+                },
+                axisLine: {
+                    show: false,
+                },
+                axisTick: {
+                    show: false,
+                },
+                axisLabel: {
+                    interval: 0,
+                    // color: 'rgba(255,255,255,0.5)',
+                    fontSize: 18,
+                    formatter: (m) => {
+                        return Math.abs(m);
+                    },
+                },
+                splitArea: {
+                    show: false,
+                },
+            },
+        ],
+        series: [
+            {
+                name: '收缩压',
+                type: 'bar',
+                barWidth: 20,
+                gridIndex: 0,
+                yAxisIndex: 0,
+                label: {
+                    show: true,
+                    position: 'top',
+                },
+                itemStyle: {
+                    normal: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                {
+                                    offset: 0,
+                                    color: 'rgba(35, 157, 250, 0.32)', // 0% 处的颜色
+                                },
+                                {
+                                    offset: 1,
+                                    color: 'rgba(35, 157, 250, 1)', // 100% 处的颜色
+                                },
+                            ],
+                            global: false, // 缺省为 false
+                        },
+                    },
+                },
+                data: data1.value,
+            },
+
+            {
+                name: '伸缩压',
+                type: 'bar',
+                barWidth: 20,
+                barGap: '-100%',
+                gridIndex: 0,
+                yAxisIndex: 0,
+                label: {
+                    show: true,
+                    position: 'bottom',
+                    formatter: (m) => {
+                        return Math.abs(m.value);
+                    },
+                },
+                itemStyle: {
+                    normal: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                {
+                                    offset: 1,
+                                    color: 'rgba(35, 250, 187, 0.32)', // 0% 处的颜色
+                                },
+                                {
+                                    offset: 0,
+                                    color: 'rgba(35, 250, 187, 1)', // 100% 处的颜色
+                                },
+                            ],
+                            global: false, // 缺省为 false
+                        },
+                        barBorderRadius: 0,
+                    },
+                },
+                data: data2.value,
+            },
+        ],
+    };
+    myChart.setOption(option);
+};
+
+
+onMounted(() => {
+    initChart();
+    window.addEventListener('resize', () => myChart.resize());
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', () => myChart.resize());
+    myChart.dispose();
+});
 </script>
