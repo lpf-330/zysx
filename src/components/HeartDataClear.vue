@@ -75,36 +75,47 @@ echarts.use([
     CanvasRenderer
 ]);
 
-let user_id=1
+let user_id = 1
 //数据
-const data = ref([100, 138, 127, 113, 120, 100, 110]);
-let heartData=ref([]);
+// const data = ref(['100', '138', '127', '113', '120', '100', '110']);
+const data = ref([])
 //日期
-const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
-
-const fetchHeartData=async()=>{
-
-  try {
-    
-    // 获取帖子 ID  
-    const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-    const response = await axios.get(url);  
-  
-      heartData.value = response.data;
-    console.log('响应心率',heartData.value);
+// const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
+const date = ref([])
 
 
-  } catch (error) {
-     console.error("出错", error);  
-    alert("加载失败，请稍后再试。"); // 友好的错误提示  
-    
-  }
+const fetchHeartData = async () => {
+
+    try {
+
+        // 获取帖子 ID  
+        const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
+        const response = await axios.get(url);
+
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].heartData)
+            date.value.push(response.data[j].Date)
+        }
+        // data.value = Object.values(data.value)
+        // date.value = Object.values(date.value)
+
+        console.log('response', response.data);
+        // console.log('data', data.value);
+        // console.log('date', date.value);
 
 
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+    }
 }
 
 
-onMounted(fetchHeartData)
+
+// onMounted(fetchHeartData)
+// onBeforeMount(fetchHeartData)
 
 
 const chart = ref(null);
@@ -133,7 +144,10 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async () => {
+    // console.log('updateChart', data.value, date.value);
+    await fetchHeartData()
+
     const option = {
         //backgroundColor: '#fff',
         color: color,
@@ -284,6 +298,8 @@ const updateChart = () => {
             // data: yAxisData2
         }]
     };
+
+
     myChart.setOption(option);
 };
 
@@ -291,7 +307,7 @@ const updateChart = () => {
 onMounted(() => {
     initChart();
     window.addEventListener('resize', () => myChart.resize());
-},fetchHeartData()
+},
 );
 
 onUnmounted(() => {
