@@ -4,11 +4,13 @@ import Memo from './Memo.vue';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import axios from 'axios';
+import { onBeforeUnmount } from 'vue';
 
 
 
 const user = storeToRefs(useUserInfoStore()).user.value.data
 
+const cancelTokenSource = axios.CancelToken.source();
 
 let updateUser = async (user_id, username) => {
     try {
@@ -17,7 +19,9 @@ let updateUser = async (user_id, username) => {
         const url = `http://localhost:8081/userInfo?user_id=${encodeURIComponent(user_id)}&username=${encodeURIComponent(username)}`; // 通过查询字符串拼接 URL  
 
         // 发送 GET 请求  
-        const response = await axios.post(url);
+        const response = await axios.post(url, {
+            cancelToken: cancelTokenSource.token
+        });
 
 
 
@@ -50,6 +54,11 @@ const updateUserName = () => {
 const today = new Date();
 const birthdate = new Date(user.birthdate);
 let age = today.getFullYear() - birthdate.getFullYear();
+
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 
 </script>
 

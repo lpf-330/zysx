@@ -83,6 +83,7 @@ const data = ref([])
 // const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
 const date = ref([])
 
+const cancelTokenSource = axios.CancelToken.source();
 
 const fetchHeartData = async () => {
 
@@ -90,7 +91,9 @@ const fetchHeartData = async () => {
 
         // 获取帖子 ID  
         const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            cancelToken: cancelTokenSource.token
+        });
 
         for (let j = 0; j < response.data.length; j++) {
             data.value.push(response.data[j].heartData)
@@ -311,6 +314,7 @@ onMounted(() => {
 );
 
 onUnmounted(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });

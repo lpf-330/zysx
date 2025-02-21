@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { onBeforeUnmount, onUnmounted, ref } from 'vue';
 import router from '../router'
 import { RouterLink } from 'vue-router';
 import axios from 'axios';
@@ -12,6 +12,7 @@ const username = ref('')
 const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
+const cancelTokenSource = axios.CancelToken.source();
 
 let fetchUser = async () => {
 
@@ -22,12 +23,14 @@ let fetchUser = async () => {
         const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
 
         // 发送 GET 请求  
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            cancelToken: cancelTokenSource.token
+        });
 
         if (response.data.code === 1) {
             userInfoStore.user.value = response.data.data;
             console.log("响应", userInfoStore.user.value);
-            router.push('/index')
+            router.push({ name: 'index' })
 
 
         } else {
@@ -69,6 +72,10 @@ const LoginTest = () => {
         alert("请输入账号")
     }
 }
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 
 </script>
 
