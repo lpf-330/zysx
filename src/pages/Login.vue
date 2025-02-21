@@ -25,8 +25,8 @@ let fetchUser = async () => {
         const response = await axios.get(url);
 
         if (response.data.code === 1) {
-            userInfoStore.user.value = response.data;
-            console.log("响应", response.data);
+            userInfoStore.user.value = response.data.data;
+            console.log("响应", userInfoStore.user.value);
             router.push('/index')
 
 
