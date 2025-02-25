@@ -62,6 +62,12 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+let userInfoStore=storeToRefs(useUserInfoStore())
+let user_id = userInfoStore.user.value.user_id
+
 
 echarts.use([
     LineChart,
@@ -75,7 +81,6 @@ echarts.use([
     CanvasRenderer
 ]);
 
-let user_id = 1
 //数据
 // const data = ref(['100', '138', '127', '113', '120', '100', '110']);
 const data = ref([])
@@ -89,11 +94,12 @@ const fetchHeartData = async () => {
 
     try {
 
-        // 获取帖子 ID  
-        const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-        const response = await axios.get(url, {
-            cancelToken: cancelTokenSource.token
-        });
+   
+        const url = `http://localhost:8081/heartData/${user_id}`; // 拼接 URL  
+        // const response = await axios.get(url, {
+        //     cancelToken: cancelTokenSource.token
+        // });
+        const response = await axios.get(url);
 
         for (let j = 0; j < response.data.length; j++) {
             data.value.push(response.data[j].heartData)
@@ -102,7 +108,7 @@ const fetchHeartData = async () => {
         // data.value = Object.values(data.value)
         // date.value = Object.values(date.value)
 
-        console.log('response', response.data);
+        console.log('响应心率', response.data);
         // console.log('data', data.value);
         // console.log('date', date.value);
 

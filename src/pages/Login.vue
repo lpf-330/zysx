@@ -12,7 +12,6 @@ const username = ref('')
 const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
-const cancelTokenSource = axios.CancelToken.source();
 
 let fetchUser = async () => {
 
@@ -23,13 +22,11 @@ let fetchUser = async () => {
         const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
 
         // 发送 GET 请求  
-        const response = await axios.get(url, {
-            cancelToken: cancelTokenSource.token
-        });
+        const response = await axios.get(url);
 
         if (response.data.code === 1) {
             userInfoStore.user.value = response.data.data;
-            console.log("响应", userInfoStore.user.value);
+            console.log("响应登录", userInfoStore.user.value);
             router.push({ name: 'index' })
 
 
@@ -73,9 +70,9 @@ const LoginTest = () => {
     }
 }
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
+// onBeforeUnmount(() => {
+//     cancelTokenSource.cancel('Component unmounted, request canceled');
+// })
 
 </script>
 

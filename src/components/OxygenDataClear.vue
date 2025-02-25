@@ -62,6 +62,13 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import 'echarts-liquidfill'
+import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+let userInfoStore=storeToRefs(useUserInfoStore())
+let user_id = userInfoStore.user.value.user_id
+
 
 echarts.use([
     LineChart,
@@ -76,9 +83,46 @@ echarts.use([
 ]);
 
 //数据
-const data = ref([45.1, 35.2, 30.3, 53.4, 95, 23.6, 21.7])
+//const data = ref([45.1, 35.2, 30.3, 53.4, 95, 23.6, 21.7])
+const data=ref([])
 //日期
-const date = ref(['15:00', '15:01', '15:02', '15:03', '15:04', '15:05', '15:06'])
+//const date = ref(['15:00', '15:01', '15:02', '15:03', '15:04', '15:05', '15:06'])
+const date=ref([])
+
+
+const cancelTokenSource = axios.CancelToken.source();
+
+const fetchOxygenData = async () => {
+
+    try {
+
+        // 获取帖子 ID  
+        const url = `http://localhost:8081/oxygenData/${user_id}`; // 拼接 URL  
+        const response = await axios.get(url, {
+            cancelToken: cancelTokenSource.token
+        });
+
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].oxygenData)
+            date.value.push(response.data[j].Date)
+        }
+        // data.value = Object.values(data.value)
+        // date.value = Object.values(date.value)
+
+        console.log('响应血氧', response.data);
+        // console.log('data', data.value);
+        // console.log('date', date.value);
+
+
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+    }
+}
+
+
 
 const chart = ref(null);
 let myChart = null;
@@ -132,7 +176,10 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async() => {
+
+    await fetchOxygenData()
+
     var option = {
         // backgroundColor:'#0d235e',
         tooltip: {

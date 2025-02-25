@@ -62,6 +62,11 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
+import axios  from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+let userInfoStore = storeToRefs(useUserInfoStore())
 
 echarts.use([
     LineChart,
@@ -75,10 +80,44 @@ echarts.use([
     CanvasRenderer
 ]);
 
+
+let user_id = userInfoStore.user.value.user_id
 //数据
-const data = ref([5.5, 8.0, 10.1, 6.3, 6.4, 8.9, 6.0])
+//const data = ref([5.5, 8.0, 10.1, 6.3, 6.4, 8.9, 6.0])
+const data = ref([])
 //日期
-const date = ref(['1', '2', '3', '4', '5', '6', '7'])
+// const date = ref(['1', '2', '3', '4', '5', '6', '7'])
+const date = ref([])
+
+
+const fetchBloodData = async () => {
+
+    try {
+
+        // 获取帖子 ID  
+        const url = `http://localhost:8081/bloodData/${user_id}`; // 拼接 URL  
+        const response = await axios.get(url);
+
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].bloodData)
+            date.value.push(response.data[j].Date)
+        }
+        // data.value = Object.values(data.value)
+        // date.value = Object.values(date.value)
+
+        console.log('响应血糖', response.data);
+        // console.log('data', data.value);
+        // console.log('date', date.value);
+
+
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+    }
+}
+
 
 
 const chart = ref(null);
@@ -106,7 +145,10 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async() => {
+
+await fetchBloodData()
+
     const option = {
         grid: {
             top: '2%',
