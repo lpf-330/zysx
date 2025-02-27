@@ -112,7 +112,7 @@ const fetchHeartData = async () => {
         }
 
        console.log("响应心率",response);
- userInfoStore.user.value = response.data.data;
+        //userInfoStore.user.value = response.data.data;
 
 
 
