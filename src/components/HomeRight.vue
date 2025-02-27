@@ -9,6 +9,9 @@ import { onBeforeUnmount } from 'vue';
 
 
 const user = storeToRefs(useUserInfoStore()).user.value.data
+//const user = storeToRefs(useUserInfoStore()).user.value
+// const username=user.username
+// const password=user.password
 
 const cancelTokenSource = axios.CancelToken.source();
 
@@ -16,7 +19,7 @@ let updateUser = async (user_id, username) => {
     try {
 
 
-        const url = `http://localhost:8081/userInfo?user_id=${encodeURIComponent(user_id)}&username=${encodeURIComponent(username)}`; // 通过查询字符串拼接 URL  
+        const url = `http://localhost:8081/userInfo1?user_id=${encodeURIComponent(user_id)}&username=${encodeURIComponent(username)}`; // 通过查询字符串拼接 URL  
 
         // 发送 GET 请求  
         const response = await axios.post(url, {
@@ -40,6 +43,54 @@ let updateUser = async (user_id, username) => {
 
 }
 
+// let updateUser = async () => {
+
+
+//     try {
+
+
+//         //const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
+
+//         // 发送 GET 请求  
+//         const url = "http://localhost:8081/userInfo"
+//         const response = await axios.post(url, {
+//             //cancelToken: cancelTokenSource.token,
+//             username: username.value,
+//             password: password.value
+//         },
+//             {
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                 }
+//             }
+//         );
+
+//         console.log("响应登录",response);
+//         userInfoStore.user.value = response.data.data;
+//         router.push({name: "index"})
+
+//         // if (response.data.code === 1) {
+//         //     userInfoStore.user.value = response.data.data;
+//         //     console.log("响应", userInfoStore.user.value);
+//         //     router.push({ name: 'index' })
+
+
+//         // } else {
+//         //     alert(user.value.msg)
+//         // }
+
+
+
+//     } catch (error) {
+//         console.error("出错", error);
+//         alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+//     }
+
+
+
+// }
+
 
 const updateUserName = () => {
     const user_id = user.user_id
@@ -50,10 +101,10 @@ const updateUserName = () => {
 }
 
 
-//计算年龄
-const today = new Date();
-const birthdate = new Date(user.birthdate);
-let age = today.getFullYear() - birthdate.getFullYear();
+// //计算年龄
+// const today = new Date();
+// const birthdate = new Date(user.birthdate);
+// let age = today.getFullYear() - birthdate.getFullYear();
 
 
 onBeforeUnmount(() => {

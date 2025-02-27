@@ -82,42 +82,46 @@ echarts.use([
 ]);
 
 //数据
-const data = ref(['100', '138', '127', '113', '120', '100', '110']);
-// const data = ref([])
+//const data = ref(['100', '138', '127', '113', '120', '100', '110']);
+ const data = ref([])
 //日期
-const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
-// const date = ref([])
+//const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
+ const date = ref([])
 
-const cancelTokenSource = axios.CancelToken.source();
+//const cancelTokenSource = axios.CancelToken.source();
 
 const fetchHeartData = async () => {
 
-    // try {
+    try {
 
-    //     // 获取帖子 ID  
-    //     const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-    //     const response = await axios.get(url, {
-    //         cancelToken: cancelTokenSource.token
-    //     });
+        // 获取帖子 ID  
+        const url = "http://localhost:8081/heartData"; // 拼接 URL  
+        const response = await axios.post(url, {
+            //cancelToken: cancelTokenSource.token
+            user_id:user_id
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
 
-    //     for (let j = 0; j < response.data.length; j++) {
-    //         data.value.push(response.data[j].heartData)
-    //         date.value.push(response.data[j].Date)
-    //     }
-    //     // data.value = Object.values(data.value)
-    //     // date.value = Object.values(date.value)
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].heartData)
+            date.value.push(response.data[j].Date)
+        }
 
-    //     console.log('response', response.data);
-    //     // console.log('data', data.value);
-    //     // console.log('date', date.value);
+       console.log("响应心率",response);
+ userInfoStore.user.value = response.data.data;
 
 
 
-    // } catch (error) {
-    //     console.error("出错", error);
-    //     alert("加载失败，请稍后再试。"); // 友好的错误提示  
 
-    // }
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+    }
 }
 
 

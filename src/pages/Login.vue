@@ -19,11 +19,12 @@ let fetchUser = async () => {
     try {
 
 
-        const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
+        //const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
 
         // 发送 GET 请求  
+        const url = "http://localhost:8081/userInfo"
         const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token,
+            //cancelToken: cancelTokenSource.token,
             username: username.value,
             password: password.value
         },
@@ -34,8 +35,9 @@ let fetchUser = async () => {
             }
         );
 
-        console.log(response);
-
+        console.log("响应登录",response);
+        userInfoStore.user.value = response.data.data;
+        router.push({name: "index"})
 
         // if (response.data.code === 1) {
         //     userInfoStore.user.value = response.data.data;
