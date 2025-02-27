@@ -20,22 +20,33 @@ let fetchUser = async () => {
     try {
 
 
-        const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
-
+        // const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
+        const url = 'http://localhost:8081/login'
         // 发送 GET 请求  
-        const response = await axios.get(url, {
-            cancelToken: cancelTokenSource.token
-        });
+        const response = await axios.post(url, {
+            cancelToken: cancelTokenSource.token,
+            username: username.value,
+            password: password.value
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
 
-        if (response.data.code === 1) {
-            userInfoStore.user.value = response.data.data;
-            console.log("响应", userInfoStore.user.value);
-            router.push({ name: 'index' })
+        console.log(response);
 
 
-        } else {
-            alert(user.value.msg)
-        }
+        // if (response.data.code === 1) {
+        //     userInfoStore.user.value = response.data.data;
+        //     console.log("响应", userInfoStore.user.value);
+        //     router.push({ name: 'index' })
+
+
+        // } else {
+        //     alert(user.value.msg)
+        // }
 
 
 
@@ -87,7 +98,7 @@ onBeforeUnmount(() => {
                 v-model="username">
             <input type="text" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp请输入密码"
                 v-model="password">
-            <input type="submit" id="login" class="login" value="登录" @click="LoginTest">
+            <input type="button" id="login" class="login" value="登录" @click="LoginTest">
             <div class="linkBox">
                 <!-- <router-link to="/admLogin" class="link">管理员登录</router-link> -->
                 <router-link to="/register" class="link">用户注册</router-link>

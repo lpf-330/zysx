@@ -66,14 +66,14 @@ import PiData from './PiData.vue';
 import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
-import { ref,onMounted,onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { defineProps } from 'vue';
 import router from '../router';
 import axios from 'axios';
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
 const heartData = ref([86, 87, 87, 90])
-const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
+const bloodData = ref([2.0, 8.0, 10.0, 4.0, 3.4, 9.0, 6.0])
 const piData = ref([62, 65, 59, 52, 78])
 const oxygenData = ref(0.6)
 const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
@@ -87,11 +87,11 @@ const pressureData = ref([20, 40, 60, 80])
 // const fetchData=async()=>{
 
 //   try {
-    
+
 //     //获取id
 //     const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
 //     const response = await axios.get(url);  
-  
+
 //       data.value = response.data;
 //     console.log('响应综合数据',data.value);
 
@@ -99,7 +99,7 @@ const pressureData = ref([20, 40, 60, 80])
 //   } catch (error) {
 //      console.error("出错", error);  
 //     alert("加载失败，请稍后再试。");  
-    
+
 //   }
 
 
