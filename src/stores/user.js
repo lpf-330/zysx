@@ -1,11 +1,17 @@
 import { defineStore } from "pinia";
 
-const useUserInfoStore = defineStore("userInfor", {
+const useUserInfoStore = defineStore("userInfo", {
     state: () => ({
-        user:Object
+        user_id: null,
+        Username: '',
+        Password: '',
+        Avatar: '',
+        Age: null,
+        Height: null,
+        Weight: null
     }),
     actions: {
-        
+
     }
 })
 

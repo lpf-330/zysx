@@ -66,10 +66,18 @@ import PiData from './PiData.vue';
 import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
-import { ref,onMounted,onBeforeMount } from 'vue';
+import { ref, onBeforeUnmount, onBeforeMount } from 'vue';
 import { defineProps } from 'vue';
 import router from '../router';
 import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+
+
+const cancelTokenSource = axios.CancelToken.source();
+
+const userInfoStore = storeToRefs(useUserInfoStore())
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
 const heartData = ref([86, 87, 87, 90])
@@ -80,34 +88,44 @@ const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
 const pressureData = ref([20, 40, 60, 80])
 
 
-// let data=ref([])
 // let user_id=1
 
 
-// const fetchData=async()=>{
+const fetchData = async () => {
 
-//   try {
+    try {
 
-//     //获取id
-//     const url = `http://localhost:8081/data/${user_id}`; // 拼接 URL  
-//     const response = await axios.get(url);  
+        const url = `http://localhost:8081/data`;
+        const response = await axios.post(url, {
+            cancelToken: cancelTokenSource.token,
+            user_id: userInfoStore.user_id.value
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
 
-//       data.value = response.data;
-//     console.log('响应综合数据',data.value);
+        if (response.data.code === 1) {
 
-
-//   } catch (error) {
-//      console.error("出错", error);  
-//     alert("加载失败，请稍后再试。");  
-
-//   }
-
-
-// }
-
-// onBeforeMount(fetchData)
+        } else {
+            alert(response.data.msg)
+        }
 
 
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。");
+    }
+
+
+}
+
+onBeforeMount(fetchData)
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 
 
 const props = defineProps({

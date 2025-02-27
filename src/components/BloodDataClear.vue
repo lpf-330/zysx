@@ -97,7 +97,8 @@ const fetchBloodData = async () => {
         // 获取帖子 ID  
         const url = `http://localhost:8081/bloodData`; // 拼接 URL  
         const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token
+            cancelToken: cancelTokenSource.token,
+            user_id: userInfoStore.user_id.value
         },
             {
                 headers: {
@@ -106,16 +107,16 @@ const fetchBloodData = async () => {
             }
         );
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].bloodData)
-            date.value.push(response.data[j].Date)
+        if (response.data.code === 1) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].data.bloodData)
+                date.value.push(response.data[j].data.Date)
+            }
+        } else {
+            alert(response.data.msg)
         }
-        // data.value = Object.values(data.value)
-        // date.value = Object.values(date.value)
 
         console.log('响应血糖', response.data);
-        // console.log('data', data.value);
-        // console.log('date', date.value);
 
 
 

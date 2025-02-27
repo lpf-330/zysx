@@ -23,6 +23,12 @@ const fetchData = () => {
             }
         }
     )
+
+    if (response.data.code === 1) {
+
+    } else {
+        alert(response.data.msg)
+    }
 }
 
 onBeforeUnmount(() => {

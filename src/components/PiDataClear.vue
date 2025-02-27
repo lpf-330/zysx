@@ -63,6 +63,8 @@ import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
 import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
 echarts.use([
     LineChart,
@@ -76,12 +78,16 @@ echarts.use([
     CanvasRenderer
 ]);
 
+const userInfoStore = storeToRefs(useUserInfoStore())
+
 const cancelTokenSource = axios.CancelToken.source();
 
 //数据
-const data = ref([6.2, 6.5, 5.9, 5.2, 7.8, 6.6, 7.9])
+// const data = ref([6.2, 6.5, 5.9, 5.2, 7.8, 6.6, 7.9])
+const data = ref([])
 //日期
-const date = ref(['11.06', '11.07', '11.08', '11.09', '11.10', '11.11', '11.12'])
+// const date = ref(['11.06', '11.07', '11.08', '11.09', '11.10', '11.11', '11.12'])
+const date = ref([])
 
 const chart = ref(null);
 let myChart = null;
@@ -89,10 +95,11 @@ let myChart = null;
 const textColor = '#666'
 
 
-const fetchData = () => {
+const fetchData = async () => {
     const url = 'http://localhost:8081/piData'
     const response = await axios.post(url, {
-        cancelToken: cancelTokenSource.token
+        cancelToken: cancelTokenSource.token,
+        user_id: userInfoStore.user_id.value
     },
         {
             headers: {
@@ -100,6 +107,15 @@ const fetchData = () => {
             }
         }
     )
+
+    if (response.data.code === 1) {
+        for (let i = 0; i < response.data.data.length; i++) {
+            data.value.push(response.data.data.piData)
+            date.value.push(response.data.data.Date)
+        }
+    } else {
+        alert(response.data.msg)
+    }
 }
 
 

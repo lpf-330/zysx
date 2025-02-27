@@ -97,7 +97,7 @@ const fetchOxygenData = async () => {
     try {
 
         // 获取帖子 ID  
-        const url = `http://localhost:8081/oxygenData`; // 拼接 URL  
+        const url = `http://localhost:8081/oxygenData`;
         const response = await axios.post(url, {
             cancelToken: cancelTokenSource.token
         }, {
@@ -106,9 +106,13 @@ const fetchOxygenData = async () => {
             }
         });
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].oxygenData)
-            date.value.push(response.data[j].Date)
+        if (response.data.code === 1) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].oxygenData)
+                date.value.push(response.data[j].Date)
+            }
+        } else {
+            alert(response.data.msg)
         }
         // data.value = Object.values(data.value)
         // date.value = Object.values(date.value)

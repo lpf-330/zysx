@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted, onBeforeMount } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -65,7 +65,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 
-let userInfoStore=storeToRefs(useUserInfoStore())
+let userInfoStore = storeToRefs(useUserInfoStore())
 let user_id = userInfoStore.user.value.user_id
 
 
@@ -83,22 +83,21 @@ echarts.use([
 
 //数据
 //const data = ref(['100', '138', '127', '113', '120', '100', '110']);
- const data = ref([])
+const data = ref([])
 //日期
 //const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
- const date = ref([])
+const date = ref([])
 
-//const cancelTokenSource = axios.CancelToken.source();
+const cancelTokenSource = axios.CancelToken.source();
 
 const fetchHeartData = async () => {
 
     try {
 
-        // 获取帖子 ID  
-        const url = "http://localhost:8081/heartData"; // 拼接 URL  
+        const url = "http://localhost:8081/heartData";
         const response = await axios.post(url, {
-            //cancelToken: cancelTokenSource.token
-            user_id:user_id
+            cancelToken: cancelTokenSource.token,
+            user_id: user_id
         },
             {
                 headers: {
@@ -106,15 +105,16 @@ const fetchHeartData = async () => {
                 }
             });
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].heartData)
-            date.value.push(response.data[j].Date)
+        if (response.data.code === 1) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].data.heartData)
+                date.value.push(response.data[j].data.Date)
+            }
+        } else {
+            alert(response.data.msg)
         }
 
-       console.log("响应心率",response);
-        //userInfoStore.user.value = response.data.data;
-
-
+        console.log("响应心率", response);
 
 
     } catch (error) {
@@ -327,4 +327,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>

@@ -8,9 +8,12 @@ import { storeToRefs } from 'pinia';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 
+
 const username = ref('')
 const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
+
+const cancelTokenSource = axios.CancelToken.source();
 
 
 let fetchUser = async () => {
@@ -19,12 +22,9 @@ let fetchUser = async () => {
     try {
 
 
-        //const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
-
-        // 发送 GET 请求  
         const url = "http://localhost:8081/userInfo"
         const response = await axios.post(url, {
-            //cancelToken: cancelTokenSource.token,
+            cancelToken: cancelTokenSource.token,
             username: username.value,
             password: password.value
         },
@@ -35,19 +35,19 @@ let fetchUser = async () => {
             }
         );
 
-        console.log("响应登录",response);
-        userInfoStore.user.value = response.data.data;
-        router.push({name: "index"})
+        console.log("响应登录", response);
 
-        // if (response.data.code === 1) {
-        //     userInfoStore.user.value = response.data.data;
-        //     console.log("响应", userInfoStore.user.value);
-        //     router.push({ name: 'index' })
+        if (response.data.code === 1) {
+            userInfoStore.user_id.value = response.data.data.user_id
+            userInfoStore.Username.value = response.data.data.username
+            userInfoStore.Age.value = response.data.data.age
+
+            router.push({ name: 'index' })
 
 
-        // } else {
-        //     alert(user.value.msg)
-        // }
+        } else {
+            alert(response.data.msg)
+        }
 
 
 
@@ -85,9 +85,9 @@ const LoginTest = () => {
     }
 }
 
-// onBeforeUnmount(() => {
-//     cancelTokenSource.cancel('Component unmounted, request canceled');
-// })
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 
 </script>
 

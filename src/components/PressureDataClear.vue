@@ -110,7 +110,7 @@ let myChart = null;
 
 const cancelTokenSource = axios.CancelToken.source();
 
-const fetchData = () => {
+const fetchData = async () => {
     const url = 'http://localhost:8081/'    //这后面还没补上
     const response = await axios.post(url, {
         cancelToken: cancelTokenSource.token
@@ -121,6 +121,14 @@ const fetchData = () => {
             }
         }
     )
+
+    if (response.data.code === 1) {
+        for (let i = 0; i < response.data.data.length; i++) {
+
+        }
+    } else {
+        alert(response.data.msg)
+    }
 }
 
 const initChart = () => {

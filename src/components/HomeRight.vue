@@ -6,31 +6,39 @@ import { storeToRefs } from 'pinia';
 import axios from 'axios';
 import { onBeforeUnmount } from 'vue';
 
+const user = ref()
 
+const userInfoStore = storeToRefs(useUserInfoStore())
 
-const user = storeToRefs(useUserInfoStore()).user.value.data
-//const user = storeToRefs(useUserInfoStore()).user.value
-// const username=user.username
-// const password=user.password
 
 const cancelTokenSource = axios.CancelToken.source();
 
-let updateUser = async (user_id, username) => {
+let updateUser = async () => {
     try {
 
+        const url = `http://localhost:8081/userInfo`; // 通过查询字符串拼接 URL  
 
-        const url = `http://localhost:8081/userInfo1?user_id=${encodeURIComponent(user_id)}&username=${encodeURIComponent(username)}`; // 通过查询字符串拼接 URL  
-
-        // 发送 GET 请求  
         const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token
+            cancelToken: cancelTokenSource.token,
+            username: userInfoStore.Username,
+            password: userInfoStore.Password
+
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
         });
-
-
 
         console.log("响应", response.data);
 
-
+        if (response.data.code === 1) {
+            userInfoStore.Age.value = response.data.data.age
+            userInfoStore.Avatar.value = response.data.data.avatar
+            userInfoStore.Height.value = response.data.data.height
+            userInfoStore.Weight.value = response.data.data.weight
+        } else {
+            alert(response.data.msg)
+        }
 
 
     } catch (error) {
@@ -38,10 +46,10 @@ let updateUser = async (user_id, username) => {
         alert("加载失败，请稍后再试。"); // 友好的错误提示  
 
     }
-
-
-
 }
+
+
+updateUser()
 
 // let updateUser = async () => {
 
@@ -92,13 +100,13 @@ let updateUser = async (user_id, username) => {
 // }
 
 
-const updateUserName = () => {
-    const user_id = user.user_id
-    const username = document.querySelector('#userName').value
+// const updateUserName = () => {
+//     const user_id = user.user_id
+//     const username = document.querySelector('#userName').value
 
-    updateUser(user_id, username)
-    user.username = username
-}
+//     updateUser(user_id, username)
+//     user.username = username
+// }
 
 
 // //计算年龄
@@ -122,21 +130,21 @@ onBeforeUnmount(() => {
             </div>
             <div class="user">
                 <div class="userImg"></div>
-                <span class="userName">{{ user.username }}</span>
+                <span class="userName">{{ userInfoStore.Username }}</span>
                 <div class="userMes">
                     <div class="age">
                         <span>年龄</span>
-                        <span>{{ age }}岁</span>
+                        <span>{{ userInfoStore.Age }}岁</span>
 
                     </div>
                     <div class="height">
                         <span>身高</span>
-                        <span>{{ user.height }}米</span>
+                        <span>{{ userInfoStore.Height }}米</span>
 
                     </div>
                     <div class="weight">
                         <span>体重</span>
-                        <span>{{ user.weight }}公斤</span>
+                        <span>{{ userInfoStore.Weight }}公斤</span>
 
                     </div>
                 </div>
