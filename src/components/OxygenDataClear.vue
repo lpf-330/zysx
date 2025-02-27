@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -66,7 +66,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 
-let userInfoStore=storeToRefs(useUserInfoStore())
+let userInfoStore = storeToRefs(useUserInfoStore())
 let user_id = userInfoStore.user.value.user_id
 
 
@@ -84,10 +84,10 @@ echarts.use([
 
 //数据
 //const data = ref([45.1, 35.2, 30.3, 53.4, 95, 23.6, 21.7])
-const data=ref([])
+const data = ref([])
 //日期
 //const date = ref(['15:00', '15:01', '15:02', '15:03', '15:04', '15:05', '15:06'])
-const date=ref([])
+const date = ref([])
 
 
 const cancelTokenSource = axios.CancelToken.source();
@@ -97,9 +97,13 @@ const fetchOxygenData = async () => {
     try {
 
         // 获取帖子 ID  
-        const url = `http://localhost:8081/oxygenData/${user_id}`; // 拼接 URL  
-        const response = await axios.get(url, {
+        const url = `http://localhost:8081/oxygenData`; // 拼接 URL  
+        const response = await axios.post(url, {
             cancelToken: cancelTokenSource.token
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
         });
 
         for (let j = 0; j < response.data.length; j++) {
@@ -176,7 +180,7 @@ const initChart = () => {
     }
 };
 
-const updateChart = async() => {
+const updateChart = async () => {
 
     await fetchOxygenData()
 
@@ -264,4 +268,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>

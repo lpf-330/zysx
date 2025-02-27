@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -62,6 +62,7 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
+import axios from 'axios';
 
 echarts.use([
     LineChart,
@@ -75,6 +76,8 @@ echarts.use([
     CanvasRenderer
 ]);
 
+const cancelTokenSource = axios.CancelToken.source();
+
 //数据
 const data = ref([6.2, 6.5, 5.9, 5.2, 7.8, 6.6, 7.9])
 //日期
@@ -84,6 +87,22 @@ const chart = ref(null);
 let myChart = null;
 
 const textColor = '#666'
+
+
+const fetchData = () => {
+    const url = 'http://localhost:8081/piData'
+    const response = await axios.post(url, {
+        cancelToken: cancelTokenSource.token
+    },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }
+    )
+}
+
+
 
 const initChart = () => {
     if (chart.value) {
@@ -190,4 +209,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>

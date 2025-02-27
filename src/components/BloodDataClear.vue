@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -62,7 +62,7 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
-import axios  from 'axios';
+import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 
@@ -80,8 +80,8 @@ echarts.use([
     CanvasRenderer
 ]);
 
+const cancelTokenSource = axios.CancelToken.source();
 
-let user_id = userInfoStore.user.value.user_id
 //数据
 //const data = ref([5.5, 8.0, 10.1, 6.3, 6.4, 8.9, 6.0])
 const data = ref([])
@@ -95,8 +95,16 @@ const fetchBloodData = async () => {
     try {
 
         // 获取帖子 ID  
-        const url = `http://localhost:8081/bloodData/${user_id}`; // 拼接 URL  
-        const response = await axios.get(url);
+        const url = `http://localhost:8081/bloodData`; // 拼接 URL  
+        const response = await axios.post(url, {
+            cancelToken: cancelTokenSource.token
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
 
         for (let j = 0; j < response.data.length; j++) {
             data.value.push(response.data[j].bloodData)
@@ -145,9 +153,9 @@ const initChart = () => {
     }
 };
 
-const updateChart = async() => {
+const updateChart = async () => {
 
-await fetchBloodData()
+    await fetchBloodData()
 
     const option = {
         grid: {
@@ -311,4 +319,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>

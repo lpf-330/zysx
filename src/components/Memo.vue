@@ -2,11 +2,32 @@
 import { ElScrollbar } from 'element-plus';
 import 'element-plus/dist/index.css';
 import { ref } from 'vue';
+import axios from 'axios';
+import { onBeforeUnmount } from 'vue';
 
 const items = ref([
     { event: "吃药", time: "2024年12月15日15:30" },
     { event: "开会", time: "2024年12月24日13:10" }
 ])
+
+const cancelTokenSource = axios.CancelToken.source();
+
+const fetchData = () => {
+    const url = 'http://localhost:8081/'    //这后面还没补完
+    const response = await axios.post(url, {
+        cancelToken: cancelTokenSource.token
+    },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }
+    )
+}
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>
 
 <template>

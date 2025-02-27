@@ -72,7 +72,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -108,6 +108,20 @@ const date = ref([1, 2, 3, 4, 5, 6, 7])
 const chart = ref(null);
 let myChart = null;
 
+const cancelTokenSource = axios.CancelToken.source();
+
+const fetchData = () => {
+    const url = 'http://localhost:8081/'    //这后面还没补上
+    const response = await axios.post(url, {
+        cancelToken: cancelTokenSource.token
+    },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }
+    )
+}
 
 const initChart = () => {
     if (chart.value) {
@@ -279,4 +293,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>

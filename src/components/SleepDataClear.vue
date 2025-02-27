@@ -51,7 +51,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -85,6 +85,21 @@ const date = ref(['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00']
 
 const chart = ref(null);
 let myChart = null;
+
+const cancelTokenSource = axios.CancelToken.source();
+
+const fetchData = () => {
+    const url = 'http://localhost:8081/'    //这后面还没补上
+    const response = await axios.post(url, {
+        cancelToken: cancelTokenSource.token
+    },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }
+    )
+}
 
 
 const initChart = () => {
@@ -224,4 +239,8 @@ onUnmounted(() => {
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
+
+onBeforeUnmount(() => {
+    cancelTokenSource.cancel('Component unmounted, request canceled');
+})
 </script>
