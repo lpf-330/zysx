@@ -67,7 +67,7 @@ import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
-let user_id = userInfoStore.user.value.user_id
+let user_id = userInfoStore.user_id.value
 
 
 echarts.use([
@@ -90,7 +90,7 @@ const data = ref([])
 const date = ref([])
 
 
-const cancelTokenSource = axios.CancelToken.source();
+//const cancelTokenSource = axios.CancelToken.source();
 
 const fetchOxygenData = async () => {
 
@@ -99,21 +99,20 @@ const fetchOxygenData = async () => {
         // 获取帖子 ID  
         const url = `http://localhost:8081/oxygenData`;
         const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token
+            //cancelToken: cancelTokenSource.token
+            user_id:user_id
         }, {
             headers: {
                 'Content-Type': 'application/json',
             }
         });
 
-        if (response.data.code === 1) {
+       
             for (let j = 0; j < response.data.length; j++) {
                 data.value.push(response.data[j].oxygenData)
                 date.value.push(response.data[j].Date)
             }
-        } else {
-            alert(response.data.msg)
-        }
+        
         // data.value = Object.values(data.value)
         // date.value = Object.values(date.value)
 
@@ -274,6 +273,6 @@ onUnmounted(() => {
 });
 
 onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
+    //cancelTokenSource.cancel('Component unmounted, request canceled');
 })
 </script>

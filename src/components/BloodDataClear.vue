@@ -80,7 +80,6 @@ echarts.use([
     CanvasRenderer
 ]);
 
-const cancelTokenSource = axios.CancelToken.source();
 
 //数据
 //const data = ref([5.5, 8.0, 10.1, 6.3, 6.4, 8.9, 6.0])
@@ -97,7 +96,6 @@ const fetchBloodData = async () => {
         // 获取帖子 ID  
         const url = `http://localhost:8081/bloodData`; // 拼接 URL  
         const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token,
             user_id: userInfoStore.user_id.value
         },
             {
@@ -107,14 +105,11 @@ const fetchBloodData = async () => {
             }
         );
 
-        if (response.data.code === 1) {
             for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].data.bloodData)
-                date.value.push(response.data[j].data.Date)
+                data.value.push(response.data[j].bloodData)
+                date.value.push(response.data[j].Date)
             }
-        } else {
-            alert(response.data.msg)
-        }
+        
 
         console.log('响应血糖', response.data);
 
@@ -321,7 +316,5 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
+
 </script>

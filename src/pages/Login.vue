@@ -35,12 +35,16 @@ let fetchUser = async () => {
             }
         );
 
-        console.log("响应登录", response);
+        console.log("响应登录", response.data);
 
         if (response.data.code === 1) {
             userInfoStore.user_id.value = response.data.data.user_id
             userInfoStore.Username.value = response.data.data.username
             userInfoStore.Age.value = response.data.data.age
+            userInfoStore.Avatar.value = response.data.data.avatar
+            userInfoStore.Height.value=response.data.data.height
+            userInfoStore.Weight.value=response.data.data.weight
+
 
             router.push({ name: 'index' })
 

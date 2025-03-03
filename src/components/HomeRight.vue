@@ -4,120 +4,12 @@ import Memo from './Memo.vue';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import axios from 'axios';
-import { onBeforeUnmount } from 'vue';
+import { ref,onBeforeUnmount } from 'vue';
 
-const user = ref()
+
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 
-
-const cancelTokenSource = axios.CancelToken.source();
-
-let updateUser = async () => {
-    try {
-
-        const url = `http://localhost:8081/userInfo`; // 通过查询字符串拼接 URL  
-
-        const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token,
-            username: userInfoStore.Username,
-            password: userInfoStore.Password
-
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        console.log("响应", response.data);
-
-        if (response.data.code === 1) {
-            userInfoStore.Age.value = response.data.data.age
-            userInfoStore.Avatar.value = response.data.data.avatar
-            userInfoStore.Height.value = response.data.data.height
-            userInfoStore.Weight.value = response.data.data.weight
-        } else {
-            alert(response.data.msg)
-        }
-
-
-    } catch (error) {
-        console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
-
-    }
-}
-
-
-updateUser()
-
-// let updateUser = async () => {
-
-
-//     try {
-
-
-//         //const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
-
-//         // 发送 GET 请求  
-//         const url = "http://localhost:8081/userInfo"
-//         const response = await axios.post(url, {
-//             //cancelToken: cancelTokenSource.token,
-//             username: username.value,
-//             password: password.value
-//         },
-//             {
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                 }
-//             }
-//         );
-
-//         console.log("响应登录",response);
-//         userInfoStore.user.value = response.data.data;
-//         router.push({name: "index"})
-
-//         // if (response.data.code === 1) {
-//         //     userInfoStore.user.value = response.data.data;
-//         //     console.log("响应", userInfoStore.user.value);
-//         //     router.push({ name: 'index' })
-
-
-//         // } else {
-//         //     alert(user.value.msg)
-//         // }
-
-
-
-//     } catch (error) {
-//         console.error("出错", error);
-//         alert("加载失败，请稍后再试。"); // 友好的错误提示  
-
-//     }
-
-
-
-// }
-
-
-// const updateUserName = () => {
-//     const user_id = user.user_id
-//     const username = document.querySelector('#userName').value
-
-//     updateUser(user_id, username)
-//     user.username = username
-// }
-
-
-// //计算年龄
-// const today = new Date();
-// const birthdate = new Date(user.birthdate);
-// let age = today.getFullYear() - birthdate.getFullYear();
-
-
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 
 </script>
 

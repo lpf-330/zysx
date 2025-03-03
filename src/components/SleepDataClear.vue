@@ -64,6 +64,9 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { color } from 'echarts';
+import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
 echarts.use([
     LineChart,
@@ -77,36 +80,51 @@ echarts.use([
     CanvasRenderer
 ]);
 
+
+const userInfoStore = storeToRefs(useUserInfoStore())
+
+
 //数据
-const data = ref([40, 58, 40, 44, 61, 58, 77]);
+//const data = ref([40, 58, 40, 44, 61, 58, 77]);
+const data = ref([])
 //日期
-const date = ref(['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00']);
+//const date = ref(['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00']);
 // const y1 = [50, 48, 44, 62, 41, 78, 57, 70, 68, 93, 60, 73];
+const date = ref([])
+
 
 const chart = ref(null);
 let myChart = null;
 
-const cancelTokenSource = axios.CancelToken.source();
 
-const fetchData = async () => {
-    const url = 'http://localhost:8081/'    //这后面还没补上
-    const response = await axios.post(url, {
-        cancelToken: cancelTokenSource.token
-    },
-        {
-            headers: {
-                'Content-Type': 'application/json',
+const fetchSleepData = async () => {
+
+    try {
+
+        const url = 'http://localhost:8081/sleepData'    //这后面还没补上
+        const response = await axios.post(url, {
+            user_id: userInfoStore.user_id.value
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             }
-        }
-    )
+        )
 
-    if (response.data.code === 1) {
-        for (let i = 0; i < response.data.data.length; i++) {
-
+        for (let i = 0; i < response.data.length; i++) {
+            data.value.push(response.data[i].sleepData)
+            date.value.push(response.data[i].Date)
         }
-    } else {
-        alert(response.data.msg)
+        console.log('响应睡眠', response.data);
+        
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
     }
+
+    
 }
 
 
@@ -117,7 +135,10 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async() => {
+
+    await fetchSleepData()
+
     const option = {
         // title: {
         //     // text: '第六使徒迪瑞吉',  
@@ -248,7 +269,4 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 </script>

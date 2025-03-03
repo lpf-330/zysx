@@ -91,37 +91,37 @@ const pressureData = ref([20, 40, 60, 80])
 // let user_id=1
 
 
-const fetchData = async () => {
+// const fetchData = async () => {
 
-    try {
+//     try {
 
-        const url = `http://localhost:8081/data`;
-        const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token,
-            user_id: userInfoStore.user_id.value
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+//         const url = `http://localhost:8081/data`;
+//         const response = await axios.post(url, {
+//             cancelToken: cancelTokenSource.token,
+//             user_id: userInfoStore.user_id.value
+//         }, {
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             }
+//         });
 
-        if (response.data.code === 1) {
+//         if (response.data.code === 1) {
 
-        } else {
-            alert(response.data.msg)
-        }
-
-
-
-    } catch (error) {
-        console.error("出错", error);
-        alert("加载失败，请稍后再试。");
-    }
+//         } else {
+//             alert(response.data.msg)
+//         }
 
 
-}
 
-onBeforeMount(fetchData)
+//     } catch (error) {
+//         console.error("出错", error);
+//         alert("加载失败，请稍后再试。");
+//     }
+
+
+// }
+
+//onBeforeMount(fetchData)
 
 onBeforeUnmount(() => {
     cancelTokenSource.cancel('Component unmounted, request canceled');

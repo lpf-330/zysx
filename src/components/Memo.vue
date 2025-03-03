@@ -10,30 +10,27 @@ const items = ref([
     { event: "开会", time: "2024年12月24日13:10" }
 ])
 
-const cancelTokenSource = axios.CancelToken.source();
 
-const fetchData = () => {
-    const url = 'http://localhost:8081/'    //这后面还没补完
-    const response = await axios.post(url, {
-        cancelToken: cancelTokenSource.token
-    },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        }
-    )
 
-    if (response.data.code === 1) {
+// const fetchData = () => {
+//     const url = 'http://localhost:8081/'    //这后面还没补完
+//     const response = await axios.post(url, {
+//         cancelToken: cancelTokenSource.token
+//     },
+//         {
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             }
+//         }
+//     )
 
-    } else {
-        alert(response.data.msg)
-    }
-}
+//     if (response.data.code === 1) {
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
+//     } else {
+//         alert(response.data.msg)
+//     }
+// }
+
 </script>
 
 <template>

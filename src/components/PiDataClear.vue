@@ -80,7 +80,6 @@ echarts.use([
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 
-const cancelTokenSource = axios.CancelToken.source();
 
 //数据
 // const data = ref([6.2, 6.5, 5.9, 5.2, 7.8, 6.6, 7.9])
@@ -95,27 +94,34 @@ let myChart = null;
 const textColor = '#666'
 
 
-const fetchData = async () => {
-    const url = 'http://localhost:8081/piData'
-    const response = await axios.post(url, {
-        cancelToken: cancelTokenSource.token,
-        user_id: userInfoStore.user_id.value
-    },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        }
-    )
+const fetchPiData = async () => {
 
-    if (response.data.code === 1) {
-        for (let i = 0; i < response.data.data.length; i++) {
-            data.value.push(response.data.data.piData)
-            date.value.push(response.data.data.Date)
+    try {
+
+        const url = 'http://localhost:8081/piData'
+        const response = await axios.post(url, {
+            user_id: userInfoStore.user_id.value
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        )
+
+        for (let i = 0; i < response.data.length; i++) {
+            data.value.push(response.data[i].piData)
+            date.value.push(response.data[i].Date)
         }
-    } else {
-        alert(response.data.msg)
+        console.log('响应灌注指数', response.data);
+        
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
     }
+    
+    
 }
 
 
@@ -127,7 +133,9 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async() => {
+
+    await fetchPiData()
     const option = {
 
         tooltip: {
@@ -226,7 +234,5 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
+
 </script>

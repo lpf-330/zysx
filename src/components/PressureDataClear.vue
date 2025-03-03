@@ -3,7 +3,7 @@
         <div class="dataBox">
             <span class="classTitle">高压</span>
             <div class="class">
-                <span class="data">123</span>
+                <span class="data">{{ avgData22.toFixed(1) }}</span>
                 <span class="unit">mmHg</span>
             </div>
         </div>
@@ -11,7 +11,7 @@
         <div class="dataBox">
             <span class="classTitle">低压</span>
             <div class="class">
-                <span class="data">123</span>
+                <span class="data">{{ avgData11.toFixed(1) }}</span>
                 <span class="unit">mmHg</span>
             </div>
         </div>
@@ -84,6 +84,9 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
+import axios from 'axios';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
 echarts.use([
     LineChart,
@@ -97,37 +100,69 @@ echarts.use([
     CanvasRenderer
 ]);
 
-//收缩压
-const data1 = ref([709, 1917, 2455, 2610, 1719, 1433, 1009])
-//伸缩压
-const data2 = ref([-327, -1776, -507, -1200, -800, -482, -998])
-//日期
-const date = ref([1, 2, 3, 4, 5, 6, 7])
+//高压
+//const data1 = ref([709, 1917, 2455, 2610, 1719, 1433, 1009])
+const data1=ref([])
 
+//低压
+//const data2 = ref([-327, -1776, -507, -1200, -800, -482, -998])
+const data2 = ref([])
+//日期
+//const date = ref([1, 2, 3, 4, 5, 6, 7])
+const date = ref([])
+
+const avgData1 = ref(0)
+const avgData2 = ref(0)
+
+const avgData11=ref(0)
+const avgData22=ref(0)
 
 const chart = ref(null);
 let myChart = null;
 
-const cancelTokenSource = axios.CancelToken.source();
+const userInfoStore = storeToRefs(useUserInfoStore())
 
-const fetchData = async () => {
-    const url = 'http://localhost:8081/'    //这后面还没补上
-    const response = await axios.post(url, {
-        cancelToken: cancelTokenSource.token
-    },
-        {
-            headers: {
-                'Content-Type': 'application/json',
+
+const fetchPressureData = async () => {
+    try {
+
+        console.log('user_id',userInfoStore.user_id.value);
+        
+
+        const url = 'http://localhost:8081/pressureData'    //这后面还没补上
+        const response = await axios.post(url, {
+            user_id: userInfoStore.user_id.value
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             }
-        }
-    )
+        )
 
-    if (response.data.code === 1) {
-        for (let i = 0; i < response.data.data.length; i++) {
+        for (let i = 0; i < response.data.length; i++) {
+            data2.value.push(response.data[i].diastolicBP)
+            data1.value.push('-'+response.data[i].systolicBP)
+            date.value.push(response.data[i].date)
 
+            avgData11.value += Number(response.data[i].diastolicBP) 
+            avgData22.value += Number(response.data[i].systolicBP)
         }
-    } else {
-        alert(response.data.msg)
+
+
+        console.log('avgData11', avgData11.value);
+        
+
+        avgData11.value /= response.data.length
+        avgData22.value /= response.data.length
+
+        console.log('响应血压', response.data);
+        
+        
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
     }
 }
 
@@ -138,7 +173,10 @@ const initChart = () => {
     }
 };
 
-const updateChart = () => {
+const updateChart = async () => {
+
+    await fetchPressureData()
+
     const option = {
         // backgroundColor: '#344b58',
         tooltip: {
@@ -302,7 +340,4 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 </script>
