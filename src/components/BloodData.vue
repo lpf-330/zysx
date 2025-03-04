@@ -15,7 +15,6 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
 import { defineProps } from 'vue';
 
 echarts.use([
@@ -66,8 +65,8 @@ const updateChart = () => {
         backgroundColor: 'transparent',
         grid: {
             top: "20%",
-            left: "10%",
-            right: "30%",
+            left: "5%",
+            right: "25%",
             bottom: "20%",
             // 是否包含文本
             containLabel: true,
@@ -128,8 +127,8 @@ const updateChart = () => {
         },],
         yAxis: [{
             type: 'value',
-            min: 0,
-            max: 15,
+            min: Math.min(data1)-3,
+            max: Math.max(data1)+3,
             axisLabel: { //坐标轴刻度标签的相关设置。
                 show: false,
                 textStyle: {

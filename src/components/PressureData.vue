@@ -15,7 +15,6 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
 import { defineProps } from 'vue';
 
 echarts.use([
@@ -51,8 +50,8 @@ const chart = ref(null);
             const option = {
                 color: ['transparent', '#3398DB'],
                 grid: {
-                    left: '20%',
-                    right: '35%',
+                    left: '15%',
+                    right: '30%',
                     bottom: '20%',
                     top: '20%'
                 },

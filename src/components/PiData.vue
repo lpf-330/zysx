@@ -15,7 +15,6 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
 import { defineProps } from 'vue';
 
 echarts.use([
@@ -62,9 +61,9 @@ const chart = ref(null);
                 },
                 grid: {
                     top: '20%',
-                    left: '2%',
-                    right: '15%',
-                    bottom: '0%',
+                    left: '5%',
+                    right: '10%',
+                    bottom: '20%',
                     containLabel: true
                 },
                 xAxis: {
@@ -94,8 +93,8 @@ const chart = ref(null);
                 },
                 yAxis: {
                     type: 'value',
-                    min: 30,
-                    // name: '成绩（分）',
+                    min: Math.min(seriesData)-3,
+                    max:Math.max(seriesData)+3,
                     nameTextStyle: {
                         color: '#333',
                         fontSize: 18,

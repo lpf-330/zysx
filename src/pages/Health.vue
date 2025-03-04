@@ -36,11 +36,11 @@ const shiftControlBox = () => {
 
 <style scoped>
 .controlBox {
-    width: 60%;
-    height: 60%;
+    width: 6rem;
+    height: 3.5rem;
     background-color: #ffffff;
     position: absolute;
-    transform: translate(38%, 40%);
+    transform: translate(39%, 35%);
     border-radius: 0.2rem;
     display: flex;
     align-items: center;
@@ -52,12 +52,12 @@ const shiftControlBox = () => {
 
 .comeIn {
     transition-duration: 1.5s;
-    transform: translate(38%, 40%);
+    transform: translate(39%, 35%);
 }
 
 .comeOut {
     transition-duration: 1.5s;
-    transform: translate(160%, 40%);
+    transform: translate(160%, 35%);
 }
 
 .buttonAlt {

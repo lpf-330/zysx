@@ -15,7 +15,6 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
 import { defineProps } from 'vue';
 
 echarts.use([
@@ -54,10 +53,10 @@ const updateChart = () => {
         name: '心率',
         backgroundColor: '#fff',
         grid: {
-            left: '-2%',
-            right: '5%',
-            bottom: '20%',
-            top: '25%',
+            left: '5%',
+            right: '10%',
+            bottom: '40%',
+            top: '40%',
             containLabel: true
         },
         xAxis: [{
@@ -81,8 +80,8 @@ const updateChart = () => {
         }],
         yAxis: [{
             show: false,
-            min: 80, //最低为最低减5
-            max: 92, //最高为最高值加5
+            min: Math.min(props.data)-5, //最低为最低减5
+            max: Math.max(props.data)+5, //最高为最高值加5
         }],
         series: [{
             type: 'line',

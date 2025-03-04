@@ -77,17 +77,17 @@ import { storeToRefs } from 'pinia';
 
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
-//const heartData = ref([86, 87, 87, 90])
+const heartData = ref([75, 72, 80, 68])
 const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
 const piData = ref([62, 65, 59, 52, 78])
 const oxygenData = ref(0.6)
 const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
 const pressureData = ref([20, 40, 60, 80])
 
-const heartData=ref([])
+// const heartData = ref([])
 
 const userInfoStore = storeToRefs(useUserInfoStore())
- let user_id=userInfoStore.user_id.value
+let user_id = userInfoStore.user_id.value
 
 
 const fetchData = async () => {
@@ -96,7 +96,7 @@ const fetchData = async () => {
 
         const url = `http://localhost:8081/data`;
         const response = await axios.post(url, {
-            
+
             user_id: user_id
         }, {
             headers: {
@@ -104,12 +104,15 @@ const fetchData = async () => {
             }
         });
 
-     console.log("响应data",response.data);
-   for (let j = 0; j < response.data.length; j++) {
-                heartData.value.push(response.data[j].heartData)
-                
-            }
-     
+        console.log("响应data", response.data);
+
+        // for (let j = 0; j < 4; j++) {
+        //     heartData.value.push(response.data.heartData[j].heartData)
+        // }
+
+        // console.log('heartData.value', heartData.value);
+
+
 
     } catch (error) {
         console.error("出错", error);

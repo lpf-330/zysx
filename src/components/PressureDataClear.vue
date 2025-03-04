@@ -187,6 +187,23 @@ const updateChart = async () => {
                     color: '#fff',
                 },
             },
+            formatter: (params) => { // 自定义提示框内容（）
+        return `<span>${params[0].name}</span>`+params
+          .map(param => {
+            // 判断数据格式：一维数值或二维数组（）
+            const value = Array.isArray(param.value) 
+              ? param.value // 提取二维数组中的数值（如 [x, y]）
+              : param.value;
+            return `
+              <div style="${param.color}">         
+                ${param.marker} 
+                ${param.seriesName}: 
+                <strong>${Math.abs(value).toFixed(1)}</strong> <!-- 取绝对值 -->
+              </div>
+            `;
+          })
+          .join('');
+      }
         },
         grid: {
             top: '2%',
@@ -218,7 +235,7 @@ const updateChart = async () => {
                 axisLabel: {
                     interval: 0,
                     // color: 'rgba(255,255,255,0.7)',
-                    fontSize: 18,
+                    fontSize: 15,
                 },
                 data: date.value,
             },
@@ -251,7 +268,7 @@ const updateChart = async () => {
         ],
         series: [
             {
-                name: '收缩压',
+                name: '伸缩压',
                 type: 'bar',
                 barWidth: 20,
                 gridIndex: 0,
@@ -259,6 +276,9 @@ const updateChart = async () => {
                 label: {
                     show: true,
                     position: 'top',
+                    formatter: (m) => {
+                        return Math.abs(m.value);
+                    },
                 },
                 itemStyle: {
                     normal: {
@@ -282,11 +302,11 @@ const updateChart = async () => {
                         },
                     },
                 },
-                data: data1.value,
+                data: data2.value,
             },
 
             {
-                name: '伸缩压',
+                name: '收缩压',
                 type: 'bar',
                 barWidth: 20,
                 barGap: '-100%',
@@ -322,7 +342,7 @@ const updateChart = async () => {
                         barBorderRadius: 0,
                     },
                 },
-                data: data2.value,
+                data: data1.value,
             },
         ],
     };

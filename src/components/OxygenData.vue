@@ -93,7 +93,7 @@ const chart = ref(null);
                             formatter: function (param) {
                                 return (param.value * 100).toFixed(1) + '%';
                             },
-                            fontSize: 18, // 调整字体大小  
+                            fontSize: 16, // 调整字体大小  
                             fontWeight: 'normal',
                             color: '#fff'
                         },

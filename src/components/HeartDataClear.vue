@@ -93,12 +93,11 @@ const date = ref([])
 const fetchHeartData = async () => {
 
     try {
-
         const url = "http://localhost:8081/heartData";
         const response = await axios.post(url, {
-           // cancelToken: cancelTokenSource.token,
+            // cancelToken: cancelTokenSource.token,
             //user_id: Number(user_id)
-            user_id:user_id
+            user_id: user_id
         },
             {
                 headers: {
@@ -106,14 +105,14 @@ const fetchHeartData = async () => {
                 }
             });
 
-        
-            for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].heartData)
-                date.value.push(response.data[j].Date)
-            }
-        
 
-        
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].heartData)
+            date.value.push(response.data[j].Date)
+        }
+
+
+
 
         console.log("响应心率", response);
 

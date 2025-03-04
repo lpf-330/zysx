@@ -81,10 +81,10 @@ const chart = ref(null);
                     }
                 },
                 grid: {
-                    top: '16%',
+                    top: '20%',
                     right: '4%',
-                    bottom: '4%',
-                    left: '1%',
+                    bottom: '20%',
+                    left: '3%',
                     containLabel: true
                 },
                 xAxis: {
@@ -103,6 +103,8 @@ const chart = ref(null);
                 },
                 yAxis: {
                     type: 'value',
+                    min:Math.min(y)-3,
+                    max:Math.max(y)+3,
                     axisTick: { show: false },
                     axisLine: {
                         show: false
