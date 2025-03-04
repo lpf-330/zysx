@@ -75,57 +75,52 @@ import { storeToRefs } from 'pinia';
 
 
 
-const cancelTokenSource = axios.CancelToken.source();
-
-const userInfoStore = storeToRefs(useUserInfoStore())
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
-const heartData = ref([86, 87, 87, 90])
+//const heartData = ref([86, 87, 87, 90])
 const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
 const piData = ref([62, 65, 59, 52, 78])
 const oxygenData = ref(0.6)
 const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
 const pressureData = ref([20, 40, 60, 80])
 
+const heartData=ref([])
 
-// let user_id=1
-
-
-// const fetchData = async () => {
-
-//     try {
-
-//         const url = `http://localhost:8081/data`;
-//         const response = await axios.post(url, {
-//             cancelToken: cancelTokenSource.token,
-//             user_id: userInfoStore.user_id.value
-//         }, {
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             }
-//         });
-
-//         if (response.data.code === 1) {
-
-//         } else {
-//             alert(response.data.msg)
-//         }
+const userInfoStore = storeToRefs(useUserInfoStore())
+ let user_id=userInfoStore.user_id.value
 
 
+const fetchData = async () => {
 
-//     } catch (error) {
-//         console.error("出错", error);
-//         alert("加载失败，请稍后再试。");
-//     }
+    try {
+
+        const url = `http://localhost:8081/data`;
+        const response = await axios.post(url, {
+            
+            user_id: user_id
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+     console.log("响应data",response.data);
+   for (let j = 0; j < response.data.length; j++) {
+                heartData.value.push(response.data[j].heartData)
+                
+            }
+     
+
+    } catch (error) {
+        console.error("出错", error);
+        alert("加载失败，请稍后再试。");
+    }
 
 
-// }
+}
 
-//onBeforeMount(fetchData)
+onBeforeMount(fetchData)
 
-onBeforeUnmount(() => {
-    cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 
 
 const props = defineProps({
