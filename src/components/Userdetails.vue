@@ -167,7 +167,6 @@ import {Edit} from '@element-plus/icons-vue'
   margin:1% 4%;
   color: #5b8eec;
   font-style: italic;
-
   }
 
   .profile{
