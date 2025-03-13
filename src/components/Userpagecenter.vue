@@ -1,7 +1,5 @@
 <template>
-  <el-button type="primary" style="margin-left: 16px" @click="drawer = true">
-    open
-  </el-button>
+  <el-button type="primary" class="Edit" @click="drawer = true" :icon="Edit"></el-button>
   <el-drawer v-model="drawer" title="I am the title" :with-header="false" size="4.5rem">
     <div class="personal-info-container"> 
       <div class="info-card-header">  
@@ -68,15 +66,16 @@
       </div>  
     </div>  
     <div class="operation">
-        <el-button size="large" @click="cancelClick">取消</el-button>
-        <el-button size="large" type="primary" @click="confirmClick">保存</el-button>
+        <el-button class="cancel" size="5rem" @click="cancelClick">取消</el-button>
+        <el-button class="confirm" size="5rem" type="primary" @click="confirmClick">保存</el-button>
     </div>
 
   </el-drawer>  
 </template>  
 
 <script setup>  
-  import { ref } from 'vue'
+  import { ref } from 'vue';
+  import {Edit} from '@element-plus/icons-vue';
   const drawer = ref(false)
   const gender = ref('男')
 
@@ -94,7 +93,15 @@ function confirmClick() {
 }
 </script>  
 
-<style scoped>  
+<style scoped>
+.Edit{
+  position: absolute;
+  width: 0.35rem;
+  height: 0.25rem;
+  top: 1.2rem;
+  left: 8.4rem;
+}
+
 .personal-info-container {
   background-color: #f8fbfe;
   border-radius: 0.15rem;
@@ -212,4 +219,20 @@ select {
   justify-content: center;
   margin-top: 0.15rem;
 }
+
+.cancel{
+  width: 0.5rem;
+  height: 0.3rem;
+  font-weight: 600;
+  font-size: 0.1rem;
+  font-family: 'FanYuanTi';
+}
+
+.confirm{
+  width: 0.5rem;
+  height: 0.3rem;
+  font-weight: 600;
+  font-size: 0.1rem;
+  font-family: 'FanYuanTi';
+  }
 </style>  

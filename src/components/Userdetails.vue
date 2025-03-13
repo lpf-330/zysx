@@ -41,7 +41,6 @@ import {Edit} from '@element-plus/icons-vue'
       </div>
       <div class="Modification">
         <span>去编辑 >&nbsp;</span>
-        <div class="M-button"><el-button class="el-button" type="primary" :icon="Edit" /></div>
       </div>
     </div>
   </div>
