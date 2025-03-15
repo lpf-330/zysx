@@ -66,10 +66,9 @@
       </div>  
     </div>  
     <div class="operation">
-        <el-button class="cancel" size="5rem" @click="cancelClick">取消</el-button>
-        <el-button class="confirm" size="5rem" type="primary" @click="confirmClick">保存</el-button>
+        <el-button class="cancel" @click="cancelClick">取消</el-button>
+        <el-button class="confirm" type="primary" @click="confirmClick">保存</el-button>
     </div>
-
   </el-drawer>  
 </template>  
 

@@ -169,7 +169,6 @@ import ImageUpload from './ImageUpload.vue';
   margin:1% 4%;
   color: #5b8eec;
   font-style: italic;
-
   }
 
   .profile{
