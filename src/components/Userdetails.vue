@@ -1,5 +1,6 @@
 <script setup>
 import {Edit} from '@element-plus/icons-vue'
+import ImageUpload from './ImageUpload.vue';
 
 </script>
 
@@ -11,6 +12,7 @@ import {Edit} from '@element-plus/icons-vue'
         </div>
         <div class="userName">
           <span>李四</span>
+          <ImageUpload></ImageUpload>
         </div>
       </div>
       <div class="tw-flex">
