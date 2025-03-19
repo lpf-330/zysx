@@ -1,5 +1,5 @@
 <template>
-  <el-button type="primary" class="Edit" @click="drawer = true" :icon="Edit"></el-button>
+  <el-button type="primary" class="Edit" @click="drawer = true" :icon="Edit" title="编辑"></el-button>
   <el-drawer v-model="drawer" title="I am the title" :with-header="false" size="4.5rem">
     <div class="personal-info-container"> 
       <div class="info-card-header">  

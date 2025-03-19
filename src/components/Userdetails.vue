@@ -15,6 +15,7 @@ import ImageUpload from './ImageUpload.vue';
           <ImageUpload></ImageUpload>
         </div>
       </div>
+    <div class="flex-container">
       <div class="tw-flex">
         <div class="gender">
           <img width="35%" height="85%" src="https://img.icons8.com/dusk/64/unisex.png" alt="unisex"/>
@@ -37,166 +38,147 @@ import ImageUpload from './ImageUpload.vue';
           <span>60kg</span>
         </div>
       </div>
-      <div class="introduce"><span>智慧守护，每一刻健康关怀!</span></div>
-      <div class="profile">
+       <!-- <div class="introduce"><span>智慧守护，每一刻健康关怀!</span></div> 
+       <div class="profile">
         <span>个人资料完善度:&nbsp;80%</span>
-      </div>
-      <div class="Modification">
+      </div>  -->
+       <div class="Modification">
         <span>去编辑 >&nbsp;</span>
       </div>
+    </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.main{
-  width: 92%;
-  margin: auto;
-  margin-top: 2%;
-}
+<style scoped>  
+.main{  
+  width: 92%;  
+  margin: auto;  
+  margin-top: 2%;  
+}  
 
-.userDetails{
-  width: 100%;
+.userDetails{  
+  width: 100%;  
   background: linear-gradient(to bottom,   
-        rgba(255, 255, 255, 0),
-        rgba(255, 255, 255, 1)
-    );
-  border-radius: 0.2rem;
-  height: 1.4rem;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.8s ease-in-out;
-}
+        rgba(255, 255, 255, 0),  
+        rgba(255, 255, 255, 1)  
+    );  
+  border-radius: 0.2rem;  
+  height: 1.4rem;  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+  transition: all 0.8s ease-in-out;  
+  position: relative; /* 新增 */  
+}  
 
 .userDetails:hover {  
   transform: scale(1.05);  
   background: rgba(255, 255, 255, 0);  
 }  
 
-.userD{
-  display: flex;
-}
+.userD{  
+  display: flex;  
+}  
 
-.avatar{
-  width: 0.5rem;
-  height: 0.5rem;
-  background-color: #8d8686;
-  border-radius: 50%;
-  margin: 0.1rem 0.2rem;
-}
+.avatar{  
+  width: 0.6rem;  
+  height: 0.6rem;  
+  background-color: #8d8686;  
+  border-radius: 50%;  
+  margin: 0.1rem 0.2rem;  
+}  
 
-.userName{
-  font-size: 0.15rem;
-  font-weight: bold;
-  margin-top: 0.25rem;
-}
+.userName{  
+  font-size: 0.18rem;  
+  font-weight: bold;  
+  margin-top: 0.15rem;  
+}  
 
-.tw-flex{
-  margin: 0.05rem 0.25rem;
-  display: flex;
-  gap: 0.1rem;
-  text-align: center;
-  color: white;
-  font-size: 0.1rem;
-  font-family: 'FanYuanTi';
-  font-weight: 500;
-}
+.flex-container {  
+  display: flex;  
+  justify-content: space-between;  
+  align-items: center;  
+  padding: 0 0.2rem;  
+  margin-top: 0.25rem;  
+  width: 100%;  
+}  
 
-.gender{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5%;
-  width: 0.45rem;
-  height: 0.18rem;
-  border-radius: 0.5rem;
-  background-color: rgba(85, 161, 242, 0.782);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
+.tw-flex{  
+  display: flex;  
+  gap: 0.1rem;  
+  text-align: center;  
+  color: white;  
+  font-size: 0.1rem;  
+  font-family: 'FanYuanTi';  
+  font-weight: 500;  
+  flex-grow: 1;  
+}  
 
-.age{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.03rem;
-  width: 0.45rem;
-  height: 0.18rem;
-  border-radius: 0.5rem;
-  background-color: rgba(85, 161, 242, 0.782);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
+.Modification {  
+  font-size: 0.1rem;  
+  font-weight: 500;  
+  display: inline;  
+  color: #333;  
+  position: absolute;  
+  right: 1.35rem;   
+}  
 
-.phoneNumber{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.03rem;
-  width: 0.95rem;
-  height: 0.18rem;
-  border-radius: 0.5rem;
-  background-color: rgba(85, 161, 242, 0.782);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
+.gender{  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  gap: 5%;  
+  width: 0.45rem;  
+  height: 0.18rem;  
+  border-radius: 0.5rem;  
+  background-color: rgba(85, 161, 242, 0.782);  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+}  
 
-.height{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 0.6rem;
-  height: 0.18rem;
-  border-radius: 0.5rem;
-  background-color: rgba(85, 161, 242, 0.782);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  gap: 0.03rem;
-}
+.age{  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  gap: 0.03rem;  
+  width: 0.45rem;  
+  height: 0.18rem;  
+  border-radius: 0.5rem;  
+  background-color: rgba(85, 161, 242, 0.782);  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+}  
 
-.weight{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5%;
-  width: 0.55rem;
-  height: 0.18rem;
-  border-radius: 0.5rem;
-  background-color: rgba(85, 161, 242, 0.782);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
+.phoneNumber{  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  gap: 0.03rem;  
+  width: 0.95rem;  
+  height: 0.18rem;  
+  border-radius: 0.5rem;  
+  background-color: rgba(85, 161, 242, 0.782);  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+}  
 
-.introduce{
-  display: inline-flex;
-  font-family: 'FanYuanTi';
-  font-size: 0.13rem;
-  font-weight: bold;
-  margin:1% 4%;
-  color: #5b8eec;
-  font-style: italic;
-  }
+.height{  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  width: 0.6rem;  
+  height: 0.18rem;  
+  border-radius: 0.5rem;  
+  background-color: rgba(85, 161, 242, 0.782);  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+  gap: 0.03rem;  
+}  
 
-  .profile{
-    margin-left: 30%;
-    font-size: 0.1rem;
-    font-weight: bold;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    height: 12%;
-    width: 17%;
-    border-radius: 0.05rem;
-    background-color: rgb(255, 255, 255,0.5);
-    color: rgb(0,0,0,0.6);
-    box-shadow: #8d8686 0rem 0rem 0.0125rem;
-  }
-
-  .Modification{
-    font-size: 0.1rem;
-    font-weight: 550;
-    margin-left: 2%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    }
-
-  .el-button{
-    width: 0.35rem;
-    height: 0.25rem;
-  }
-</style>
+.weight{  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  gap: 5%;  
+  width: 0.55rem;  
+  height: 0.18rem;  
+  border-radius: 0.5rem;  
+  background-color: rgba(85, 161, 242, 0.782);  
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);  
+}  
+</style>  

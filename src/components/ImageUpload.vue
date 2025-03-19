@@ -8,7 +8,7 @@
       ref="fileInput"
       style="display: none"
     />
-    <button @click="triggerFileInput">选择图片</button>
+    <button @click="triggerFileInput" class="upload-btn">选择图片</button>  
     
     <!-- 使用Element Plus上传组件（可选） -->
     <!-- <el-upload
@@ -107,9 +107,44 @@ const emit = defineEmits(['upload-success'])
 
 <style scoped>
 .upload-container {
-  border: 1px dashed #ddd;
-  padding: 20px;
+  border: none;
+  padding: 10px;
   border-radius: 4px;
+  margin-bottom: 0.0005rem;
+  margin-top:0.01rem;
+}
+
+.upload-btn {  
+  width: 0.7rem;  
+  height: 0.2rem;  
+  font-size: 10px;  
+  border-radius: 4px;  
+  border: 1px solid #dcdfe6;  
+  background-color: #ffffff;  
+  color: #606266;  
+  cursor: pointer;  
+  padding: 0;  
+  margin-left: -0.2rem;  
+  display: flex;  
+  align-items: center;
+  justify-content: center; 
+  position:relative; 
+  transition: background-color 0.3s;  
+}  
+
+.upload-btn:hover {  
+  background-color: #f5f7fa;  
+  border-color: #c0c4cc;  
+}  
+
+.upload-btn:active {  
+  background-color: #ebeef5;  
+  border-color: #a8abae;  
+}  
+ 
+button.upload-btn {  
+  align-self: flex-end;  
+  margin-bottom: 0;  
 }
 
 .preview-wrapper {
