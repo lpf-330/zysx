@@ -9,30 +9,30 @@
         <div class="content">  
           <div class="info-item">  
             <label>姓名:</label>  
-            <input v-model="name" type="text" id="input1"/>  
+            <input v-model="formData.name" type="text" id="input1"/>  
           </div>  
           <div class="info-item">  
             <label>性别:</label>  
-            <select v-model="gender" id="select1" class="gender">  
+            <select v-model="formData.gender" id="select1" class="gender">  
               <option value="男">男</option>  
               <option value="女">女</option>  
             </select>  
           </div>  
           <div class="info-item">  
             <label>年龄:</label>  
-            <input v-model="age" id="input2"/>  
+            <input v-model.number="formData.age" id="input2"/>  
           </div>  
           <div class="info-item">  
             <label>手机号:</label>  
-            <input v-model="phoneNumber" type="tel" id="input3"/>  
+            <input v-model="formData.phone_number" type="tel" id="input3"/>  
           </div>  
           <div class="info-item">  
             <label>身高:</label>  
-            <input v-model="height" placeholder="cm" id="input4"/>  
+            <input v-model="formData.height" placeholder="cm" id="input4"/>  
           </div>  
           <div class="info-item">  
             <label>体重:</label>  
-            <input v-model="weight" placeholder="kg" id="input5"/>  
+            <input v-model="formData.weight" placeholder="kg" id="input5"/>  
           </div>  
         </div>  
       </div>  
@@ -44,23 +44,23 @@
         <div class="medical-content">  
           <div class="info-item">  
             <label>家族遗传病史:</label>  
-            <textarea v-model="familyHistory" placeholder="请输入家族遗传病史" />  
+            <textarea v-model="formData.family_history" placeholder="请输入家族遗传病史" />  
           </div>  
           <div class="info-item">  
             <label>过敏史:</label>  
-            <textarea v-model="allergyHistory" placeholder="请输入过敏史" />  
+            <textarea v-model="formData.allergy_history" placeholder="请输入过敏史" />  
           </div>  
           <div class="info-item">  
             <label>既往病史:</label>  
-            <textarea v-model="pastIllnessHistory" placeholder="请输入既往病史" />  
+            <textarea v-model="formData.past_medical_history" placeholder="请输入既往病史" />  
           </div>  
           <div class="info-item">  
             <label>手术史:</label>  
-            <textarea v-model="surgicalHistory" placeholder="请输入手术史" />  
+            <textarea v-model="formData.surgical_history" placeholder="请输入手术史" />  
           </div>  
           <div class="info-item">  
             <label>用药依从性记录:</label>  
-            <textarea v-model="medicationAdherence" placeholder="请输入用药依从性记录" />  
+            <textarea v-model="formData.medication_compliance" placeholder="请输入用药依从性记录" />  
           </div>  
         </div>  
       </div>  
@@ -70,27 +70,98 @@
         <el-button class="confirm" type="primary" @click="confirmClick">保存</el-button>
     </div>
   </el-drawer>  
-</template>  
+</template>
 
 <script setup>  
   import { ref } from 'vue';
   import {Edit} from '@element-plus/icons-vue';
-  const drawer = ref(false)
-  const gender = ref('男')
+  import axios from 'axios';
+  import useUserInfoStore from '../stores/user';
+  import { storeToRefs } from 'pinia';
+  
+  const drawer = ref(false);
+
+  const formData = ref({
+      user_id: '',
+      name: '',
+      gender: '男',
+      age: 0,
+      phone_number: '',
+      height: '',
+      weight: '',
+      family_history: '',
+      allergy_history: '',
+      past_medical_history: '',
+      surgical_history: '',
+      medication_compliance: ''
+  });
 
   function cancelClick() {
-  drawer.value = false
-}
-function confirmClick() {
-  ElMessageBox.confirm(`Are you confirm to chose ${radio1.value} ?`)
-    .then(() => {
-      drawer.value = false
-    })
-    .catch(() => {
-      // catch error
-    })
-}
-</script>  
+    drawer.value = false;
+  }
+
+  function confirmClick() {
+    fetchUserpagecenterdata();
+  }
+
+  let userInfoStore = storeToRefs(useUserInfoStore());
+  let user_id = userInfoStore.user_id.value;
+
+  /**
+   * 获取用户的基本信息
+   * 请求参数：
+   * user_id:string
+   * name:string
+   * gender:string
+   * age:int
+   * phone_number:string
+   * height:string
+   * weight:string
+   * family_history:string
+   * allergy_history:string
+   * past_medical_history:string
+   * surgical_history:string
+   * medical_compliance:string
+   * 响应参数：
+   * status,
+   * message,
+   */
+  const fetchUserpagecenterdata = async () => {  
+    try {  
+      const url = 'http://localhost:8081/'; //后端还没写 
+
+      const response = await axios.post(url, {  
+        user_id: user_id,
+        name: formData.value.name,  
+        gender: formData.value.gender,  
+        age: formData.value.age,  
+        phone_number: formData.value.phone_number,   
+        height: formData.value.height,  
+        weight: formData.value.weight,  
+        family_history: formData.value.family_history,  
+        allergy_history: formData.value.allergy_history,  
+        past_medical_history: formData.value.past_medical_history,  
+        surgical_history: formData.value.surgical_history,  
+        medication_compliance: formData.value.medication_compliance  
+      }, {  
+        headers: {  
+          'Content-Type': 'application/json',  
+        }  
+      });  
+
+      if (response.data.status === 'success') {  
+        alert(response.data.message || '用户信息保存成功！');
+        drawer.value = false;  
+      } else {  
+        alert('保存失败，请稍后再试。');  
+      }  
+
+      } catch (error) {  
+        console.error("出错", error);  
+        alert("保存失败，请稍后再试。");  
+      }  
+  };  
+</script>
 
 <style scoped>
 .Edit{
@@ -233,5 +304,5 @@ select {
   font-weight: 600;
   font-size: 0.1rem;
   font-family: 'FanYuanTi';
-  }
-</style>  
+}
+</style>
