@@ -1,7 +1,3 @@
-<script setup>
-
-</script>
-
 <template>
     <div class="Medication-adherence-records">
     <el-scrollbar height="3.5rem">
@@ -28,7 +24,61 @@
     </el-scrollbar>
     </div>
 </template>
+<script setup>
+  import { ref } from 'vue';
+  import { onMounted } from 'vue';
+  import axios from 'axios';
+  import useUserInfoStore from '../stores/user';
+  import { storeToRefs } from 'pinia';
 
+  const medicationData = ref({
+    drug_taken: '',
+    details: ''
+  });
+
+  const userStore = useUserInfoStore();
+  const { user_id } = storeToRefs(userStore);
+
+  /**
+   * 获取用户用药依从性记录信息
+   * 请求参数：
+   * user_id：string,
+   * 响应参数：
+   * status：string,
+   * data.drug_taken:string,
+   * data.details:string
+   */
+  const fetchMedication_adherence_recordsData = async () => {
+    try {
+        const url = 'http://localhost:8081/'    //后端还没写
+        const response = await axios.post(url, {
+            user_id: user_id.value
+        },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        )
+
+      if (response.data.status === 'success') {
+        const data = response.data.data;
+        medicationData.value = {
+          drug_taken: data.drug_taken,
+          details: data.details
+      };
+    } else {
+      alert('获取用药依从性记录失败，请稍后再试。');
+    }    
+    } catch (error) {
+        console.error("出错", error);
+        alert("获取信息失败，请稍后再试。"); // 友好的错误提示  
+    }
+}
+    onMounted(() => {
+      fetchMedication_adherence_recordsData();
+    });//更新组件状态
+</script>
 <style scoped>
 .scrollbar-demo-item {
   display: flex;

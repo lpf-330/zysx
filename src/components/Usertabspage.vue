@@ -97,14 +97,83 @@
   </template>
   
   <script lang="ts" setup>
-  import { ref } from 'vue'
-  import type { TabsPaneContext } from 'element-plus'
+  import { ref } from 'vue';
+  import { onMounted } from 'vue';
+  import type { TabsPaneContext } from 'element-plus';
+  import axios from 'axios';
+  import useUserInfoStore from '../stores/user';
+  import { storeToRefs } from 'pinia';
   
   const activeName = ref('first')
   
+  const Usertabpagedata = ref({
+    family_history_yesorno: '',
+    family_history_detail: '',
+    allergy_history_yesorno: '',
+    allergy_history_detail: '',
+    past_medical_history_yesorno: '',
+    past_medical_history_detail: '',
+    surgical_history_yesorno: '',
+    surgical_history_detail: ''
+  });
+  
+  const userStore = useUserInfoStore();
+  const { user_id } = storeToRefs(userStore);
+
   const handleClick = (tab: TabsPaneContext, event: Event) => {
-    console.log(tab, event)
-  }
+    console.log(tab, event);
+  };//点击事件，用于切换页面
+
+  /**
+   * 获取用户医疗信息
+   * 请求参数：
+   * user_id：string,
+   * 相应参数：
+   * status:string,
+   * message:string,
+   * data.family_history_yesorno:string,
+   * data.family_history_detail:string,
+   * data.allergy_history_yesorno:string,
+   * data.allergy_history_detail:string,
+   * data.past_medical_history_yesorno:string,
+   * data.past_medical_history_detail:string,
+   * data.surgical_history_yesorno:string,
+   * data.surgical_history_detail:string
+   */
+  const fetchUsertabpagedata = async () => {  
+    try {  
+      const url = 'http://localhost:8081/'; //后端还没写 
+
+      const response = await axios.post(url, { user_id: user_id.value },
+       {  
+        headers: {  
+          'Content-Type': 'application/json',  
+        }  
+      });  
+      if (response.data.status === 'success') {
+        const data = response.data.data;
+        Usertabpagedata.value = {
+          family_history_yesorno: data.family_history_yesorno,
+          family_history_detail: data.family_history_detail,
+          allergy_history_yesorno: data.allergy_history_yesorno,
+          allergy_history_detail: data.allergy_history_detail,
+          past_medical_history_yesorno: data.past_medical_history_yesorno,
+          past_medical_history_detail: data.past_medical_history_detail,
+          surgical_history_yesorno: data.surgical_history_yesorno,
+          surgical_history_detail: data.surgical_history_detail
+        };
+      } else {
+        alert('获取用户医疗信息失败，请稍后再试。');
+      }
+      } catch (error) {  
+        console.error("出错", error);  
+        alert("获取信息失败，请稍后再试。");  
+      }  
+  };  
+
+      onMounted(() => {
+      fetchUsertabpagedata();
+    });//更新组件状态
   </script>
   
   <style scoped>

@@ -108,7 +108,7 @@
   let user_id = userInfoStore.user_id.value;
 
   /**
-   * 获取用户的基本信息
+   * 保存用户的基本信息
    * 请求参数：
    * user_id:string
    * name:string
@@ -123,8 +123,8 @@
    * surgical_history:string
    * medical_compliance:string
    * 响应参数：
-   * status,
-   * message,
+   * status:string
+   * message:string
    */
   const fetchUserpagecenterdata = async () => {  
     try {  
