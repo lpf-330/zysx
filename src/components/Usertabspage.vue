@@ -133,25 +133,30 @@
    */
   const fetchUsertabpagedata = async () => {  
     try {  
-      const url = 'http://localhost:8081/'; //后端还没写 
+      const url = 'http://localhost:8081/personal_history'; //后端还没写 
 
-      const response = await axios.post(url, { user_id: user_id.value },
-       {  
-        headers: {  
-          'Content-Type': 'application/json',  
-        }  
-      });  
-      if (response.data.status === 'success') {
-         const data = response.data.data;
-        Usertabpagedata.value = {
-          family_history: data.family_history,
-          allergy_history: data.allergy_history,
-          past_medical_history: data.past_medical_history,
-          surgical_history: data.surgical_history,
-        };
-      } else {
-        alert('获取用户医疗信息失败，请稍后再试。');
-      }
+            const response = await axios.post(url, {
+                user_id: user_id.value
+            },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+            console.log('响应健康档案', response.data);
+            
+      // if (response.data.status === 'success') {
+      //    const data = response.data.data;
+      //   Usertabpagedata.value = {
+      //     family_history: data.family_history,
+      //     allergy_history: data.allergy_history,
+      //     past_medical_history: data.past_medical_history,
+      //     surgical_history: data.surgical_history,
+      //   };
+      // } else {
+      //   alert('获取用户医疗信息失败，请稍后再试。');
+      // }
       } catch (error) {  
         console.error("出错", error);  
         alert("获取信息失败，请稍后再试。");  

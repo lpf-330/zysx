@@ -72,9 +72,9 @@
         alert("获取信息失败，请稍后再试。"); // 友好的错误提示  
     }
 }
-    onMounted(() => {
-      fetchMedication_adherence_recordsData();
-    });//更新组件状态
+    // onMounted(() => {
+    //   fetchMedication_adherence_recordsData();
+    // });//更新组件状态
 </script>
 <style scoped>
 .scrollbar-demo-item {
