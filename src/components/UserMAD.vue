@@ -32,8 +32,7 @@
   import { storeToRefs } from 'pinia';
 
   const medicationData = ref({
-    drug_taken: '',
-    details: ''
+    medical_compliance:""
   });
 
   const userStore = useUserInfoStore();
@@ -44,9 +43,8 @@
    * 请求参数：
    * user_id：string,
    * 响应参数：
-   * status：string,
-   * data.drug_taken:string,
-   * data.details:string
+   * status：string//status是返回的状态
+   * medical_compliance:string,
    */
   const fetchMedication_adherence_recordsData = async () => {
     try {
@@ -64,8 +62,7 @@
       if (response.data.status === 'success') {
         const data = response.data.data;
         medicationData.value = {
-          drug_taken: data.drug_taken,
-          details: data.details
+          medical_compliance:data.medical_compliance,
       };
     } else {
       alert('获取用药依从性记录失败，请稍后再试。');

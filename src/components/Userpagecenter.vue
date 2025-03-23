@@ -83,12 +83,12 @@
 
   const formData = ref({
       user_id: '',
-      name: '',
+      Username: '',
       gender: '男',
-      age: 0,
+      Age: 0,
       phone_number: '',
-      height: '',
-      weight: '',
+      Height: '',
+      Weight: '',
       family_history: '',
       allergy_history: '',
       past_medical_history: '',
@@ -111,20 +111,20 @@
    * 保存用户的基本信息
    * 请求参数：
    * user_id:string
-   * name:string
+   * Username:string
    * gender:string
-   * age:int
+   * Age:int
    * phone_number:string
-   * height:string
-   * weight:string
+   * Height:string
+   * Weight:string
    * family_history:string
    * allergy_history:string
    * past_medical_history:string
    * surgical_history:string
    * medical_compliance:string
    * 响应参数：
-   * status:string
-   * message:string
+   * status:string//status是返回的状态
+   * message:string//表示返回的“成功”或者“失败”的信息
    */
   const fetchUserpagecenterdata = async () => {  
     try {  
@@ -132,12 +132,12 @@
 
       const response = await axios.post(url, {  
         user_id: user_id,
-        name: formData.value.name,  
+        Username: formData.value.Username,  
         gender: formData.value.gender,  
-        age: formData.value.age,  
+        Age: formData.value.Age,  
         phone_number: formData.value.phone_number,   
-        height: formData.value.height,  
-        weight: formData.value.weight,  
+        Height: formData.value.Height,  
+        Weight: formData.value.Weight,  
         family_history: formData.value.family_history,  
         allergy_history: formData.value.allergy_history,  
         past_medical_history: formData.value.past_medical_history,  

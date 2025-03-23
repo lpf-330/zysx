@@ -107,14 +107,10 @@
   const activeName = ref('first')
   
   const Usertabpagedata = ref({
-    family_history_yesorno: '',
-    family_history_detail: '',
-    allergy_history_yesorno: '',
-    allergy_history_detail: '',
-    past_medical_history_yesorno: '',
-    past_medical_history_detail: '',
-    surgical_history_yesorno: '',
-    surgical_history_detail: ''
+    family_history: '',
+    allergy_history:'',
+    past_medical_history: '',
+    surgical_history:'',
   });
   
   const userStore = useUserInfoStore();
@@ -128,17 +124,12 @@
    * 获取用户医疗信息
    * 请求参数：
    * user_id：string,
-   * 相应参数：
-   * status:string,
-   * message:string,
-   * data.family_history_yesorno:string,
-   * data.family_history_detail:string,
-   * data.allergy_history_yesorno:string,
-   * data.allergy_history_detail:string,
-   * data.past_medical_history_yesorno:string,
-   * data.past_medical_history_detail:string,
-   * data.surgical_history_yesorno:string,
-   * data.surgical_history_detail:string
+   * 响应参数：
+   * family_history:string,
+   * allergy_history:string,
+   * past_medical_history:string,
+   * surgical_history:string,
+   * status:string//status是返回的状态
    */
   const fetchUsertabpagedata = async () => {  
     try {  
@@ -151,16 +142,12 @@
         }  
       });  
       if (response.data.status === 'success') {
-        const data = response.data.data;
+         const data = response.data.data;
         Usertabpagedata.value = {
-          family_history_yesorno: data.family_history_yesorno,
-          family_history_detail: data.family_history_detail,
-          allergy_history_yesorno: data.allergy_history_yesorno,
-          allergy_history_detail: data.allergy_history_detail,
-          past_medical_history_yesorno: data.past_medical_history_yesorno,
-          past_medical_history_detail: data.past_medical_history_detail,
-          surgical_history_yesorno: data.surgical_history_yesorno,
-          surgical_history_detail: data.surgical_history_detail
+          family_history: data.family_history,
+          allergy_history: data.allergy_history,
+          past_medical_history: data.past_medical_history,
+          surgical_history: data.surgical_history,
         };
       } else {
         alert('获取用户医疗信息失败，请稍后再试。');
