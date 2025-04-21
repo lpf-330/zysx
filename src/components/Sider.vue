@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 
 let selected = ref(0)
 const router = useRouter()
-const items = ['home', 'health', 'person']
+const items = ['home', 'health', 'medicalQA', 'person']
 
 const select = (i) => {
     selected.value = i
@@ -36,7 +36,11 @@ const exit = () => {
                 </div>
                 <div class="person" @click="select(2)">
                     <span class="iconfont icon-yonghu" :class="{ active: selected === 2 }"></span>
-                    <span class="menuText" :class="{ active: selected === 2 }">用户</span>
+                    <span class="menuText" :class="{ active: selected === 2 }">问答</span>
+                </div>
+                <div class="person" @click="select(3)">
+                    <span class="iconfont icon-yonghu" :class="{ active: selected === 3 }"></span>
+                    <span class="menuText" :class="{ active: selected === 3 }">用户</span>
                 </div>
             </div>
             <span class="iconfont YLine" :style="{ top: `${1.35 + selected * 0.68}rem` }"></span>

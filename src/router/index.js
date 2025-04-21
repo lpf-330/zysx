@@ -65,6 +65,11 @@ const routes = [
                 ]
             },
             {
+                path: "medicalQA",
+                name: "medicalQA",
+                component: () => import("../pages/MedicalQA.vue")
+            },
+            {
                 path: "person",
                 name: "person",
                 component: () => import("../pages/Person.vue")
