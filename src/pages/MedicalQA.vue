@@ -37,8 +37,8 @@ const postQuery = async () => {
 </script>
 
 <template>
-    <input type="text" v-model="query" @click="postQuery">
-    <button>提交</button>
+    <input type="text" v-model="query">
+    <button @click="postQuery">提交</button>
 </template>
 
 <style scoped></style>
