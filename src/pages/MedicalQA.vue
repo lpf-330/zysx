@@ -8,9 +8,11 @@ const postQuery = async () => {
     if (query.value !== '') {
         try {
 
-            const url = "http://localhost:8081/api/medical"
+            console.log("666"+query.value);
+            
+            const url = "http://localhost:8081/api/medical/query"
             const response = await axios.post(url, {
-                text: query.value
+                question: query.value
             },
                 {
                     headers: {
