@@ -158,12 +158,10 @@ const fetchUsertabpagedata = async () => {
 
     medicalHistoryStore.allergy_history.value = response.data.allergy_history
     medicalHistoryStore.family_history.value = response.data.family_history
-    // medicalHistoryStore.medication_compliance = response.data.medication_compliance
     medicalHistoryStore.past_medical_history.value = response.data.past_medical_history
     medicalHistoryStore.surgical_history.value = response.data.surgical_history
+    medicalHistoryStore.medication_compliance.value = response.data.medication_compliance
 
-
-    console.log('响应健康档案仓库', Usertabpagedata);
     // if (response.data.status === 'success') {
     //    const data = response.data.data;
     //   Usertabpagedata.value = {

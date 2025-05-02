@@ -13,7 +13,7 @@
             alt="help--v1" /></div>
         <div class="y_or_n">
           <span class="y_or_n_span">是否服用过任何药物:</span>
-          <span>&nbsp;是</span>
+          <span>&nbsp;{{ medicalHistoryStore.medication_compliance.value === '' ? '无' : '有' }}</span>
         </div>
       </div>
       <div class="detail">
@@ -22,63 +22,20 @@
         <div>详细信息:</div>
       </div>
       <div class="detail_span_content">
-        <span class="detail-content">阿司匹林 80mg 1次/天，每周一次，服用频率：每天一次，服用时间：2周，服用方式：口服，服药后出现头痛、恶心、呕吐、腹泻等症状，请及时就医。布洛芬 20mg 1次
-          1天 口服，服药后出现头痛、恶心、呕吐，请及时就医（有则填写，无则不填）</span>
+        <span class="detail-content">
+          {{ medicalHistoryStore.medication_compliance.value }}
+        </span>
       </div>
     </el-scrollbar>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
-import { onMounted } from 'vue';
-import axios from 'axios';
-import useUserInfoStore from '../stores/user';
+import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
 
-const medicationData = ref({
-  medical_compliance: ""
-});
+const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 
-const userStore = useUserInfoStore();
-const { user_id } = storeToRefs(userStore);
 
-/**
- * 获取用户用药依从性记录信息
- * 请求参数：
- * user_id：string,
- * 响应参数：
- * status：string//status是返回的状态
- * medical_compliance:string,
- */
-const fetchMedication_adherence_recordsData = async () => {
-  try {
-    const url = 'http://localhost:8081/'    //后端还没写
-    const response = await axios.post(url, {
-      user_id: user_id.value
-    },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    )
-
-    if (response.data.status === 'success') {
-      const data = response.data.data;
-      medicationData.value = {
-        medical_compliance: data.medical_compliance,
-      };
-    } else {
-      alert('获取用药依从性记录失败，请稍后再试。');
-    }
-  } catch (error) {
-    console.error("出错", error);
-    alert("获取信息失败，请稍后再试。"); // 友好的错误提示  
-  }
-}
-// onMounted(() => {
-//   fetchMedication_adherence_recordsData();
-// });//更新组件状态
 </script>
 <style scoped>
 .scrollbar-demo-item {

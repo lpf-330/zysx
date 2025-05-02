@@ -9,7 +9,7 @@
         <div class="content">
           <div class="info-item">
             <label>姓名:</label>
-            <input v-model="formData.name" type="text" id="input1" />
+            <input v-model="formData.Username" type="text" id="input1" />
           </div>
           <div class="info-item">
             <label>性别:</label>
@@ -20,7 +20,7 @@
           </div>
           <div class="info-item">
             <label>年龄:</label>
-            <input v-model.number="formData.age" id="input2" />
+            <input v-model.number="formData.Age" id="input2" />
           </div>
           <div class="info-item">
             <label>手机号:</label>
@@ -28,11 +28,11 @@
           </div>
           <div class="info-item">
             <label>身高:</label>
-            <input v-model="formData.height" placeholder="cm" id="input4" />
+            <input v-model="formData.Height" placeholder="cm" id="input4" />
           </div>
           <div class="info-item">
             <label>体重:</label>
-            <input v-model="formData.weight" placeholder="kg" id="input5" />
+            <input v-model="formData.Weight" placeholder="kg" id="input5" />
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ const formData = ref({
   gender: userInfoStore.gender.value,
   Age: userInfoStore.Age.value,
   phone_number: userInfoStore.phone_number.value,
-  Height: userInfoStore.Height.value,
+  Height: userInfoStore.Height.value * 100,
   Weight: userInfoStore.Weight.value,
   family_history: medicalHistoryStore.family_history.value,
   allergy_history: medicalHistoryStore.allergy_history.value,
@@ -109,7 +109,8 @@ const formData = ref({
   medication_compliance: medicalHistoryStore.medication_compliance.value
 });
 
-/**
+
+/*
  * 保存用户的基本信息
  * 请求参数：
  * user_id:string
@@ -117,16 +118,15 @@ const formData = ref({
  * gender:string
  * Age:int
  * phone_number:string
- * Height:string
- * Weight:string
+ * Height:Int
+ * Weight:Int
  * family_history:string
  * allergy_history:string
  * past_medical_history:string
  * surgical_history:string
  * medical_compliance:string
  * 响应参数：
- * status:string//status是返回的状态
- * message:string//表示返回的“成功”或者“失败”的信息
+ * 返回成功或者失败
  */
 const fetchUserpagecenterdata = async () => {
   try {
@@ -151,12 +151,15 @@ const fetchUserpagecenterdata = async () => {
       }
     });
 
-    if (response.data.status === 'success') {
-      alert(response.data.message || '用户信息保存成功！');
-      drawer.value = false;
-    } else {
-      alert('保存失败，请稍后再试。');
-    }
+    console.log('fetchUserpagecenterdata', response.data);
+
+
+    // if (response.data.status === 'success') {
+    //   alert(response.data.message || '用户信息保存成功！');
+    //   drawer.value = false;
+    // } else {
+    //   alert('保存失败，请稍后再试。');
+    // }
 
   } catch (error) {
     console.error("出错", error);
