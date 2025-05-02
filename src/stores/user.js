@@ -13,7 +13,8 @@ const useUserInfoStore = defineStore("userInfo", {
     }),
     actions: {
 
-    }
+    },
+    persist: true
 })
 
 export default useUserInfoStore

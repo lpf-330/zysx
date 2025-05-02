@@ -5,66 +5,16 @@ import { RouterLink } from 'vue-router';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { useAuthStore } from '../stores/authStore';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
-
+const authStore = useAuthStore()
 
 const account = ref('')
 const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
 const cancelTokenSource = axios.CancelToken.source();
-
-
-let fetchUser = async () => {
-
-
-    try {
-
-
-        const url = "http://localhost:8081/userInfo"
-        const response = await axios.post(url, {
-            cancelToken: cancelTokenSource.token,
-            account: account.value,
-            password: password.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        console.log("响应登录", response.data);
-
-        if (response.data.code === 1) {
-            userInfoStore.user_id.value = response.data.data.user_id
-            userInfoStore.Username.value = response.data.data.username
-            userInfoStore.Age.value = response.data.data.age
-            userInfoStore.Avatar.value = response.data.data.avatar
-            userInfoStore.Height.value = response.data.data.height
-            userInfoStore.Weight.value = response.data.data.weight
-            userInfoStore.gender.value = response.data.data.gender
-            userInfoStore.phone_number.value = response.data.data.phone_number
-            router.push({ name: 'index' })
-
-
-        } else {
-            alert(response.data.msg)
-        }
-
-
-
-    } catch (error) {
-        console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
-
-    }
-
-
-
-}
-
 
 
 const LoginTest = () => {
@@ -75,8 +25,7 @@ const LoginTest = () => {
             if (passwordTest.test(password.value)) {
                 console.log(123);
 
-                fetchUser()
-
+                authStore.login(account.value, password.value)
 
             } else {
                 alert("密码必须在12个字符内，且仅限英文字母，数字和下划线")

@@ -1,18 +1,18 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/authStore';
 
-
+const authStore = useAuthStore()
 let selected = ref(0)
 const router = useRouter()
-const items = ['home', 'health', 'medicalQA', 'person']
+const items = ['home', 'heartData', 'medicalQA', 'person']
 
 for (let i = 0; i < items.length; i++) {
     if (router.currentRoute.value.name === items[i]) {
         selected.value = i
     }
 }
-
 
 
 const select = (i) => {
@@ -22,6 +22,7 @@ const select = (i) => {
 
 const exit = () => {
     router.push('/')
+    // authStore.logout()
 }
 
 </script>

@@ -1,6 +1,5 @@
-import component from "element-plus/es/components/tree-select/src/tree-select-option.mjs";
 import { createRouter, createWebHashHistory } from "vue-router";
-
+import { useAuthStore } from "../stores/authStore";
 
 const routes = [
     {
@@ -13,7 +12,7 @@ const routes = [
     },
     {
         path: "/register",
-        component: () => import("../pages/register.vue")
+        component: () => import("../pages/register.vue"),
     },
     {
         path: "/index",
@@ -83,6 +82,32 @@ const router = createRouter({
     history: createWebHashHistory(),
     routes,
 });
+
+
+router.beforeEach(async (to, from) => {
+    const authStore = useAuthStore()
+
+    // 访问根路径时强制退出
+    if (to.path === '/') {
+        authStore.logout()
+        return '/login'
+    }
+
+    // 访问登录页时触发退出逻辑
+    if (to.path === '/login') {
+        authStore.logout()
+        return true // 允许访问登录页
+    }
+
+    // 检查其他页面是否登录
+    if (!authStore.token) {
+
+        return '/login'
+    }
+
+    // 已登录用户正常访问
+    return true
+})
 
 
 
