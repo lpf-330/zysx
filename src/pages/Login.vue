@@ -9,7 +9,7 @@ import { storeToRefs } from 'pinia';
 let userInfoStore = storeToRefs(useUserInfoStore())
 
 
-const username = ref('')
+const account = ref('')
 const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
@@ -25,7 +25,7 @@ let fetchUser = async () => {
         const url = "http://localhost:8081/userInfo"
         const response = await axios.post(url, {
             cancelToken: cancelTokenSource.token,
-            username: username.value,
+            account: account.value,
             password: password.value
         },
             {
@@ -42,10 +42,10 @@ let fetchUser = async () => {
             userInfoStore.Username.value = response.data.data.username
             userInfoStore.Age.value = response.data.data.age
             userInfoStore.Avatar.value = response.data.data.avatar
-            userInfoStore.Height.value=response.data.data.height
-            userInfoStore.Weight.value=response.data.data.weight
-
-
+            userInfoStore.Height.value = response.data.data.height
+            userInfoStore.Weight.value = response.data.data.weight
+            userInfoStore.gender.value = response.data.data.gender
+            userInfoStore.phone_number.value = response.data.data.phone_number
             router.push({ name: 'index' })
 
 
@@ -70,7 +70,7 @@ let fetchUser = async () => {
 const LoginTest = () => {
     console.log(122);
 
-    if (username.value) {
+    if (account.value) {
         if (password.value) {
             if (passwordTest.test(password.value)) {
                 console.log(123);
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
         <form class="from">
             <h1>登录</h1>
             <input type="text" name="AccountNumber" id="account" class="account" placeholder="&nbsp&nbsp请输入账号"
-                v-model="username">
+                v-model="account">
             <input type="text" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp请输入密码"
                 v-model="password">
             <input type="button" id="login" class="login" value="登录" @click="LoginTest">

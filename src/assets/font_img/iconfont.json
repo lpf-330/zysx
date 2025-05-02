@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "2787238",
+      "name": "回答",
+      "font_class": "huida1",
+      "unicode": "e609",
+      "unicode_decimal": 58889
+    },
+    {
+      "icon_id": "11752935",
+      "name": "问答",
+      "font_class": "V",
+      "unicode": "e6c0",
+      "unicode_decimal": 59072
+    },
+    {
+      "icon_id": "16534096",
+      "name": "提交信息",
+      "font_class": "tijiaoxinxi",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
       "icon_id": "13456131",
       "name": "拉出",
       "font_class": "lachu",

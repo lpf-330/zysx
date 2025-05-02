@@ -96,7 +96,6 @@ const fetchData = async () => {
 
         const url = `http://localhost:8081/data`;
         const response = await axios.post(url, {
-
             user_id: user_id
         }, {
             headers: {

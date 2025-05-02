@@ -3,10 +3,17 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 
-
 let selected = ref(0)
 const router = useRouter()
 const items = ['home', 'health', 'medicalQA', 'person']
+
+for (let i = 0; i < items.length; i++) {
+    if (router.currentRoute.value.name === items[i]) {
+        selected.value = i
+    }
+}
+
+
 
 const select = (i) => {
     selected.value = i
@@ -35,7 +42,7 @@ const exit = () => {
                     <span class="menuText" :class="{ active: selected === 1 }">健康</span>
                 </div>
                 <div class="person" @click="select(2)">
-                    <span class="iconfont icon-yonghu" :class="{ active: selected === 2 }"></span>
+                    <span class="iconfont icon-V" :class="{ active: selected === 2 }"></span>
                     <span class="menuText" :class="{ active: selected === 2 }">问答</span>
                 </div>
                 <div class="person" @click="select(3)">

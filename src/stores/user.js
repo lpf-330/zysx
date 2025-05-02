@@ -4,11 +4,12 @@ const useUserInfoStore = defineStore("userInfo", {
     state: () => ({
         user_id: null,
         Username: '',
-        Password: '',
         Avatar: '',
         Age: null,
         Height: null,
-        Weight: null
+        Weight: null,
+        gender: '',
+        phone_number: null
     }),
     actions: {
 
