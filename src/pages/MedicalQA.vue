@@ -5,7 +5,7 @@ import QueryItem from '../components/QueryItem.vue';
 import AnswerItem from '../components/AnswerItem.vue';
 
 const query = ref('')
-const QAList = []
+const QAList = ref([])
 
 const postQuery = async () => {
     if (query.value !== '') {
@@ -27,9 +27,9 @@ const postQuery = async () => {
             console.log("响应问答", response.data);
 
             if (response.data !== null) {
-                QAList.push({ query: query.value, answer: response.data.answer })
+                QAList.value.push({ query: query.value, answer: response.data.answer })
             } else {
-                QAList.push({ query: query.value, answer: '很抱歉没能听懂您的问题' })
+                QAList.value.push({ query: query.value, answer: '很抱歉没能听懂您的问题' })
             }
 
             query.value = ''
@@ -58,7 +58,7 @@ const postQuery = async () => {
 
         <div class="main">
             <el-scrollbar height="100%">
-                <div v-for="(data, index) in QAList" v-bind:key="index">
+                <div v-for="(data, index) in QAList" :key="index">
                     <query-item :query="data.query"></query-item>
                     <answer-item :answer="data.answer"></answer-item>
                 </div>
