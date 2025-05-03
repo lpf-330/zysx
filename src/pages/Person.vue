@@ -36,14 +36,14 @@ import UserMAD from '../components/UserMAD.vue';
 
 .demo-tabs {
     width: 93%;
-    height: 100%;
+    height: 94%;
 }
 
-.MAD{
+.MAD {
     display: flex;
     justify-content: flex-end;
     width: 2rem;
     height: 3.55rem;
-    
+
 }
 </style>

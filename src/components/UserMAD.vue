@@ -13,7 +13,8 @@
             alt="help--v1" /></div>
         <div class="y_or_n">
           <span class="y_or_n_span">是否服用过任何药物:</span>
-          <span>&nbsp;{{ medicalHistoryStore.medication_compliance.value === '' ? '无' : '有' }}</span>
+          <span>&nbsp;{{ (medicalHistoryStore.medication_compliance.value === '' ||
+            medicalHistoryStore.medication_compliance.value === null) ? '无' : '有' }}</span>
         </div>
       </div>
       <div class="detail">
@@ -51,7 +52,7 @@ const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 }
 
 .Medication-adherence-records {
-  height: 100%;
+  height: 86.5%;
   width: 100%;
   background-color: #fff;
   border-radius: 0.2rem;

@@ -15,7 +15,7 @@ const userInfoStore = storeToRefs(useUserInfoStore())
         </div>
         <div class="userName">
           <span>{{ userInfoStore.Username.value }}</span>
-          <ImageUpload></ImageUpload>
+          <!-- <ImageUpload></ImageUpload> -->
         </div>
       </div>
       <div class="flex-container">
@@ -93,7 +93,9 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 .userName {
   font-size: 0.18rem;
   font-weight: bold;
-  margin-top: 0.15rem;
+  /* margin-top: 0.15rem; */
+  display: flex;
+  align-items: center;
 }
 
 .flex-container {

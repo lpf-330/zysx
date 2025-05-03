@@ -17,3 +17,8 @@
     font-family: 'OpenSans';
     src: url('/src/assets/fonts/content/OpenSans/OpenSans-Regular.ttf');
 }
+
+@font-face {
+    font-family: 'Noto Sans SC';
+    src: url('/src/assets/fonts/content/noto-sans-sc/NotoSansSC-Regular.otf');
+}

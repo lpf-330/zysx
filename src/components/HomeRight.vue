@@ -4,7 +4,7 @@ import Memo from './Memo.vue';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import axios from 'axios';
-import { ref,onBeforeUnmount } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 
 
 
@@ -75,8 +75,8 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 
 .message {
     width: 85%;
-    height: 25%;
-    margin-top: 0.15rem;
+    height: 28%;
+    margin-top: 0.11rem;
 }
 
 .title {
@@ -151,18 +151,21 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 
 .calendarBox {
     width: 100%;
+    height: 43%;
+    background-color: aquamarine;
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
-    margin-top: 0.16rem;
+    margin-top: 0.11rem;
 }
 
 .memoBox {
     width: 100%;
+    height: 28%;
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
-    margin-top: 0.2rem;
+    margin-top: 0.11rem;
 }
 
 .memo {

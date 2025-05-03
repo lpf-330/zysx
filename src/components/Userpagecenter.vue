@@ -129,8 +129,9 @@ const formData = ref({
  * 返回成功或者失败
  */
 const fetchUserpagecenterdata = async () => {
+  console.log('formData', formData);
   try {
-    const url = 'http://localhost:8081/'; //后端还没写 
+    const url = 'http://localhost:8081/fetchUserPageCenterData'; //后端还没写 
 
     const response = await axios.post(url, {
       user_id: user_id,
@@ -144,7 +145,7 @@ const fetchUserpagecenterdata = async () => {
       allergy_history: formData.value.allergy_history,
       past_medical_history: formData.value.past_medical_history,
       surgical_history: formData.value.surgical_history,
-      medication_compliance: formData.value.medication_compliance
+      medical_compliance: formData.value.medication_compliance
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -153,13 +154,6 @@ const fetchUserpagecenterdata = async () => {
 
     console.log('fetchUserpagecenterdata', response.data);
 
-
-    // if (response.data.status === 'success') {
-    //   alert(response.data.message || '用户信息保存成功！');
-    //   drawer.value = false;
-    // } else {
-    //   alert('保存失败，请稍后再试。');
-    // }
 
   } catch (error) {
     console.error("出错", error);

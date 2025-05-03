@@ -11,7 +11,9 @@
                 src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
             <div class="y_or_n">
               <span class="y_or_n_span">是否有家族遗传病史:</span>
-              <span>&nbsp;{{ medicalHistoryStore.family_history.value === '' ? '无' : '有' }}</span>
+              <span>&nbsp;{{ (medicalHistoryStore.family_history.value === '' ||
+                medicalHistoryStore.family_history.value ===
+                null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -37,7 +39,9 @@
                 src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
             <div class="y_or_n">
               <span class="y_or_n_span">是否有过敏史:</span>
-              <span>&nbsp;{{ medicalHistoryStore.allergy_history.value === '' ? '无' : '有' }}</span>
+              <span>&nbsp;{{ (medicalHistoryStore.allergy_history.value === '' ||
+                medicalHistoryStore.allergy_history.value
+                === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -61,7 +65,8 @@
                 src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
             <div class="y_or_n">
               <span class="y_or_n_span">是否有既往病史:</span>
-              <span>&nbsp;{{ medicalHistoryStore.past_medical_history.value === '' ? '无' : '有' }}</span>
+              <span>&nbsp;{{ (medicalHistoryStore.past_medical_history.value === '' ||
+                medicalHistoryStore.past_medical_history.value === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -85,7 +90,8 @@
                 src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
             <div class="y_or_n">
               <span class="y_or_n_span">是否有手术史:</span>
-              <span>&nbsp;{{ medicalHistoryStore.surgical_history.value === '' ? '无' : '有' }}</span>
+              <span>&nbsp;{{ (medicalHistoryStore.surgical_history.value === '' ||
+                medicalHistoryStore.surgical_history.value === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -160,7 +166,7 @@ const fetchUsertabpagedata = async () => {
     medicalHistoryStore.family_history.value = response.data.family_history
     medicalHistoryStore.past_medical_history.value = response.data.past_medical_history
     medicalHistoryStore.surgical_history.value = response.data.surgical_history
-    medicalHistoryStore.medication_compliance.value = response.data.medication_compliance
+    medicalHistoryStore.medication_compliance.value = response.data.medical_compliance
 
     // if (response.data.status === 'success') {
     //    const data = response.data.data;

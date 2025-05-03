@@ -51,7 +51,7 @@ const exit = () => {
                     <span class="menuText" :class="{ active: selected === 3 }">用户</span>
                 </div>
             </div>
-            <span class="iconfont YLine" :style="{ top: `${1.35 + selected * 0.68}rem` }"></span>
+            <span class="iconfont YLine" :style="{ top: `${1.24 + selected * 0.68}rem` }"></span>
         </div>
         <div class="exit">
             <span class="iconfont icon-tuichu" @click="exit"></span>

@@ -1,67 +1,37 @@
-<!-- <script setup>
-import { ref } from 'vue';
+<script setup>
+import { onBeforeUnmount, onUnmounted, ref } from 'vue';
 import router from '../router'
 import { RouterLink } from 'vue-router';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { useAuthStore } from '../stores/authStore';
 
-let userInfoStore=storeToRefs(useUserInfoStore())
 
-const username = ref('')
+const account = ref('')
 const password = ref('')
-const passwordTest = /^[a-zA-Z0-_]{2,11}$/
+const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
+const accountTest = /^[a-zA-Z0-9_]{1,18}$/
 
-
-let fetchUser=async()=>{
-
-
-try {
-    
-  
-     const url = `http://localhost:8081/userInfo?username=${encodeURIComponent(username.value)}&password=${encodeURIComponent(password.value)}`; // 通过查询字符串拼接 URL  
-        
-        // 发送 GET 请求  
-        const response = await axios.get(url);  
-        
-    if(response.data.code===1){
-        userInfoStore.user.value = response.data;
-        console.log("响应",response.data);
-        router.push('/index/indexView')
-
-         
-    }else{
-      alert(user.value.msg)
-    }
-
-
-
-  } catch (error) {
-     console.error("出错", error);  
-    alert("加载失败，请稍后再试。"); // 友好的错误提示  
-    
-  }
-  
-
-
-}
-
-
-
-const LoginTest = () => {
+const rigisterTest = () => {
   console.log(122);
-  
-  if (username.value) {
-    if (password.value) {
-      if(passwordTest.test(password.value)){
-        console.log(123);
-        
-        fetchUser()
-        
 
-        }else{
-          alert("密码必须在12个字符内，且仅限英文字母，数字和下划线")
+  if (account.value) {
+    if (password.value) {
+
+      if (accountTest.test(account.value)) {
+        if (passwordTest.test(password.value)) {
+          console.log(123);
+
+
+
+        } else {
+          alert("密码必须在20个字符内，且仅限英文字母，数字和下划线")
         }
+      } else {
+        alert("密码必须在18个字符内，且仅限英文字母，数字和下划线")
+      }
+
     } else {
       alert("请输入密码")
     }
@@ -70,20 +40,58 @@ const LoginTest = () => {
   }
 }
 
+/**
+ * 用户注册（插入一个新用户时，用户名默认为他的账号）
+ * 请求参数：
+ * account：String
+ * password：String
+ * 
+ * 返回参数：
+ * 是否注册成功
+ * 
+ */
+const register = async (account, password) => {
+
+  try {
+
+    const url = "http://localhost:8081/"
+    const response = await axios.post(url, {
+      account: account,
+      password: password
+    },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+
+    console.log("响应登录", response.data);
+
+
+
+  } catch (error) {
+    console.error("出错", error);
+    alert("加载失败，请稍后再试。"); // 友好的错误提示  
+  }
+
+}
+
+const toLogin = () => {
+  router.push('/login')
+}
+
 </script>
 
 <template>
   <div class="backgrand">
     <form class="from">
-      <h1>登录</h1>
+      <span class="iconfont icon-fanhui" @click="toLogin"></span>
+      <h1>用户注册</h1>
       <input type="text" name="AccountNumber" id="account" class="account" placeholder="&nbsp&nbsp请输入账号"
-        v-model="username">
+        v-model="account">
       <input type="text" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp请输入密码" v-model="password">
-      <input type="submit" id="login" class="login" value="登录" @click="LoginTest">
-      <div class="linkBox">
-        <router-link to="/admLogin" class="link">管理员登录</router-link>
-      <router-link to="/register" class="link">用户注册</router-link>
-      </div>
+      <input type="button" id="rigister" class="rigister" value="注册" @click="rigisterTest">
     </form>
 
   </div>
@@ -99,9 +107,9 @@ const LoginTest = () => {
 .from {
   padding-top: 10%;
   border: 1%;
-  border-radius: 1rem;
+  border-radius: 0.1rem;
   display: inline-block;
-  position: fixed;
+  position: relative;
   top: 50%;
   left: 50%;
   right: 50%;
@@ -120,7 +128,7 @@ const LoginTest = () => {
 }
 
 .from h1 {
-  font-size: 2.5rem;
+  font-size: 0.25rem;
   position: relative;
   top: -8%;
 }
@@ -131,41 +139,48 @@ const LoginTest = () => {
   top: -5%;
   width: 40%;
   height: 6%;
-  border-radius: 2rem;
-  border-width: 0.2rem;
+  border-radius: 0.06rem;
+  border-width: 0.02rem;
   padding-left: 2%;
   margin-bottom: 4%;
-  font-size: 1rem;
+  font-size: 0.08rem;
   border-color: #e1e1e13e;
 }
 
-.login {
-  width: 40%;
+.rigister {
+  width: 43%;
   height: 8%;
-  font-size: 1.4rem;
+  font-size: 0.14rem;
   color: #fff;
-  border-radius: 2rem;
+  border-radius: 0.02rem;
   background-color: rgb(0, 140, 255);
-  box-shadow: 0px 0.5vh 0.5vh 0 rgba(0, 140, 255, 0.63);
+  box-shadow: rgba(0, 140, 255, 0.63) 0 20px 30px -10px;
   border: 0;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.rigister:hover {
+  box-shadow: rgba(0, 140, 255, 0.63) 0 10px 30px -10px;
+}
+
+.iconfont {
+  position: absolute;
+  font-size: 0.15rem;
+  font-weight: 500;
+  left: 5%;
+  top: 5%;
+  color: #767676;
   cursor: pointer;
 }
 
-.link{
-  font-size: 0.8rem;
-  text-decoration: none;
+.iconfont {
+  position: absolute;
+  font-size: 0.15rem;
+  font-weight: 500;
+  left: 5%;
+  top: 5%;
+  color: #767676;
+  cursor: pointer;
 }
-
-.linkBox{
-  width: 30%;
-  margin-top: 2%;
-}
-
-.linkBox a:nth-of-type(1){
-  margin-right: 5%;
-}
-
-.linkBox a:nth-of-type(2){
-  margin-left: 5%;
-}
-</style> -->
+</style>

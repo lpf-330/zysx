@@ -12,7 +12,8 @@ const routes = [
     },
     {
         path: "/register",
-        component: () => import("../pages/register.vue"),
+        name: 'register',
+        component: () => import("../pages/Register.vue"),
     },
     {
         path: "/index",
@@ -94,14 +95,13 @@ router.beforeEach(async (to, from) => {
     }
 
     // 访问登录页时触发退出逻辑
-    if (to.path === '/login') {
+    if (to.path === '/login' || to.path === '/register') {
         authStore.logout()
         return true // 允许访问登录页
     }
 
     // 检查其他页面是否登录
     if (!authStore.token) {
-
         return '/login'
     }
 

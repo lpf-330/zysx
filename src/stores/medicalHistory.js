@@ -10,7 +10,8 @@ const useMedicalHistoryStore = defineStore("medicalHistory", {
     }),
     actions: {
 
-    }
+    },
+    persist: true
 })
 
 export default useMedicalHistoryStore
