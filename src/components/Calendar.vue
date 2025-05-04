@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 
 // 初始数据
 const currentDate = ref(new Date());
-const events = ref(['2025-2-11', '2025-2-22']); // 示例待办日期
+const events = ref(['2025-5-11', '2025-5-22']); // 示例待办日期
 
 // 计算当前月份信息
 const yearMonth = computed(() => ({

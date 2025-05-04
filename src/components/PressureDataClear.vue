@@ -1,7 +1,7 @@
 <template>
     <div class="nowData">
         <div class="dataBox">
-            <span class="classTitle">高压</span>
+            <span class="classTitle" style="color: rgb(255, 105, 35);">高压</span>
             <div class="class">
                 <span class="data">{{ avgData22.toFixed(1) }}</span>
                 <span class="unit">mmHg</span>
@@ -9,7 +9,7 @@
         </div>
         <span class="title">平均血压</span>
         <div class="dataBox">
-            <span class="classTitle">低压</span>
+            <span class="classTitle" style="color: rgba(35, 157, 250, 1);">低压</span>
             <div class="class">
                 <span class="data">{{ avgData11.toFixed(1) }}</span>
                 <span class="unit">mmHg</span>
@@ -102,7 +102,7 @@ echarts.use([
 
 //高压
 //const data1 = ref([709, 1917, 2455, 2610, 1719, 1433, 1009])
-const data1=ref([])
+const data1 = ref([])
 
 //低压
 //const data2 = ref([-327, -1776, -507, -1200, -800, -482, -998])
@@ -114,8 +114,8 @@ const date = ref([])
 const avgData1 = ref(0)
 const avgData2 = ref(0)
 
-const avgData11=ref(0)
-const avgData22=ref(0)
+const avgData11 = ref(0)
+const avgData22 = ref(0)
 
 const chart = ref(null);
 let myChart = null;
@@ -126,8 +126,8 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 const fetchPressureData = async () => {
     try {
 
-        console.log('user_id',userInfoStore.user_id.value);
-        
+        console.log('user_id', userInfoStore.user_id.value);
+
 
         const url = 'http://localhost:8081/pressureData'    //这后面还没补上
         const response = await axios.post(url, {
@@ -142,23 +142,23 @@ const fetchPressureData = async () => {
 
         for (let i = 0; i < response.data.length; i++) {
             data2.value.push(response.data[i].diastolicBP)
-            data1.value.push('-'+response.data[i].systolicBP)
+            data1.value.push('-' + response.data[i].systolicBP)
             date.value.push(response.data[i].date)
 
-            avgData11.value += Number(response.data[i].diastolicBP) 
+            avgData11.value += Number(response.data[i].diastolicBP)
             avgData22.value += Number(response.data[i].systolicBP)
         }
 
 
         console.log('avgData11', avgData11.value);
-        
+
 
         avgData11.value /= response.data.length
         avgData22.value /= response.data.length
 
         console.log('响应血压', response.data);
-        
-        
+
+
     } catch (error) {
         console.error("出错", error);
         alert("加载失败，请稍后再试。"); // 友好的错误提示  
@@ -188,22 +188,22 @@ const updateChart = async () => {
                 },
             },
             formatter: (params) => { // 自定义提示框内容（）
-        return `<span>${params[0].name}</span>`+params
-          .map(param => {
-            // 判断数据格式：一维数值或二维数组（）
-            const value = Array.isArray(param.value) 
-              ? param.value // 提取二维数组中的数值（如 [x, y]）
-              : param.value;
-            return `
+                return `<span>${params[0].name}</span>` + params
+                    .map(param => {
+                        // 判断数据格式：一维数值或二维数组（）
+                        const value = Array.isArray(param.value)
+                            ? param.value // 提取二维数组中的数值（如 [x, y]）
+                            : param.value;
+                        return `
               <div style="${param.color}">         
                 ${param.marker} 
                 ${param.seriesName}: 
                 <strong>${Math.abs(value).toFixed(1)}</strong> <!-- 取绝对值 -->
               </div>
             `;
-          })
-          .join('');
-      }
+                    })
+                    .join('');
+            }
         },
         grid: {
             top: '2%',
@@ -268,7 +268,7 @@ const updateChart = async () => {
         ],
         series: [
             {
-                name: '伸缩压',
+                name: '低压',
                 type: 'bar',
                 barWidth: 20,
                 gridIndex: 0,
@@ -306,7 +306,7 @@ const updateChart = async () => {
             },
 
             {
-                name: '收缩压',
+                name: '高压',
                 type: 'bar',
                 barWidth: 20,
                 barGap: '-100%',
@@ -330,11 +330,11 @@ const updateChart = async () => {
                             colorStops: [
                                 {
                                     offset: 1,
-                                    color: 'rgba(35, 250, 187, 0.32)', // 0% 处的颜色
+                                    color: 'rgb(255, 105, 35,0.32)', // 0% 处的颜色
                                 },
                                 {
                                     offset: 0,
-                                    color: 'rgba(35, 250, 187, 1)', // 100% 处的颜色
+                                    color: 'rgb(255, 105, 35)', // 100% 处的颜色
                                 },
                             ],
                             global: false, // 缺省为 false

@@ -11,7 +11,8 @@ const userInfoStore = storeToRefs(useUserInfoStore())
   <div class="main">
     <div class="userDetails">
       <div class="userD">
-        <div class="avatar">
+        <div class="avatar"
+          :style="{ backgroundImage: `url(${(userInfoStore.Avatar.value === '' || userInfoStore.Avatar.value === null) ? 'src/assets/img/userAvater.jpg' : userInfoStore.Avatar.value})` }">
         </div>
         <div class="userName">
           <span>{{ userInfoStore.Username.value }}</span>
@@ -88,6 +89,9 @@ const userInfoStore = storeToRefs(useUserInfoStore())
   background-color: #8d8686;
   border-radius: 50%;
   margin: 0.1rem 0.2rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 .userName {

@@ -105,11 +105,11 @@ const fetchBloodData = async () => {
             }
         );
 
-            for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].bloodData)
-                date.value.push(response.data[j].Date)
-            }
-        
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].bloodData)
+            date.value.push(response.data[j].Date)
+        }
+
 
         console.log('响应血糖', response.data);
 
@@ -217,7 +217,7 @@ const updateChart = async () => {
         yAxis: [{
             type: 'value',
             min: 0,
-            max: 15,
+            max: Math.floor(Math.max(...data1) + 3),
             offset: 20,
             axisLabel: { //坐标轴刻度标签的相关设置。
                 show: true,
@@ -245,7 +245,7 @@ const updateChart = async () => {
             {
                 name: title[0],
                 type: 'bar',
-                barWidth: 10,
+                barWidth: 20,
                 showBackground: true,
                 backgroundStyle: {
                     color: 'rgba(21,136,209,0.0)',
@@ -253,22 +253,22 @@ const updateChart = async () => {
                 itemStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
                         offset: 1,
-                        color: 'rgb(0, 102, 255)', //渐变1
+                        color: 'rgb(127, 255, 212)', //渐变1
                     },
                     {
                         offset: 0.75,
-                        color: 'rgb(0, 38, 255)', //渐变1
+                        color: 'rgb(127, 253, 255)', //渐变1
                     },
                     {
                         offset: 0.5,
-                        color: 'rgb(89, 0, 255)', //渐变1
+                        color: 'rgb(127, 246, 255)', //渐变1
                     },
                     {
                         offset: 0.25,
-                        color: 'rgb(255, 0, 238)', //渐变1
+                        color: 'rgb(127, 229, 255)', //渐变1
                     }, {
                         offset: 0,
-                        color: 'rgb(255, 0, 85)', //渐变1
+                        color: 'rgb(127, 202, 255)', //渐变1
                     }
 
                     ]),
@@ -279,14 +279,14 @@ const updateChart = async () => {
             },
             {
                 type: 'pictorialBar',
-                barWidth: 10,
+                barWidth: 20,
                 itemStyle: {
                     color: '#fff', //数据的间隔颜色
                 },
                 symbolRepeat: 'true',
                 symbolMargin: 3,
                 symbol: 'rect',
-                symbolSize: [11, 2],
+                symbolSize: [20, 2],
                 data: data1,
                 z: 1,
                 zlevel: 0,

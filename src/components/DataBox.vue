@@ -49,7 +49,7 @@
         </div>
         <div class="item" @click="toggleRouter('pressureData')">
             <div class="data">
-                <div class="dataNum">{{ pressureData[pressureData.length - 1] }}&nbsp;mmhg</div>
+                <!-- <div class="dataNum">{{ pressureData[pressureData.length - 1] }}&nbsp;mmhg</div> -->
                 <div class="title">血压</div>
             </div>
             <div class="chart">
@@ -77,14 +77,19 @@ import { storeToRefs } from 'pinia';
 
 
 //从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
-const heartData = ref([75, 72, 80, 68])
-const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
-const piData = ref([62, 65, 59, 52, 78])
-const oxygenData = ref(0.6)
-const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
-const pressureData = ref([20, 40, 60, 80])
+// const heartData = ref([75, 72, 80, 68])
+// const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
+// const piData = ref([62, 65, 59, 52, 78])
+// const oxygenData = ref(0.6)
+// const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
+// const pressureData = ref([20, 40, 60, 80])
 
-// const heartData = ref([])
+const heartData = ref([])
+const bloodData = ref([])
+const piData = ref([])
+const oxygenData = ref(0)
+const sleepData = ref([])
+const pressureData = ref([])
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 let user_id = userInfoStore.user_id.value
@@ -105,9 +110,20 @@ const fetchData = async () => {
 
         console.log("响应data", response.data);
 
-        // for (let j = 0; j < 4; j++) {
-        //     heartData.value.push(response.data.heartData[j].heartData)
-        // }
+        for (let j = 0; j < 4; j++) {
+            heartData.value.push(Number(response.data.heartData[j].heartData))
+            piData.value.push(Number(response.data.piData[j].piData))
+            sleepData.value.push(Number(response.data.sleepData[j].sleepData))
+        }
+
+        for (let j = 0; j < 7; j++) {
+            bloodData.value.push(Number(response.data.bloodData[j].bloodData))
+        }
+
+        oxygenData.value = Number(response.data.oxygenData[response.data.oxygenData.length - 1].oxygenData) * 0.01
+        pressureData.value.push(Number(response.data.pressureData[response.data.pressureData.length - 1].systolicBP))
+        pressureData.value.push(Number(response.data.pressureData[response.data.pressureData.length - 1].diastolicBP))
+
 
         // console.log('heartData.value', heartData.value);
 
@@ -125,12 +141,13 @@ onBeforeMount(fetchData)
 
 
 
-const props = defineProps({
-    onClick: Function
-})
+// const props = defineProps({
+//     onClick: Function
+// })
 
 const toggleRouter = (str) => {
-    props.onClick()
+    // props.onClick()
+    userInfoStore.siderMode.value = 1
     router.push({ name: str })
 }
 

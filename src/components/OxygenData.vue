@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -38,83 +38,89 @@ const props = defineProps({
 })
 
 const chart = ref(null);
-        let myChart = null;
+let myChart = null;
 
-        var value = props.data;
+// const value = ref(props.data * 0.01);
 
-        const initChart = () => {
-            if (chart.value) {
-                myChart = echarts.init(chart.value);
-                updateChart();
-            }
-        };
+const initChart = () => {
+    if (chart.value) {
+        myChart = echarts.init(chart.value);
+        updateChart();
+    }
+};
 
-        const updateChart = () => {
-            const option = {
-                title: {
-                    text: '',
-                },
-                series: [
+const updateChart = () => {
+    const option = {
+        title: {
+            text: '',
+        },
+        series: [
+            {
+                type: 'liquidFill',
+                radius: '78.1%',
+                center: ['40%', '50%'],
+                color: [
                     {
-                        type: 'liquidFill',
-                        radius: '78.1%',
-                        center: ['40%', '50%'],
-                        color: [
+                        type: 'linear',
+                        x: 0,
+                        y: 0,
+                        x2: 0,
+                        y2: 1,
+                        colorStops: [
                             {
-                                type: 'linear',
-                                x: 0,
-                                y: 0,
-                                x2: 0,
-                                y2: 1,
-                                colorStops: [
-                                    {
-                                        offset: 0,
-                                        color: '#daf4ff', // 0% 处的颜色  
-                                    },
-                                    {
-                                        offset: 1,
-                                        color: '#37D3FF', // 100% 处的颜色  
-                                    },
-                                ],
+                                offset: 0,
+                                color: '#daf4ff', // 0% 处的颜色  
+                            },
+                            {
+                                offset: 1,
+                                color: '#37D3FF', // 100% 处的颜色  
                             },
                         ],
-                        data: [value, value], // data个数代表波浪数  
-                        backgroundStyle: {
-                            borderWidth: 1,
-                            borderColor: '#448af9',
-                            color: '#fff',
-                        },
-                        itemStyle: {
-                            opacity: 1, // 波浪的透明度
-                            shadowBlur: 0, // 波浪的阴影范围
-                        },
-                        label: {
-                            show: true,
-                            formatter: function (param) {
-                                return (param.value * 100).toFixed(1) + '%';
-                            },
-                            fontSize: 16, // 调整字体大小  
-                            fontWeight: 'normal',
-                            color: '#fff'
-                        },
-                        outline: {
-                            show: false,
-                        },
                     },
                 ],
-            };
-            myChart.setOption(option);
-        };
+                data: [props.data, props.data, props.data], // data个数代表波浪数  
+                backgroundStyle: {
+                    borderWidth: 1,
+                    borderColor: '#448af9',
+                    color: '#fff',
+                },
+                itemStyle: {
+                    opacity: 1, // 波浪的透明度
+                    shadowBlur: 0, // 波浪的阴影范围
+                },
+                label: {
+                    show: true,
+                    formatter: function (param) {
+                        return (param.value * 100).toFixed(1) + '%';
+                    },
+                    fontSize: 16, // 调整字体大小  
+                    fontWeight: 'normal',
+                    color: '#fff'
+                },
+                outline: {
+                    show: false,
+                },
+            },
+        ],
+    };
+    myChart.setOption(option);
+};
 
-        onMounted(() => {
-            initChart();
-            window.addEventListener('resize', () => myChart.resize());
-        });
+// 监听数据变化
+watch(() => [props.data], () => {
+    updateChart();
+    myChart?.resize();
+}, { deep: true });
 
-        onUnmounted(() => {
-            window.removeEventListener('resize', () => myChart.resize());
-            myChart.dispose();
-        });
+onMounted(() => {
+    initChart();
+    window.addEventListener('resize', () => myChart.resize());
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', () => myChart.resize());
+    myChart.dispose();
+});
 </script>
 
 <style>

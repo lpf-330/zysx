@@ -2,21 +2,22 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
-const authStore = useAuthStore()
-let selected = ref(0)
+const siderMode = storeToRefs(useUserInfoStore()).siderMode
 const router = useRouter()
 const items = ['home', 'heartData', 'medicalQA', 'person']
 
-for (let i = 0; i < items.length; i++) {
-    if (router.currentRoute.value.name === items[i]) {
-        selected.value = i
-    }
-}
+// for (let i = 0; i < items.length; i++) {
+//     if (router.currentRoute.value.name === items[i]) {
+//         selected.value = i
+//     }
+// }
 
 
 const select = (i) => {
-    selected.value = i
+    siderMode.value = i
     router.push({ name: items[i] })
 }
 
@@ -35,23 +36,23 @@ const exit = () => {
         <div class="menu">
             <div class="opts">
                 <div class="home" @click="select(0)">
-                    <span class="iconfont icon-zhuye" :class="{ active: selected === 0 }"></span>
-                    <span class="menuText" :class="{ active: selected === 0 }">主页</span>
+                    <span class="iconfont icon-zhuye" :class="{ active: siderMode === 0 }"></span>
+                    <span class="menuText" :class="{ active: siderMode === 0 }">主页</span>
                 </div>
                 <div class="health" @click="select(1)">
-                    <span class="iconfont icon-jiankang" :class="{ active: selected === 1 }"></span>
-                    <span class="menuText" :class="{ active: selected === 1 }">健康</span>
+                    <span class="iconfont icon-jiankang" :class="{ active: siderMode === 1 }"></span>
+                    <span class="menuText" :class="{ active: siderMode === 1 }">健康</span>
                 </div>
                 <div class="person" @click="select(2)">
-                    <span class="iconfont icon-V" :class="{ active: selected === 2 }"></span>
-                    <span class="menuText" :class="{ active: selected === 2 }">问答</span>
+                    <span class="iconfont icon-V" :class="{ active: siderMode === 2 }"></span>
+                    <span class="menuText" :class="{ active: siderMode === 2 }">问答</span>
                 </div>
                 <div class="person" @click="select(3)">
-                    <span class="iconfont icon-yonghu" :class="{ active: selected === 3 }"></span>
-                    <span class="menuText" :class="{ active: selected === 3 }">用户</span>
+                    <span class="iconfont icon-yonghu" :class="{ active: siderMode === 3 }"></span>
+                    <span class="menuText" :class="{ active: siderMode === 3 }">用户</span>
                 </div>
+                <span class="iconfont YLine" :style="{ top: `${0.214 + siderMode * 0.68}rem` }"></span>
             </div>
-            <span class="iconfont YLine" :style="{ top: `${1.24 + selected * 0.68}rem` }"></span>
         </div>
         <div class="exit">
             <span class="iconfont icon-tuichu" @click="exit"></span>
@@ -87,6 +88,7 @@ const exit = () => {
     padding-left: 15%;
     padding-top: 5%;
     box-sizing: border-box;
+    position: relative;
 }
 
 .exit {

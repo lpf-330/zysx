@@ -6,8 +6,8 @@ import axios from 'axios';
 import { onBeforeUnmount } from 'vue';
 
 const items = ref([
-    { event: "吃药", time: "2024年12月15日15:30" },
-    { event: "开会", time: "2024年12月24日13:10" }
+    { event: "吃药", time: "2025年5月4日15:30" },
+    { event: "开会", time: "2024年5月15日13:10" }
 ])
 
 

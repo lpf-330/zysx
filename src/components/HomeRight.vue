@@ -21,7 +21,9 @@ const userInfoStore = storeToRefs(useUserInfoStore())
                 <span>信息</span>
             </div>
             <div class="user">
-                <div class="userImg"></div>
+                <div class="userImg"
+                    :style="{ backgroundImage: `url(${(userInfoStore.Avatar.value === '' || userInfoStore.Avatar.value === null) ? 'src/assets/img/userAvater.jpg' : userInfoStore.Avatar.value})` }">
+                </div>
                 <span class="userName">{{ userInfoStore.Username }}</span>
                 <div class="userMes">
                     <div class="age">
@@ -115,6 +117,10 @@ const userInfoStore = storeToRefs(useUserInfoStore())
     width: 0.5rem;
     border-radius: 50%;
     background-color: cadetblue;
+    /* background-image: url('../assets/img/userAvater.jpg'); */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
 }
 
 .userMes {
@@ -152,7 +158,7 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 .calendarBox {
     width: 100%;
     height: 43%;
-    background-color: aquamarine;
+    /* background-color: aquamarine; */
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;

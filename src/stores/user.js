@@ -9,7 +9,8 @@ const useUserInfoStore = defineStore("userInfo", {
         Height: null,
         Weight: null,
         gender: '',
-        phone_number: null
+        phone_number: null,
+        siderMode: 0
     }),
     actions: {
 

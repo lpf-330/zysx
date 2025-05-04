@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -31,107 +31,236 @@ echarts.use([
 
 const props = defineProps({
     data: {
-        type: Array,
+        type: Array,    //第一个值为收缩压（高压），第二个值为舒张压（低压）
         required: true
     }
 })
 
+let information = {
+    color: "#069DFD",
+    area: ["高压", "低压"],
+    dataArray: [560, 480],
+};
+
+let style = {
+    width: 32,
+    height: 24,
+    padding: [5, 6, 0, 0],
+    fontSize: 20,
+    align: "center",
+    color: "#ffffff"
+}
+
 const chart = ref(null);
-        let myChart = null;
+let myChart = null;
 
-        const initChart = () => {
-            if (chart.value) {
-                myChart = echarts.init(chart.value);
-                updateChart();
-            }
-        };
+const initChart = () => {
+    if (chart.value && !myChart) {
+        myChart = echarts.init(chart.value);
+        updateChart();
+    }
+};
 
-        const updateChart = () => {
-            const option = {
-                color: ['transparent', '#3398DB'],
-                grid: {
-                    left: '15%',
-                    right: '30%',
-                    bottom: '20%',
-                    top: '20%'
+const updateChart = () => {
+    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+
+    console.log('here');
+
+    const option = {
+        // backgroundColor: "#021032",
+        // tooltip: {
+        //     trigger: "axis",
+        //     backgroundColor: "rgba(9,40,84,0.8)",
+        //     borderColor: "rgba(9,40,84,0.8)",
+        //     textStyle: {
+        //         fontSize: 20,
+        //         color: "#fff",
+        //     },
+        //     axisPointer: {
+        //         type: "shadow",
+        //     },
+        //     formatter: function (params) {
+        //         return (
+        //             params[0].name +
+        //             "&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-weight:bold;color:'#fff'>" +
+        //             params[0].value +
+        //             "KM</span>"
+        //         );
+        //     },
+        // },
+        grid: {
+            left: "4%",
+            right: "10%",
+            top: "20%",
+            bottom: "10%", // 特殊
+            containLabel: true,
+        },
+        xAxis: [
+            {
+                type: "value",
+                show: false,
+            },
+        ],
+        yAxis: [
+            {
+                type: "category",
+                splitLine: {
+                    show: false,
                 },
-                xAxis: [{
-                    type: 'category',
-                    axisLine: {
-                        show: false
-                    },
-                    axisTick: {
-                        show: false
-                    },
-                    axisLabel: {
-                        show: false
-                    },
-                }],
-                yAxis: [{
-                    type: 'value',
-                    splitLine: {
-                        show: false
-                    },
-                    axisLine: {
-                        show: false
-                    },
-                    axisTick: {
-                        show: false
-                    },
-                    axisLabel: {
-                        show: false
-                    }
-                }],
-                series: [{
-                    name: 'A',
-                    type: 'bar',
-                    data: [{
-                        value: 100, percent: '10'
-                    }, {
-                        value: 100, percent: '20'
-                    }, {
-                        value: 100, percent: '30'
-                    }, {
-                        value: 100, percent: '40'
-                    }],
-                    barWidth: 20,
-                    itemStyle: {
-                        borderColor: '#999',
-                        barBorderRadius: 100
-                    },
-                    label: {
-                        show: false,
-                        // position: 'top',
-                        // color: '#999',
-                        // formatter: function (item) {
-                        //     return item.data.percent + '%';
+                axisLine: {
+                    show: false,
+                },
+                axisTick: {
+                    show: false,
+                },
+                inverse: true,
+                data: information.area,
+                axisLabel: {
+                    color: "rgba(96, 98, 102, 1)",
+                    margin: 10,
+                    formatter: (name, index) => {
+                        // const id = index + 1;
+                        // if (id < 5) {
+                        //     return `{nameStyle|${name}}`;
+                        // } else {
+                        //     return `{nameStyle|${name}}`;
                         // }
-                    }
+                        if (index === 0) {
+                            return `{highPressure|${name}}`
+                        } else {
+                            return `{lowPressure|${name}}`
+                        }
+                    },
+                    rich: {
+                        // id: {
+                        //     padding: [0, 0, 0, 2],
+                        //     fontSize: 16,
+                        //     color: '#fff',
+                        // },
+                        // ids: {
+                        //     padding: [0, 0, 0, 2],
+                        //     fontSize: 16,
+                        //     color: '#b4bec8',
+                        // },
+                        highPressure: {
+                            padding: [0, 10, 0, 2],
+                            fontSize: 16,
+                            color: 'rgb(255, 105, 35)',
+                        },
+                        lowPressure: {
+                            padding: [0, 10, 0, 2],
+                            fontSize: 16,
+                            color: 'rgb(66, 157, 255)',
+                        },
+                        rank: {
+                            ...style,
+                            backgroundColor: new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+                                {
+                                    offset: 0,
+                                    color: '#E7F4FF',
+                                },
+                                {
+                                    offset: 0.95,
+                                    color: '#fff',
+                                },
+                            ]),
+                        },
+                        rank1: {
+                            ...style,
+                            color: "#FF992B",
+                            backgroundColor: new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+                                {
+                                    offset: 0,
+                                    color: '#E7F4FF',
+                                },
+                                {
+                                    offset: 0.95,
+                                    color: '#fff',
+                                },
+                            ]),
+                        },
+                    },
                 },
-                {
-                    name: 'B',
-                    type: 'bar',
-                    barWidth: 20,
-                    data: props.data,
-                    barGap: '-98%',
-                    itemStyle: {
-                        barBorderRadius: 100
-                    }
-                }
-                ]
-            };
-            myChart.setOption(option);
-        };
+            },
+            {
+                inverse: true,
+                axisTick: "none",
+                axisLine: "none",
+                show: true,
+                axisLabel: {
+                    color: "rgb(0, 0, 0)",
+                    fontSize: 16,
+                    margin: 20,
+                    formatter: function (value) {
+                        return value + 'mmhg';
+                    },
+                },
+                data: props.data,
+            },
+        ],
+        series: [
+            {
+                type: "bar",
+                barWidth: 14, // 柱子宽度
+                MaxSize: 0,
+                showBackground: true,
+                backgroundStyle: {
+                    color: "rgb(157, 230, 230)",
+                    borderRadius: 5, //设置背景的圆角
+                },
+                data: props.data.map((item) => {
+                    return {
+                        value: item,
+                        itemStyle: {
+                            borderRadius: 5,
+                            color: information.color,
+                        },
+                    };
+                }),
+            },
+            {
+                type: 'scatter',
+                emphasis: {
+                    scale: false
+                },
+                symbol: 'rect',
+                itemStyle: {
+                    barBorderRadius: [30, 0, 0, 30],
+                    color: '#fff',
+                    shadowColor: '#fff',
+                    shadowBlur: 1,
+                    borderWidth: 1,
+                    opacity: 1
+                },
+                symbolSize: [4, 13], // 进度条白点的大小
+                z: 2,
+                data: props.data,
+            },
+        ],
+    };
+    myChart.setOption(option);
+};
+
+// 监听数据变化
+watch(() => [props.data], () => {
+    updateChart();
+    myChart?.resize();
+}, { deep: true });
 
 
-        onMounted(() => {
-            initChart();
-            window.addEventListener('resize', () => myChart.resize());
-        });
+onMounted(() => {
+    initChart();
+    window.addEventListener('resize', () => myChart.resize());
+});
 
-        onUnmounted(() => {
-            window.removeEventListener('resize', () => myChart.resize());
-            myChart.dispose();
-        });
+onUnmounted(() => {
+    window.removeEventListener('resize', () => myChart.resize());
+    myChart.dispose();
+});
 </script>
 
+<style scoped>
+.hhh {
+    background-color: rgb(0, 0, 0);
+}
+</style>

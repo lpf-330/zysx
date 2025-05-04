@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted,watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -36,19 +36,22 @@ const props = defineProps({
     }
 })
 
+// console.log('heartData',props.data,typeof(props.data[0]));
 
 
 const chart = ref(null);
 let myChart = null;
 
 const initChart = () => {
-    if (chart.value) {
+    if (chart.value && !myChart) {
         myChart = echarts.init(chart.value);
         updateChart();
     }
 };
 
 const updateChart = () => {
+    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+
     const option = {
         name: '心率',
         backgroundColor: '#fff',
@@ -80,8 +83,8 @@ const updateChart = () => {
         }],
         yAxis: [{
             show: false,
-            min: Math.min(props.data)-5, //最低为最低减5
-            max: Math.max(props.data)+5, //最高为最高值加5
+            min: Math.min(...props.data)-5, //最低为最低减5
+            max: Math.max(...props.data)+5, //最高为最高值加5
         }],
         series: [{
             type: 'line',
@@ -160,6 +163,12 @@ const updateChart = () => {
     myChart.setOption(option);
 };
 
+
+// 监听数据变化
+watch(() => [props.data], () => {
+    updateChart();
+    myChart?.resize();
+}, { deep: true });
 
 onMounted(() => {
     initChart();

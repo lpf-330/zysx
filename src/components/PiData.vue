@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -37,121 +37,127 @@ const props = defineProps({
 })
 
 const chart = ref(null);
-        let myChart = null;
+let myChart = null;
 
-        const textColor = '#666'
-        const seriesData = props.data
-        const xAxisList = [
+const textColor = '#666'
+// const seriesData = props.data
+const xAxisList = [
 
 
-        ]
+]
 
-        const initChart = () => {
-            if (chart.value) {
-                myChart = echarts.init(chart.value);
-                updateChart();
+const initChart = () => {
+    if (chart.value && !myChart) {
+        myChart = echarts.init(chart.value);
+        updateChart();
+    }
+};
+
+const updateChart = () => {
+    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    const option = {
+
+        // tooltip: {
+        //     trigger: 'axis'
+        // },
+        grid: {
+            top: '20%',
+            left: '5%',
+            right: '10%',
+            bottom: '20%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: xAxisList,
+            axisLabel: {
+                // 坐标轴字体颜色
+                color: textColor,
+                fontSize: 18,
+                show: false
+            },
+            axisLine: {
+                // lineStyle: {
+                //     color: textColor
+                // }
+                show: false
+            },
+            axisTick: {
+                // y轴刻度线
+                show: false
+            },
+            splitLine: {
+                // 网格
+                show: false
+            },
+            boundaryGap: false
+        },
+        yAxis: {
+            type: 'value',
+            min: Math.min(...props.data) - 3,
+            max: Math.max(...props.data) + 3,
+            nameTextStyle: {
+                color: '#333',
+                fontSize: 18,
+                padding: [0, 0, 0, 80]
+            },
+            axisLabel: {
+                // 坐标轴字体颜色
+                color: textColor,
+                fontSize: 18,
+                show: false
+            },
+            axisLine: {
+                show: false
+            },
+            axisTick: {
+                // y轴刻度线
+                show: false
+            },
+            splitLine: {
+                // 网格
+                show: false,
+                lineStyle: {
+                    color: '#CCCCCC',
+                    type: 'dashed'
+                }
             }
-        };
+        },
 
-        const updateChart = () => {
-            const option = {
-
-                tooltip: {
-                    trigger: 'axis'
+        series: [
+            {
+                // name: '成绩（分）',
+                type: 'line',
+                symbol: 'circle',
+                symbolSize: 10,
+                z: 1,
+                itemStyle: {
+                    color: '#5487FF'
                 },
-                grid: {
-                    top: '20%',
-                    left: '5%',
-                    right: '10%',
-                    bottom: '20%',
-                    containLabel: true
+                lineStyle: {
+                    color: '#5487FF'
                 },
-                xAxis: {
-                    type: 'category',
-                    data: xAxisList,
-                    axisLabel: {
-                        // 坐标轴字体颜色
-                        color: textColor,
-                        fontSize: 18,
-                        show: false
-                    },
-                    axisLine: {
-                        // lineStyle: {
-                        //     color: textColor
-                        // }
-                        show: false
-                    },
-                    axisTick: {
-                        // y轴刻度线
-                        show: false
-                    },
-                    splitLine: {
-                        // 网格
-                        show: false
-                    },
-                    boundaryGap: false
-                },
-                yAxis: {
-                    type: 'value',
-                    min: Math.min(seriesData)-3,
-                    max:Math.max(seriesData)+3,
-                    nameTextStyle: {
-                        color: '#333',
-                        fontSize: 18,
-                        padding: [0, 0, 0, 80]
-                    },
-                    axisLabel: {
-                        // 坐标轴字体颜色
-                        color: textColor,
-                        fontSize: 18,
-                        show: false
-                    },
-                    axisLine: {
-                        show: false
-                    },
-                    axisTick: {
-                        // y轴刻度线
-                        show: false
-                    },
-                    splitLine: {
-                        // 网格
-                        show: false,
-                        lineStyle: {
-                            color: '#CCCCCC',
-                            type: 'dashed'
-                        }
-                    }
-                },
+                data: props.data
+            }
+        ]
+    };
 
-                series: [
-                    {
-                        // name: '成绩（分）',
-                        type: 'line',
-                        symbol: 'circle',
-                        symbolSize: 10,
-                        z: 1,
-                        itemStyle: {
-                            color: '#5487FF'
-                        },
-                        lineStyle: {
-                            color: '#5487FF'
-                        },
-                        data: seriesData
-                    }
-                ]
-            };
+    myChart.setOption(option);
+};
 
-            myChart.setOption(option);
-        };
+// 监听数据变化
+watch(() => [props.data, props.xData], () => {
+    updateChart();
+    myChart?.resize();
+}, { deep: true });
 
+onMounted(() => {
+    initChart();
+    window.addEventListener('resize', () => myChart.resize());
+});
 
-        onMounted(() => {
-            initChart();
-            window.addEventListener('resize', () => myChart.resize());
-        });
-
-        onUnmounted(() => {
-            window.removeEventListener('resize', () => myChart.resize());
-            myChart.dispose();
-        });
+onUnmounted(() => {
+    window.removeEventListener('resize', () => myChart.resize());
+    myChart.dispose();
+});
 </script>

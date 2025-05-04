@@ -2,13 +2,31 @@
 import TimeBox from '../components/TimeBox.vue'
 import { RouterView } from 'vue-router';
 import DataBox from '../components/DataBox.vue';
+import { ref } from 'vue';
+
+const shouldAnimate = ref(true);
 
 const shiftControlBox = () => {
     const controlBox = document.querySelector('.controlBox')
+
+    // Toggle the animation duration based on shouldAnimate
+    if (shouldAnimate.value) {
+        controlBox.style.transitionDuration = '1.5s';
+    } else {
+        // Remove the transition after the animation completes
+        controlBox.style.transitionDuration = '1.5s';
+        setTimeout(() => {
+            controlBox.style.transitionDuration = '0s';
+        }, 1500); // Match this with the transition duration
+    }
+
     controlBox.classList.toggle('comeIn')
     controlBox.classList.toggle('comeOut')
 
     document.querySelector('.icon-lachu').classList.toggle('buttonAlt')
+
+    // Toggle the flag for next click
+    shouldAnimate.value = !shouldAnimate.value;
 }
 </script>
 
@@ -16,7 +34,6 @@ const shiftControlBox = () => {
     <div class="mid">
         <TimeBox></TimeBox>
         <div class="health">
-            <!-- <HeartDataClear></HeartDataClear> -->
             <RouterView></RouterView>
         </div>
     </div>
@@ -51,12 +68,10 @@ const shiftControlBox = () => {
 }
 
 .comeIn {
-    transition-duration: 1.5s;
     transform: translate(39%, 35%);
 }
 
 .comeOut {
-    transition-duration: 1.5s;
     transform: translate(160%, 35%);
 }
 

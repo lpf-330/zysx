@@ -100,19 +100,19 @@ const fetchOxygenData = async () => {
         const url = `http://localhost:8081/oxygenData`;
         const response = await axios.post(url, {
             //cancelToken: cancelTokenSource.token
-            user_id:user_id
+            user_id: user_id
         }, {
             headers: {
                 'Content-Type': 'application/json',
             }
         });
 
-       
-            for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].oxygenData)
-                date.value.push(response.data[j].Date)
-            }
-        
+
+        for (let j = 0; j < response.data.length; j++) {
+            data.value.push(response.data[j].oxygenData)
+            date.value.push(response.data[j].created_at)
+        }
+
         // data.value = Object.values(data.value)
         // date.value = Object.values(date.value)
 
@@ -218,7 +218,7 @@ const updateChart = async () => {
             },
             axisLabel: {
                 textStyle: {
-                    color: 'balck',
+                    color: '#666',
                     fontSize: 16
                 },
                 formatter: function (params) {

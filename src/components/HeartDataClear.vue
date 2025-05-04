@@ -108,7 +108,7 @@ const fetchHeartData = async () => {
 
         for (let j = 0; j < response.data.length; j++) {
             data.value.push(response.data[j].heartData)
-            date.value.push(response.data[j].Date)
+            date.value.push(response.data[j].created_at)
         }
 
 

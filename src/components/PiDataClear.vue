@@ -111,17 +111,17 @@ const fetchPiData = async () => {
 
         for (let i = 0; i < response.data.length; i++) {
             data.value.push(response.data[i].piData)
-            date.value.push(response.data[i].Date)
+            date.value.push(response.data[i].created_at)
         }
         console.log('响应灌注指数', response.data);
-        
+
     } catch (error) {
         console.error("出错", error);
         alert("加载失败，请稍后再试。"); // 友好的错误提示  
 
     }
-    
-    
+
+
 }
 
 
@@ -133,7 +133,7 @@ const initChart = () => {
     }
 };
 
-const updateChart = async() => {
+const updateChart = async () => {
 
     await fetchPiData()
     const option = {

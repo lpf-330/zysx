@@ -48,11 +48,11 @@ const toRegister = () => {
     <div class="backgrand">
         <div class="header">
             <div class="hero">
-                <h1>你好 用户<br>
+                <h1>您好 用户<br>
                     <span class="heroTxt">欢迎来到 </span>
                     <span class="gradient-text">智养生息</span>
                 </h1>
-                <p>如果你没有账号<br>可以<a @click="toRegister">点击这里</a>进行注册.</p>
+                <p>如果您没有账号<br>可以<a @click="toRegister">点击这里</a>进行注册.</p>
             </div>
         </div>
 
@@ -60,7 +60,7 @@ const toRegister = () => {
             <!-- <h1>智养生息</h1> -->
             <input type="text" name="AccountNumber" id="account" class="account" placeholder="&nbsp&nbsp账号"
                 v-model="account">
-            <input type="text" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp密码"
+            <input type="password" name="KeyWord" id="passward" class="password" placeholder="&nbsp&nbsp密码"
                 v-model="password">
             <input type="button" id="login" class="login" value="登录" @click="LoginTest">
             <div class="linkBox">
