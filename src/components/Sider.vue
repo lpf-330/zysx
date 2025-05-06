@@ -15,6 +15,7 @@ const items = ['home', 'heartData', 'medicalQA', 'person']
 //     }
 // }
 
+// siderMode.value -= 2
 
 const select = (i) => {
     siderMode.value = i

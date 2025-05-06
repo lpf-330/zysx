@@ -13,7 +13,10 @@ const useUserInfoStore = defineStore("userInfo", {
         siderMode: 0
     }),
     actions: {
-
+        fullReset() {
+            this.$reset()
+            localStorage.removeItem('userInfo')
+        }
     },
     persist: true
 })

@@ -9,7 +9,10 @@ const useMedicalHistoryStore = defineStore("medicalHistory", {
         medication_compliance: ''
     }),
     actions: {
-
+        fullReset() {
+            this.$reset()
+            localStorage.removeItem('medicalHistory')
+        }
     },
     persist: true
 })
