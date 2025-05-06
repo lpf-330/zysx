@@ -9,30 +9,30 @@
         <div class="content">
           <div class="info-item">
             <label>姓名:</label>
-            <input v-model="formData.Username" type="text" id="input1" />
+            <input v-model="userInfoStore.Username.value" type="text" id="input1" />
           </div>
           <div class="info-item">
             <label>性别:</label>
-            <select v-model="formData.gender" id="select1" class="gender">
+            <select v-model="userInfoStore.gender.value" id="select1" class="gender">
               <option value="男">男</option>
               <option value="女">女</option>
             </select>
           </div>
           <div class="info-item">
             <label>年龄:</label>
-            <input v-model.number="formData.Age" id="input2" />
+            <input v-model.number="userInfoStore.Age.value" id="input2" />
           </div>
           <div class="info-item">
             <label>手机号:</label>
-            <input v-model="formData.phone_number" type="tel" id="input3" />
+            <input v-model="userInfoStore.phone_number.value" type="tel" id="input3" />
           </div>
           <div class="info-item">
             <label>身高:</label>
-            <input v-model="formData.Height" placeholder="cm" id="input4" />
+            <input v-model="userInfoStore.Height.value" placeholder="m" id="input4" />
           </div>
           <div class="info-item">
             <label>体重:</label>
-            <input v-model="formData.Weight" placeholder="kg" id="input5" />
+            <input v-model="userInfoStore.Weight.value" placeholder="kg" id="input5" />
           </div>
         </div>
       </div>
@@ -44,23 +44,23 @@
         <div class="medical-content">
           <div class="info-item">
             <label>家族遗传病史:</label>
-            <textarea v-model="formData.family_history" placeholder="请输入家族遗传病史" />
+            <textarea v-model="medicalHistoryStore.family_history.value" placeholder="请输入家族遗传病史" />
           </div>
           <div class="info-item">
             <label>过敏史:</label>
-            <textarea v-model="formData.allergy_history" placeholder="请输入过敏史" />
+            <textarea v-model="medicalHistoryStore.allergy_history.value" placeholder="请输入过敏史" />
           </div>
           <div class="info-item">
             <label>既往病史:</label>
-            <textarea v-model="formData.past_medical_history" placeholder="请输入既往病史" />
+            <textarea v-model="medicalHistoryStore.past_medical_history.value" placeholder="请输入既往病史" />
           </div>
           <div class="info-item">
             <label>手术史:</label>
-            <textarea v-model="formData.surgical_history" placeholder="请输入手术史" />
+            <textarea v-model="medicalHistoryStore.surgical_history.value" placeholder="请输入手术史" />
           </div>
           <div class="info-item">
             <label>用药依从性记录:</label>
-            <textarea v-model="formData.medication_compliance" placeholder="请输入用药依从性记录" />
+            <textarea v-model="medicalHistoryStore.medication_compliance.value" placeholder="请输入用药依从性记录" />
           </div>
         </div>
       </div>
@@ -90,24 +90,26 @@ function confirmClick() {
   fetchUserpagecenterdata();
 }
 
-let userInfoStore = storeToRefs(useUserInfoStore());
+const userInfoStore = storeToRefs(useUserInfoStore());
 const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 let user_id = userInfoStore.user_id.value;
 
-const formData = ref({
-  user_id: '',
-  Username: userInfoStore.Username.value,
-  gender: userInfoStore.gender.value,
-  Age: userInfoStore.Age.value,
-  phone_number: userInfoStore.phone_number.value,
-  Height: userInfoStore.Height.value * 100,
-  Weight: userInfoStore.Weight.value,
-  family_history: medicalHistoryStore.family_history.value,
-  allergy_history: medicalHistoryStore.allergy_history.value,
-  past_medical_history: medicalHistoryStore.past_medical_history.value,
-  surgical_history: medicalHistoryStore.surgical_history.value,
-  medication_compliance: medicalHistoryStore.medication_compliance.value
-});
+// const formData = ref({
+//   user_id: '',
+//   Username: userInfoStore.Username.value,
+//   gender: userInfoStore.gender.value,
+//   Age: userInfoStore.Age.value,
+//   phone_number: userInfoStore.phone_number.value,
+//   Height: userInfoStore.Height.value * 100,
+//   Weight: userInfoStore.Weight.value,
+//   family_history: medicalHistoryStore.family_history.value,
+//   allergy_history: medicalHistoryStore.allergy_history.value,
+//   past_medical_history: medicalHistoryStore.past_medical_history.value,
+//   surgical_history: medicalHistoryStore.surgical_history.value,
+//   medication_compliance: medicalHistoryStore.medication_compliance.value
+// });
+
+// console.log(medicalHistoryStore.family_history.value);
 
 
 /*
@@ -128,38 +130,44 @@ const formData = ref({
  * 响应参数：
  * 返回成功或者失败
  */
-const fetchUserpagecenterdata = async () => {
-  console.log('formData', formData);
-  try {
-    const url = '/api/fetchUserPageCenterData'; //后端还没写 
-
-    const response = await axios.post(url, {
-      user_id: user_id,
-      Username: formData.value.Username,
-      gender: formData.value.gender,
-      Age: formData.value.Age,
-      phone_number: formData.value.phone_number,
-      Height: formData.value.Height,
-      Weight: formData.value.Weight,
-      family_history: formData.value.family_history,
-      allergy_history: formData.value.allergy_history,
-      past_medical_history: formData.value.past_medical_history,
-      surgical_history: formData.value.surgical_history,
-      medical_compliance: formData.value.medication_compliance
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    console.log('fetchUserpagecenterdata', response.data);
+// const fetchUserpagecenterdata = async () => {
+//   console.log('userInfoStore.Username.value', typeof (userInfoStore.Username.value));
 
 
-  } catch (error) {
-    console.error("出错", error);
-    alert("保存失败，请稍后再试。");
-  }
-};  
+//   try {
+//     const url = '/api/fetchUserPageCenterData'; //后端还没写 
+
+//     const response = await axios.post(url, {
+//       user_id: user_id,
+//       Username: userInfoStore.Username.value,
+//       gender: userInfoStore.gender.value,
+//       Age: userInfoStore.Age.value,
+//       phone_number: userInfoStore.phone_number.value,
+//       Height: userInfoStore.Height.value,
+//       Weight: userInfoStore.Weight.value,
+//       family_history: medicalHistoryStore.family_history.value,
+//       allergy_history: medicalHistoryStore.allergy_history.value,
+//       past_medical_history: medicalHistoryStore.past_medical_history.value,
+//       surgical_history: medicalHistoryStore.surgical_history.value,
+//       medical_compliance: medicalHistoryStore.medication_compliance.value
+//     }, {
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
+
+//     console.log('fetchUserpagecenterdata', response.data);
+
+
+//   } catch (error) {
+//     console.error("出错", error);
+//     alert("保存失败，请稍后再试。");
+//   }
+// };
+
+const fetchUserpagecenterdata = () => {
+  alert("修改成功")
+}
 </script>
 
 <style scoped>
