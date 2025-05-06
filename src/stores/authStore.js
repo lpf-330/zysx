@@ -4,6 +4,7 @@ import router from '../router'
 import useUserInfoStore from './user'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
+import useMedicalHistoryStore from './medicalHistory'
 
 export const useAuthStore = defineStore('auth', () => {
     const token = ref(localStorage.getItem('token') || null)
@@ -33,7 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
             console.log('login', account, password);
 
 
-            const url = "http://localhost:8081/userInfo"
+            const url = "/api/userInfo"
+            // const url = 'http://localhost:8081/api/userInfo'
             const response = await axios.post(url, {
                 account: account,
                 password: password
@@ -80,6 +82,9 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null
         user.value = null
         localStorage.removeItem('token')
+
+        useUserInfoStore().fullReset()
+        useMedicalHistoryStore().fullReset()
     }
 
     return { token, user, login, logout }

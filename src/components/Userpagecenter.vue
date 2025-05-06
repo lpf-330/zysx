@@ -131,7 +131,7 @@ const formData = ref({
 const fetchUserpagecenterdata = async () => {
   console.log('formData', formData);
   try {
-    const url = 'http://localhost:8081/fetchUserPageCenterData'; //后端还没写 
+    const url = '/api/fetchUserPageCenterData'; //后端还没写 
 
     const response = await axios.post(url, {
       user_id: user_id,

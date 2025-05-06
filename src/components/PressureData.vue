@@ -67,27 +67,6 @@ const updateChart = () => {
     console.log('here');
 
     const option = {
-        // backgroundColor: "#021032",
-        // tooltip: {
-        //     trigger: "axis",
-        //     backgroundColor: "rgba(9,40,84,0.8)",
-        //     borderColor: "rgba(9,40,84,0.8)",
-        //     textStyle: {
-        //         fontSize: 20,
-        //         color: "#fff",
-        //     },
-        //     axisPointer: {
-        //         type: "shadow",
-        //     },
-        //     formatter: function (params) {
-        //         return (
-        //             params[0].name +
-        //             "&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-weight:bold;color:'#fff'>" +
-        //             params[0].value +
-        //             "KM</span>"
-        //         );
-        //     },
-        // },
         grid: {
             left: "4%",
             right: "10%",
@@ -132,16 +111,6 @@ const updateChart = () => {
                         }
                     },
                     rich: {
-                        // id: {
-                        //     padding: [0, 0, 0, 2],
-                        //     fontSize: 16,
-                        //     color: '#fff',
-                        // },
-                        // ids: {
-                        //     padding: [0, 0, 0, 2],
-                        //     fontSize: 16,
-                        //     color: '#b4bec8',
-                        // },
                         highPressure: {
                             padding: [0, 10, 0, 2],
                             fontSize: 16,

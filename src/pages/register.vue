@@ -54,7 +54,7 @@ const register = async (account, password) => {
 
   try {
 
-    const url = "http://localhost:8081/"
+    const url = "/api"
     const response = await axios.post(url, {
       account: account,
       password: password

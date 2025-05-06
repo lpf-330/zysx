@@ -1,14 +1,8 @@
 <script setup>
-import { onBeforeUnmount, onUnmounted, ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import router from '../router'
-import { RouterLink } from 'vue-router';
-import axios from 'axios';
-import useUserInfoStore from '../stores/user';
-import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/authStore';
-import useMedicalHistoryStore from "../stores/medicalHistory";
 
-let userInfoStore = storeToRefs(useUserInfoStore())
 const authStore = useAuthStore()
 
 const account = ref('')
@@ -16,8 +10,6 @@ const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
 
-useUserInfoStore().fullReset()
-useMedicalHistoryStore().fullReset()
 
 
 const LoginTest = () => {

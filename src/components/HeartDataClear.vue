@@ -93,7 +93,7 @@ const date = ref([])
 const fetchHeartData = async () => {
 
     try {
-        const url = "http://localhost:8081/heartData";
+        const url = "/api/heartData";
         const response = await axios.post(url, {
             // cancelToken: cancelTokenSource.token,
             //user_id: Number(user_id)
@@ -169,17 +169,6 @@ const updateChart = async () => {
         },
         tooltip: {
             trigger: "axis",
-            // formatter: function (params) {
-            //     let html = '';
-            //     params.forEach(v => {
-            //         html += `<div style="color: #666;font-size: 14px;line-height: 24px">
-            //     <span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${color[v.componentIndex]};"></span>
-            //     ${v.seriesName}2020.${v.name}  
-            //     <span style="color:${color[v.componentIndex]};font-weight:700;font-size: 18px;margin-left:5px">${v.value}</span>
-            //     次`;
-            //     })
-            //     return html
-            // },
             extraCssText: 'background: #fff; border-radius: 0;box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);color: #333;',
             axisPointer: {
                 type: 'shadow',

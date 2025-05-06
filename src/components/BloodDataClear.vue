@@ -94,7 +94,7 @@ const fetchBloodData = async () => {
     try {
 
         // 获取帖子 ID  
-        const url = `http://localhost:8081/bloodData`; // 拼接 URL  
+        const url = `/api/bloodData`; // 拼接 URL  
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },

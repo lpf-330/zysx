@@ -149,7 +149,7 @@ const handleClick = (tab: TabsPaneContext, event: Event) => {
  */
 const fetchUsertabpagedata = async () => {
   try {
-    const url = 'http://localhost:8081/personal_history'; //后端还没写 
+    const url = '/api/personal_history'; //后端还没写 
 
     const response = await axios.post(url, {
       user_id: user_id.value

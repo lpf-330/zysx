@@ -101,7 +101,7 @@ const fetchSleepData = async () => {
 
     try {
 
-        const url = 'http://localhost:8081/sleepData'    //这后面还没补上
+        const url = '/api/sleepData'    //这后面还没补上
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },
@@ -117,14 +117,14 @@ const fetchSleepData = async () => {
             date.value.push(response.data[i].Date)
         }
         console.log('响应睡眠', response.data);
-        
+
     } catch (error) {
         console.error("出错", error);
         alert("加载失败，请稍后再试。"); // 友好的错误提示  
 
     }
 
-    
+
 }
 
 
@@ -135,27 +135,14 @@ const initChart = () => {
     }
 };
 
-const updateChart = async() => {
+const updateChart = async () => {
 
     await fetchSleepData()
 
     const option = {
-        // title: {
-        //     // text: '第六使徒迪瑞吉',  
-        //     left: "center",
-        //     top: "8%",
-        //     textStyle: {
-        //         color: '#111111', // 标题颜色  
-        //         fontWeight: 'bold',
-        //         fontSize: 16,
-        //     },
-        // },
         tooltip: {
             trigger: 'axis',
-            // backgroundColor: 'rgba(33,56,77,1)',
-            // borderColor: 'rgba(33,56,77,1)',
             textStyle: {
-                // color: '#fff',
                 fontSize: 14
             },
             axisPointer: {

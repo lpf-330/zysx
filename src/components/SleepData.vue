@@ -54,20 +54,6 @@ const updateChart = () => {
     const option = {
         tooltip: {
             show: false
-            // trigger: 'axis',
-            // backgroundColor: 'rgba(33,56,77,1)',
-            // borderColor: 'rgba(33,56,77,1)',
-            // textStyle: {
-            //     color: '#fff',
-            //     fontSize: 14
-            // },
-            // axisPointer: {
-            //     lineStyle: {
-            //         color: 'rgba(19,255,241,1)',
-            //         type: 'dashed',
-            //         width: 2
-            //     }
-            // }
         },
         legend: {
             right: 'center',
@@ -160,27 +146,6 @@ const updateChart = () => {
                 // name: '进园',
                 smooth: true,
                 type: 'line',
-                // 填充颜色设置
-                // areaStyle: {
-                //     color: new echarts.graphic.LinearGradient(
-                //     0,
-                //     0,
-                //     0,
-                //     1,
-                //     [
-                //         {
-                //             offset: 0,
-                //             color: 'rgba(26, 119, 221,.4)' // 渐变色的起始颜色
-                //         },
-                //         {
-                //             offset: 0.9,
-                //             color: 'rgba(26, 119, 221,0)' // 渐变线的结束颜色
-                //         }
-                //     ],
-                //     false
-                //     ),
-                //     shadowColor: 'rgba(0, 0, 0, 0.1)'
-                // },
                 // 开始不显示拐点， 鼠标经过显示
                 showSymbol: false,
                 symbolSize: 4,

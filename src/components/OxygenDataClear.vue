@@ -97,7 +97,7 @@ const fetchOxygenData = async () => {
     try {
 
         // 获取帖子 ID  
-        const url = `http://localhost:8081/oxygenData`;
+        const url = `/api/oxygenData`;
         const response = await axios.post(url, {
             //cancelToken: cancelTokenSource.token
             user_id: user_id

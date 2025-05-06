@@ -21,5 +21,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '~': path.resolve(__dirname, './public')
     }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 })

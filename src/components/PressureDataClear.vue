@@ -129,7 +129,7 @@ const fetchPressureData = async () => {
         console.log('user_id', userInfoStore.user_id.value);
 
 
-        const url = 'http://localhost:8081/pressureData'    //这后面还没补上
+        const url = '/api/pressureData'    //这后面还没补上
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },

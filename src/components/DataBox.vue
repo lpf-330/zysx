@@ -99,7 +99,7 @@ const fetchData = async () => {
 
     try {
 
-        const url = `http://localhost:8081/data`;
+        const url = `/api/data`;
         const response = await axios.post(url, {
             user_id: user_id
         }, {

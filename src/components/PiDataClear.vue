@@ -98,7 +98,7 @@ const fetchPiData = async () => {
 
     try {
 
-        const url = 'http://localhost:8081/piData'
+        const url = '/api/piData'
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },
