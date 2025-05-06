@@ -81,22 +81,17 @@ echarts.use([
     CanvasRenderer
 ]);
 
-//数据
-//const data = ref(['100', '138', '127', '113', '120', '100', '110']);
+
 const data = ref([])
-//日期
-//const date = ref(["2025-01-12", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-18"]);
 const date = ref([])
 
-//const cancelTokenSource = axios.CancelToken.source();
+
 
 const fetchHeartData = async () => {
 
     try {
         const url = "/api/heartData";
         const response = await axios.post(url, {
-            // cancelToken: cancelTokenSource.token,
-            //user_id: Number(user_id)
             user_id: user_id
         },
             {
@@ -119,15 +114,11 @@ const fetchHeartData = async () => {
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+        alert("加载失败，请稍后再试。");
 
     }
 }
 
-
-
-// onMounted(fetchHeartData)
-// onBeforeMount(fetchHeartData)
 
 
 const chart = ref(null);
@@ -157,11 +148,9 @@ const initChart = () => {
 };
 
 const updateChart = async () => {
-    // console.log('updateChart', data.value, date.value);
     await fetchHeartData()
 
     const option = {
-        //backgroundColor: '#fff',
         color: color,
         legend: {
             top: 20,
@@ -187,7 +176,6 @@ const updateChart = async () => {
         },
         xAxis: [{
             type: "category",
-            // boundaryGap: false,
             offset: 20,
             axisLabel: {
                 formatter: '{value}',
@@ -196,8 +184,6 @@ const updateChart = async () => {
                 textStyle: {
                     color: "#333"
                 }//,
-                //rotate:20
-
             },
             axisTick: {
                 show: false
@@ -211,7 +197,6 @@ const updateChart = async () => {
         }],
         yAxis: [{
             type: "value",
-            // name: '心率',
             offset: 30,
             min: 0,
             max: 160,
@@ -228,7 +213,6 @@ const updateChart = async () => {
                 fontSize: 12,
                 lineHeight: 40
             },
-            // 分割线
             splitLine: {
                 lineStyle: {
                     type: "dashed",
@@ -243,8 +227,6 @@ const updateChart = async () => {
             }
         }],
         series: [{
-            // name: "2018",
-            // name: "一般隐患",
             type: "line",
             smooth: true,
             symbolSize: 8,
@@ -257,10 +239,9 @@ const updateChart = async () => {
                     shadowOffsetY: 8
                 }
             },
-            symbol: 'circle',//数据交叉点样式
+            symbol: 'circle',
             data: data.value
         }, {
-            // name: "重大隐患",
             type: "line",
             smooth: true,
             symbolSize: 8,
@@ -269,11 +250,10 @@ const updateChart = async () => {
                 normal: {
                     color: color[1],
                     shadowBlur: 3,
-                    // shadowColor: hexToRgba(color[1], 0.5),
                     shadowOffsetY: 8
                 }
             },
-            symbol: 'circle',//数据交叉点样式 (实心点)
+            symbol: 'circle',
             areaStyle: {
                 normal: {
                     color: new echarts.graphic.LinearGradient(
@@ -296,7 +276,6 @@ const updateChart = async () => {
                     shadowBlur: 10
                 }
             },
-            // data: yAxisData2
         }]
     };
 
@@ -312,12 +291,8 @@ onMounted(() => {
 );
 
 onUnmounted(() => {
-    // cancelTokenSource.cancel('Component unmounted, request canceled');
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    //cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 </script>

@@ -129,7 +129,7 @@ const fetchPressureData = async () => {
         console.log('user_id', userInfoStore.user_id.value);
 
 
-        const url = '/api/pressureData'    //这后面还没补上
+        const url = '/api/pressureData'
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },
@@ -161,7 +161,7 @@ const fetchPressureData = async () => {
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+        alert("加载失败，请稍后再试。");
 
     }
 }
@@ -178,7 +178,6 @@ const updateChart = async () => {
     await fetchPressureData()
 
     const option = {
-        // backgroundColor: '#344b58',
         tooltip: {
             trigger: 'axis',
             axisPointer: {
@@ -187,12 +186,11 @@ const updateChart = async () => {
                     color: '#fff',
                 },
             },
-            formatter: (params) => { // 自定义提示框内容（）
+            formatter: (params) => {
                 return `<span>${params[0].name}</span>` + params
                     .map(param => {
-                        // 判断数据格式：一维数值或二维数组（）
                         const value = Array.isArray(param.value)
-                            ? param.value // 提取二维数组中的数值（如 [x, y]）
+                            ? param.value
                             : param.value;
                         return `
               <div style="${param.color}">         
@@ -218,11 +216,6 @@ const updateChart = async () => {
         xAxis: [
             {
                 type: 'category',
-                // axisLine: {
-                //     lineStyle: {
-                //         color: 'rgba(255,255,255,.5)',
-                //     },
-                // },
                 splitLine: {
                     show: false,
                 },
@@ -234,7 +227,6 @@ const updateChart = async () => {
                 },
                 axisLabel: {
                     interval: 0,
-                    // color: 'rgba(255,255,255,0.7)',
                     fontSize: 15,
                 },
                 data: date.value,
@@ -255,7 +247,6 @@ const updateChart = async () => {
                 },
                 axisLabel: {
                     interval: 0,
-                    // color: 'rgba(255,255,255,0.5)',
                     fontSize: 18,
                     formatter: (m) => {
                         return Math.abs(m);
@@ -291,14 +282,14 @@ const updateChart = async () => {
                             colorStops: [
                                 {
                                     offset: 0,
-                                    color: 'rgba(35, 157, 250, 0.32)', // 0% 处的颜色
+                                    color: 'rgba(35, 157, 250, 0.32)',
                                 },
                                 {
                                     offset: 1,
-                                    color: 'rgba(35, 157, 250, 1)', // 100% 处的颜色
+                                    color: 'rgba(35, 157, 250, 1)',
                                 },
                             ],
-                            global: false, // 缺省为 false
+                            global: false,
                         },
                     },
                 },
@@ -330,14 +321,14 @@ const updateChart = async () => {
                             colorStops: [
                                 {
                                     offset: 1,
-                                    color: 'rgb(255, 105, 35,0.32)', // 0% 处的颜色
+                                    color: 'rgb(255, 105, 35,0.32)',
                                 },
                                 {
                                     offset: 0,
-                                    color: 'rgb(255, 105, 35)', // 100% 处的颜色
+                                    color: 'rgb(255, 105, 35)',
                                 },
                             ],
-                            global: false, // 缺省为 false
+                            global: false,
                         },
                         barBorderRadius: 0,
                     },

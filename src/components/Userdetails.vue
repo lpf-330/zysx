@@ -1,5 +1,4 @@
 <script setup>
-import ImageUpload from './ImageUpload.vue';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 

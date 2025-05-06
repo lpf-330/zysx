@@ -50,7 +50,7 @@ const initChart = () => {
 };
 
 const updateChart = () => {
-    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    if (!myChart || props.data.length === 0) return;
     const option = {
         tooltip: {
             show: false
@@ -84,7 +84,7 @@ const updateChart = () => {
                 show: false
             },
             axisTick: {
-                show: false // 去除刻度线
+                show: false
             }
         },
         yAxis: {
@@ -98,21 +98,14 @@ const updateChart = () => {
             axisLabel: {
                 show: false
             },
-            // y轴分割线的颜色
             splitLine: {
-                // lineStyle: {
-                //     color: '#9EA6B4',
-                //     type: 'solid',
-                // }
                 show: false
             }
         },
         series: [
             {
-                // name: '总流量',
                 smooth: true,
                 type: 'line',
-                // 填充颜色设置
                 areaStyle: {
                     color: new echarts.graphic.LinearGradient(
                         0,
@@ -122,36 +115,29 @@ const updateChart = () => {
                         [
                             {
                                 offset: 0,
-                                color: 'rgba(253, 190, 93,.4)' // 渐变色的起始颜色
+                                color: 'rgba(253, 190, 93,.4)'
                             },
                             {
                                 offset: 0.9,
-                                color: 'rgba(253, 190, 93,0)' // 渐变线的结束颜色
+                                color: 'rgba(253, 190, 93,0)'
                             }
                         ],
                         false
                     ),
                     shadowColor: 'rgba(0, 0, 0, 0.1)'
                 },
-                // 开始不显示拐点， 鼠标经过显示
                 showSymbol: false,
                 symbolSize: 8,
-                // 设置拐点颜色以及边框
                 itemStyle: {
                     color: 'rgba(253, 190, 93, 1)'
                 },
-                // data: y1
             },
             {
-                // name: '进园',
                 smooth: true,
                 type: 'line',
-                // 开始不显示拐点， 鼠标经过显示
                 showSymbol: false,
                 symbolSize: 4,
-                // 设置拐点颜色以及边框
                 itemStyle: {
-                    // color: "rgba(241,162,42,1)",
                     color: 'rgba(26, 119, 221, 1)'
                 },
                 data: props.data

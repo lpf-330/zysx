@@ -13,7 +13,7 @@ const postQuery = async () => {
 
             console.log("666" + query.value);
 
-            const url = "/api/medical/query"
+            const url = "/api/query"
             const response = await axios.post(url, {
                 question: query.value
             },

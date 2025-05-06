@@ -9,13 +9,6 @@ const siderMode = storeToRefs(useUserInfoStore()).siderMode
 const router = useRouter()
 const items = ['home', 'heartData', 'medicalQA', 'person']
 
-// for (let i = 0; i < items.length; i++) {
-//     if (router.currentRoute.value.name === items[i]) {
-//         selected.value = i
-//     }
-// }
-
-// siderMode.value -= 2
 
 const select = (i) => {
     siderMode.value = i

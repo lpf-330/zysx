@@ -40,7 +40,6 @@ const chart = ref(null);
 let myChart = null;
 
 const textColor = '#666'
-// const seriesData = props.data
 const xAxisList = [
 
 
@@ -54,12 +53,9 @@ const initChart = () => {
 };
 
 const updateChart = () => {
-    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    if (!myChart || props.data.length === 0) return;
     const option = {
 
-        // tooltip: {
-        //     trigger: 'axis'
-        // },
         grid: {
             top: '20%',
             left: '5%',
@@ -71,23 +67,17 @@ const updateChart = () => {
             type: 'category',
             data: xAxisList,
             axisLabel: {
-                // 坐标轴字体颜色
                 color: textColor,
                 fontSize: 18,
                 show: false
             },
             axisLine: {
-                // lineStyle: {
-                //     color: textColor
-                // }
                 show: false
             },
             axisTick: {
-                // y轴刻度线
                 show: false
             },
             splitLine: {
-                // 网格
                 show: false
             },
             boundaryGap: false
@@ -102,7 +92,6 @@ const updateChart = () => {
                 padding: [0, 0, 0, 80]
             },
             axisLabel: {
-                // 坐标轴字体颜色
                 color: textColor,
                 fontSize: 18,
                 show: false
@@ -111,11 +100,9 @@ const updateChart = () => {
                 show: false
             },
             axisTick: {
-                // y轴刻度线
                 show: false
             },
             splitLine: {
-                // 网格
                 show: false,
                 lineStyle: {
                     color: '#CCCCCC',
@@ -126,7 +113,6 @@ const updateChart = () => {
 
         series: [
             {
-                // name: '成绩（分）',
                 type: 'line',
                 symbol: 'circle',
                 symbolSize: 10,
@@ -145,7 +131,6 @@ const updateChart = () => {
     myChart.setOption(option);
 };
 
-// 监听数据变化
 watch(() => [props.data, props.xData], () => {
     updateChart();
     myChart?.resize();

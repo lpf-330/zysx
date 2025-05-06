@@ -125,13 +125,6 @@ const userStore = useUserInfoStore();
 const { user_id } = storeToRefs(userStore);
 const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 
-// const Usertabpagedata = ref({
-//   family_history: medicalHistoryStore.family_history.value,
-//   allergy_history: medicalHistoryStore.allergy_history.value,
-//   past_medical_history: medicalHistoryStore.past_medical_history.value,
-//   surgical_history: medicalHistoryStore.surgical_history.value,
-// });
-
 const handleClick = (tab: TabsPaneContext, event: Event) => {
   console.log(tab, event);
 };//点击事件，用于切换页面
@@ -168,17 +161,7 @@ const fetchUsertabpagedata = async () => {
     medicalHistoryStore.surgical_history.value = response.data.surgical_history
     medicalHistoryStore.medication_compliance.value = response.data.medical_compliance
 
-    // if (response.data.status === 'success') {
-    //    const data = response.data.data;
-    //   Usertabpagedata.value = {
-    //     family_history: data.family_history,
-    //     allergy_history: data.allergy_history,
-    //     past_medical_history: data.past_medical_history,
-    //     surgical_history: data.surgical_history,
-    //   };
-    // } else {
-    //   alert('获取用户医疗信息失败，请稍后再试。');
-    // }
+
   } catch (error) {
     console.error("出错", error);
     alert("获取信息失败，请稍后再试。");
@@ -187,7 +170,7 @@ const fetchUsertabpagedata = async () => {
 
 onMounted(() => {
   fetchUsertabpagedata();
-});//更新组件状态
+});
 </script>
 
 <style scoped>

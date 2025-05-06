@@ -1,36 +1,33 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-// 初始数据
 const currentDate = ref(new Date());
-const events = ref(['2025-5-11', '2025-5-22']); // 示例待办日期
+const events = ref(['2025-5-11', '2025-5-22']);
 
-// 计算当前月份信息
+
 const yearMonth = computed(() => ({
     year: currentDate.value.getFullYear(),
     month: currentDate.value.getMonth()
 }));
 
-// 生成日历的核心逻辑
+
 const calendarWeeks = computed(() => {
     const { year, month } = yearMonth.value;
     const weeks = [];
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    // 计算起始偏移（周一到周日）
+
     let dayOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
-    // 生成日期数组
+
     let currentDate = 1;
     for (let week = 0; week < 6; week++) {
         const days = [];
         for (let day = 0; day < 7; day++) {
             if ((week === 0 && day < dayOffset) || currentDate > lastDay.getDate()) {
-                // 前后月份的空白日期
                 days.push(createCalendarDay(false));
             } else {
-                // 当前月份日期
                 const dateStr = `${year}-${month + 1}-${currentDate}`;
                 days.push({
                     date: currentDate,
@@ -47,7 +44,7 @@ const calendarWeeks = computed(() => {
     return weeks;
 });
 
-// 辅助函数
+
 const createCalendarDay = (isCurrentMonth) => ({
     date: null,
     isCurrentMonth,
@@ -62,7 +59,7 @@ const isToday = (y, m, d) => {
         d === today.getDate();
 };
 
-// 月份切换
+
 const prevMonth = () => {
     currentDate.value = new Date(
         currentDate.value.getFullYear(),
@@ -77,7 +74,7 @@ const nextMonth = () => {
     );
 };
 
-// 格式化显示月份
+
 const formattedMonth = computed(() => {
     return currentDate.value.toLocaleDateString('zh-CN', {
         year: 'numeric',
@@ -85,7 +82,6 @@ const formattedMonth = computed(() => {
     });
 });
 
-// 星期显示（周一到周日）
 const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 </script>
 
@@ -126,7 +122,6 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 .calendar-container {
     width: 2rem;
     font-family: Arial, sans-serif;
-    /* margin-top: 0.08rem; */
 }
 
 .header {

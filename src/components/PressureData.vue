@@ -62,7 +62,7 @@ const initChart = () => {
 };
 
 const updateChart = () => {
-    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    if (!myChart || props.data.length === 0) return;
 
     console.log('here');
 
@@ -71,7 +71,7 @@ const updateChart = () => {
             left: "4%",
             right: "10%",
             top: "20%",
-            bottom: "10%", // 特殊
+            bottom: "10%",
             containLabel: true,
         },
         xAxis: [
@@ -98,12 +98,6 @@ const updateChart = () => {
                     color: "rgba(96, 98, 102, 1)",
                     margin: 10,
                     formatter: (name, index) => {
-                        // const id = index + 1;
-                        // if (id < 5) {
-                        //     return `{nameStyle|${name}}`;
-                        // } else {
-                        //     return `{nameStyle|${name}}`;
-                        // }
                         if (index === 0) {
                             return `{highPressure|${name}}`
                         } else {
@@ -170,12 +164,12 @@ const updateChart = () => {
         series: [
             {
                 type: "bar",
-                barWidth: 14, // 柱子宽度
+                barWidth: 14,
                 MaxSize: 0,
                 showBackground: true,
                 backgroundStyle: {
                     color: "rgb(157, 230, 230)",
-                    borderRadius: 5, //设置背景的圆角
+                    borderRadius: 5,
                 },
                 data: props.data.map((item) => {
                     return {

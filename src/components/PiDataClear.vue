@@ -81,11 +81,7 @@ echarts.use([
 const userInfoStore = storeToRefs(useUserInfoStore())
 
 
-//数据
-// const data = ref([6.2, 6.5, 5.9, 5.2, 7.8, 6.6, 7.9])
 const data = ref([])
-//日期
-// const date = ref(['11.06', '11.07', '11.08', '11.09', '11.10', '11.11', '11.12'])
 const date = ref([])
 
 const chart = ref(null);

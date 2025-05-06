@@ -40,7 +40,6 @@ const props = defineProps({
 const chart = ref(null);
 let myChart = null;
 
-// const value = ref(props.data * 0.01);
 
 const initChart = () => {
     if (chart.value) {
@@ -69,24 +68,24 @@ const updateChart = () => {
                         colorStops: [
                             {
                                 offset: 0,
-                                color: '#daf4ff', // 0% 处的颜色  
+                                color: '#daf4ff',
                             },
                             {
                                 offset: 1,
-                                color: '#37D3FF', // 100% 处的颜色  
+                                color: '#37D3FF',
                             },
                         ],
                     },
                 ],
-                data: [props.data, props.data, props.data], // data个数代表波浪数  
+                data: [props.data, props.data, props.data],
                 backgroundStyle: {
                     borderWidth: 1,
                     borderColor: '#448af9',
                     color: '#fff',
                 },
                 itemStyle: {
-                    opacity: 1, // 波浪的透明度
-                    shadowBlur: 0, // 波浪的阴影范围
+                    opacity: 1,
+                    shadowBlur: 0,
                 },
                 label: {
                     show: true,

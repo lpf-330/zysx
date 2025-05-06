@@ -173,9 +173,6 @@ const fetchUserpagecenterdata = async () => {
 
 .Edit :deep(.el-icon) {
   font-size: 0.13rem;
-  /* 控制图标大小 */
-  /* margin-right: 8px; */
-  /* 调整图标与文字的间距 */
 }
 
 .personal-info-container {

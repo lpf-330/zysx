@@ -12,24 +12,6 @@ const items = ref([
 
 
 
-// const fetchData = () => {
-//     const url = 'http://localhost:8081/'    //这后面还没补完
-//     const response = await axios.post(url, {
-//         cancelToken: cancelTokenSource.token
-//     },
-//         {
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             }
-//         }
-//     )
-
-//     if (response.data.code === 1) {
-
-//     } else {
-//         alert(response.data.msg)
-//     }
-// }
 
 </script>
 

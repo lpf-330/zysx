@@ -75,15 +75,6 @@ import { storeToRefs } from 'pinia';
 
 
 
-
-//从数据库中获取用户最近的数据，在数组中越靠右的数据对应的时间越新
-// const heartData = ref([75, 72, 80, 68])
-// const bloodData = ref([20, 80, 100, 40, 34, 90, 60])
-// const piData = ref([62, 65, 59, 52, 78])
-// const oxygenData = ref(0.6)
-// const sleepData = ref([400, 580, 400, 404, 601, 508, 707, 600, 708, 503])
-// const pressureData = ref([20, 40, 60, 80])
-
 const heartData = ref([])
 const bloodData = ref([])
 const piData = ref([])

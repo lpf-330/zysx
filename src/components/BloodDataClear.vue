@@ -81,11 +81,7 @@ echarts.use([
 ]);
 
 
-//数据
-//const data = ref([5.5, 8.0, 10.1, 6.3, 6.4, 8.9, 6.0])
 const data = ref([])
-//日期
-// const date = ref(['1', '2', '3', '4', '5', '6', '7'])
 const date = ref([])
 
 
@@ -93,8 +89,8 @@ const fetchBloodData = async () => {
 
     try {
 
-        // 获取帖子 ID  
-        const url = `/api/bloodData`; // 拼接 URL  
+
+        const url = `/api/bloodData`;
         const response = await axios.post(url, {
             user_id: userInfoStore.user_id.value
         },

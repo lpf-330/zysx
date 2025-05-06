@@ -19,7 +19,7 @@ import {
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 
-// 注册必要的组件
+
 echarts.use([
     BarChart,
     TitleComponent,
@@ -50,7 +50,7 @@ const props = defineProps({
 const chart = ref(null);
 let myChart = null;
 
-// 初始化图表
+
 const initChart = () => {
     if (chart.value && !myChart) {
         myChart = echarts.init(chart.value);
@@ -58,9 +58,9 @@ const initChart = () => {
     }
 };
 
-// 更新图表配置
+
 const updateChart = () => {
-    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    if (!myChart || props.data.length === 0) return;
 
     const option = {
         backgroundColor: '#001037',
@@ -76,7 +76,6 @@ const updateChart = () => {
             text: ''
         },],
         tooltip: {
-            // 触发类型  经过轴触发axis  经过轴触发item
             trigger: 'axis',
             backgroundColor: 'rgba(9, 30, 60, 0.6)',
             extraCssText: 'box-shadow: 0 0 8px rgba(0, 128, 255, 0.27) inset;',
@@ -87,7 +86,6 @@ const updateChart = () => {
                 color: '#fff',
                 fontSize: 10,
             },
-            // 轴触发提示才有效
             axisPointer: {
                 type: 'shadow',
             },
@@ -101,7 +99,7 @@ const updateChart = () => {
         },
         xAxis: [{
             type: 'category',
-            data: props.xData, // 直接使用props.xData
+            data: props.xData,
             axisTick: { show: false },
             axisLabel: {
                 interval: 0,
@@ -114,7 +112,7 @@ const updateChart = () => {
         }],
         yAxis: [{
             type: 'value',
-            min: Math.min(...props.data) - 3, // 确保展开数组
+            min: Math.min(...props.data) - 3,
             max: Math.max(...props.data) + 3,
             splitLine: { show: false },
             axisLabel: {
@@ -139,22 +137,22 @@ const updateChart = () => {
             itemStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
                     offset: 0,
-                    color: 'rgb(127, 202, 255)', //渐变1
+                    color: 'rgb(127, 202, 255)',
                 },
                 {
                     offset: 0.25,
-                    color: 'rgb(127, 229, 255)', //渐变1
+                    color: 'rgb(127, 229, 255)',
                 },
                 {
                     offset: 0.5,
-                    color: 'rgb(127, 246, 255)', //渐变1
+                    color: 'rgb(127, 246, 255)',
                 },
                 {
                     offset: 0.75,
-                    color: 'rgb(127, 253, 255)', //渐变1
+                    color: 'rgb(127, 253, 255)',
                 }, {
                     offset: 1,
-                    color: 'rgb(127, 255, 212)', //渐变1
+                    color: 'rgb(127, 255, 212)',
                 }
 
                 ])
@@ -166,7 +164,7 @@ const updateChart = () => {
             type: 'pictorialBar',
             barWidth: 10,
             itemStyle: {
-                color: '#fff', //数据的间隔颜色
+                color: '#fff',
             },
             symbolRepeat: 'true',
             symbolMargin: 3,

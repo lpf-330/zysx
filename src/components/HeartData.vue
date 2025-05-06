@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted,watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -36,7 +36,6 @@ const props = defineProps({
     }
 })
 
-// console.log('heartData',props.data,typeof(props.data[0]));
 
 
 const chart = ref(null);
@@ -50,7 +49,7 @@ const initChart = () => {
 };
 
 const updateChart = () => {
-    if (!myChart || props.data.length === 0) return; // 数据为空时不渲染
+    if (!myChart || props.data.length === 0) return;
 
     const option = {
         name: '心率',
@@ -65,7 +64,7 @@ const updateChart = () => {
         xAxis: [{
             type: 'category',
             boundaryGap: false,
-            data: [1,2,3,4],
+            data: [1, 2, 3, 4],
             axisLabel: {
                 show: false,
                 interval: 0,
@@ -83,16 +82,14 @@ const updateChart = () => {
         }],
         yAxis: [{
             show: false,
-            min: Math.min(...props.data)-5, //最低为最低减5
-            max: Math.max(...props.data)+5, //最高为最高值加5
+            min: Math.min(...props.data) - 5,
+            max: Math.max(...props.data) + 5,
         }],
         series: [{
             type: 'line',
             smooth: true,
             symbol: 'circle',
-            //        symbolSize: 2,
             showSymbol: true,
-            //       color:'#ffffff',
             lineStyle: {
                 normal: {
                     width: 5,
@@ -101,13 +98,6 @@ const updateChart = () => {
             },
             areaStyle: {
                 normal: {
-                    // color: new echarts.graphic.LinearGradient(1, 1, 1, 0, [{
-                    //     offset: 0,
-                    //     color: 'rgba(251,153,102, 1)'
-                    // }, {
-                    //     offset: 1,
-                    //     color: 'rgba(251,153,102, 0.3)'
-                    // }]),
                     color: "#fff"
                 }
             },
@@ -126,36 +116,6 @@ const updateChart = () => {
                     fontSize: 24,
                 }
             },
-            // markLine: {
-            //     lineStyle: {
-            //         normal: {
-            //             color: 'rgba(0,0,0,0.3)',
-            //         },
-            //     },
-            //     data: [{
-            //         name: '最高',
-            //         label: {
-            //             normal: {
-            //                 formatter: '正常心率 100次/分',
-            //                 position: 'middle',
-            //                 fontSize: 18,
-            //             }
-            //         },
-            //         yAxis: 100,//高100为界
-            //     },
-            //     {
-            //         name: '最低',
-            //         label: {
-            //             normal: {
-            //                 formatter: '正常心率 60次/分',
-            //                 position: 'middle',
-            //                 fontSize: 18,
-            //             }
-            //         },
-            //         yAxis: 60,//高100为界
-
-            //     }]
-            // },
             data: props.data
         },]
     };
@@ -164,7 +124,6 @@ const updateChart = () => {
 };
 
 
-// 监听数据变化
 watch(() => [props.data], () => {
     updateChart();
     myChart?.resize();
@@ -180,13 +139,4 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-// export default {
-//     setup() {
-        
-
-//         return {
-//             chart
-//         };
-//     }
-// };
 </script>

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import router from '../router'
 import { useAuthStore } from '../stores/authStore';
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore()
 
@@ -10,7 +11,9 @@ const password = ref('')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 
 
-
+onMounted(() => {
+    alert("账号：123456789\n密码：123456789zjg")
+})
 
 const LoginTest = () => {
     console.log(122);

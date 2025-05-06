@@ -9,15 +9,13 @@ const shouldAnimate = ref(true);
 const shiftControlBox = () => {
     const controlBox = document.querySelector('.controlBox')
 
-    // Toggle the animation duration based on shouldAnimate
     if (shouldAnimate.value) {
         controlBox.style.transitionDuration = '1.5s';
     } else {
-        // Remove the transition after the animation completes
         controlBox.style.transitionDuration = '1.5s';
         setTimeout(() => {
             controlBox.style.transitionDuration = '0s';
-        }, 1500); // Match this with the transition duration
+        }, 1500);
     }
 
     controlBox.classList.toggle('comeIn')
@@ -25,7 +23,6 @@ const shiftControlBox = () => {
 
     document.querySelector('.icon-lachu').classList.toggle('buttonAlt')
 
-    // Toggle the flag for next click
     shouldAnimate.value = !shouldAnimate.value;
 }
 </script>

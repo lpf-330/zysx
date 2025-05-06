@@ -82,24 +82,17 @@ echarts.use([
     CanvasRenderer
 ]);
 
-//数据
-//const data = ref([45.1, 35.2, 30.3, 53.4, 95, 23.6, 21.7])
 const data = ref([])
-//日期
-//const date = ref(['15:00', '15:01', '15:02', '15:03', '15:04', '15:05', '15:06'])
 const date = ref([])
 
 
-//const cancelTokenSource = axios.CancelToken.source();
 
 const fetchOxygenData = async () => {
 
     try {
 
-        // 获取帖子 ID  
         const url = `/api/oxygenData`;
         const response = await axios.post(url, {
-            //cancelToken: cancelTokenSource.token
             user_id: user_id
         }, {
             headers: {
@@ -113,18 +106,11 @@ const fetchOxygenData = async () => {
             date.value.push(response.data[j].created_at)
         }
 
-        // data.value = Object.values(data.value)
-        // date.value = Object.values(date.value)
-
-        console.log('响应血氧', response.data);
-        // console.log('data', data.value);
-        // console.log('date', date.value);
-
 
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+        alert("加载失败，请稍后再试。");
 
     }
 }
@@ -140,8 +126,6 @@ var charts = {
     lineX: date.value,
     value: [
         data.value,
-        // [360, 545, 80, 192, 330, 580, 192, 80, 250, 453, 352, 28, 625, 345, 65, 325],
-        // [220, 125, 80, 192, 120, 180, 192, 80, 150, 153, 152, 128, 125, 145, 65, 125]
     ]
 
 }
@@ -188,7 +172,6 @@ const updateChart = async () => {
     await fetchOxygenData()
 
     var option = {
-        // backgroundColor:'#0d235e',
         tooltip: {
             trigger: 'axis'
         },
@@ -272,7 +255,4 @@ onUnmounted(() => {
     myChart.dispose();
 });
 
-onBeforeUnmount(() => {
-    //cancelTokenSource.cancel('Component unmounted, request canceled');
-})
 </script>
