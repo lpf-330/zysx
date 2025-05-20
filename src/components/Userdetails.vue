@@ -1,8 +1,65 @@
 <script setup>
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
+import axios from 'axios';
 
 const userInfoStore = storeToRefs(useUserInfoStore())
+
+const testInput = ref('')
+const testOutput = ref('')
+
+const setTestMessage = async () => {
+
+  try {
+
+    const url = '/api/setTestMessage'
+    const response = await axios.post(url, {
+      message: testInput.value
+    },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
+
+    console.log('响应发送test', response.data);
+
+  } catch (error) {
+    console.error("出错", error);
+    alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+  }
+
+
+}
+
+const getTestMessage = async () => {
+
+  try {
+
+    const url = '/api/getTestMessage'
+    const response = await axios.post(url, {
+    },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
+
+    console.log('响应获取test', response.data);
+    testOutput.value = response.data.message
+
+  } catch (error) {
+    console.error("出错", error);
+    alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
+  }
+
+
+}
 
 </script>
 
@@ -16,6 +73,13 @@ const userInfoStore = storeToRefs(useUserInfoStore())
         <div class="userName">
           <span>{{ userInfoStore.Username.value }}</span>
           <!-- <ImageUpload></ImageUpload> -->
+        </div>
+        <div class="test">
+          <span>测试发送数据（以String类型发送）：</span>
+          <el-input v-model="testInput" style="width: 240px" placeholder="输入数据" />
+          <el-button type="primary" @click="setTestMessage">发送</el-button>
+          <el-input v-model="testOutput" style="width: 240px" />
+          <el-button type="primary" @click="getTestMessage">获取</el-button>
         </div>
       </div>
       <div class="flex-container">
@@ -188,5 +252,12 @@ const userInfoStore = storeToRefs(useUserInfoStore())
   border-radius: 0.5rem;
   background-color: rgba(85, 161, 242, 0.782);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.test {
+  margin-left: 0.2rem;
+  font-size: 0.12rem;
+  display: flex;
+  align-items: center;
 }
 </style>
