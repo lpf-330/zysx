@@ -2,7 +2,7 @@
     <div class="nowData">
         <span class="title">平均心率</span>
         <div class="dataBox">
-            <span class="data">{{ data[data.length - 1] }}</span>
+            <span class="data">{{ nowData }}</span>
             <span class="unit">bmp</span>
         </div>
     </div>
@@ -64,6 +64,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import dateFormatter from '../utils/dateFormatter';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 let user_id = userInfoStore.user_id.value
@@ -81,10 +82,10 @@ echarts.use([
     CanvasRenderer
 ]);
 
-
+const nowData = ref(0)
 const data = ref([])
-const date = ref([])
-
+const formattedTime = ref([])
+let pollInterval = null;
 
 
 const fetchHeartData = async () => {
@@ -94,6 +95,7 @@ const fetchHeartData = async () => {
         const response = await axios.post(url, {
             user_id: user_id
         },
+
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -101,15 +103,25 @@ const fetchHeartData = async () => {
             });
 
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].heartData)
-            date.value.push(response.data[j].created_at)
+        if (data.value.length === 0) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].heartData)
+
+                formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+            }
+        } else {
+            for (let j = 0; j < response.data.length; j++) {
+                // data.value.push(response.data[j].heartData)
+                data.value[j] = response.data[j].heartData
+
+                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+                const tem = dateFormatter.Formatter(response.data[j].created_at)
+                formattedTime.value[j].time = tem.time
+                formattedTime.value[j].date = tem.date
+            }
         }
 
-
-
-
-        console.log("响应心率", response);
+        nowData.value = data.value[data.value.length - 1]
 
 
     } catch (error) {
@@ -166,6 +178,13 @@ const updateChart = async () => {
                     shadowColor: 'rgba(225,225,225,1)',
                     shadowBlur: 5
                 }
+            },
+            formatter: function (params) {
+
+                return `${params.map((param, i) => {
+                    return `<div style="margin-bottom:5px">${dateFormatter.getDate(formattedTime.value)[i]}</div>
+                    <div>${param.marker + "  "}${param.data}</div>`;
+                }).join('')}`;
             }
         },
         grid: {
@@ -193,7 +212,7 @@ const updateChart = async () => {
                     color: "rgba(17,41,80,1)"
                 }
             },
-            data: date.value,
+            data: dateFormatter.getTime(formattedTime.value),
         }],
         yAxis: [{
             type: "value",
@@ -287,10 +306,14 @@ const updateChart = async () => {
 onMounted(() => {
     initChart();
     window.addEventListener('resize', () => myChart.resize());
+    pollInterval = setInterval(updateChart, 2000); // 每2秒轮询一次
 },
 );
 
 onUnmounted(() => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });

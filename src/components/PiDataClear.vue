@@ -65,6 +65,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import dateFormatter from '../utils/dateFormatter';
 
 echarts.use([
     LineChart,
@@ -83,6 +84,7 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 
 const data = ref([])
 const date = ref([])
+const formattedTime = ref([])
 
 const chart = ref(null);
 let myChart = null;
@@ -107,9 +109,9 @@ const fetchPiData = async () => {
 
         for (let i = 0; i < response.data.length; i++) {
             data.value.push(response.data[i].piData)
-            date.value.push(response.data[i].created_at)
+
+            formattedTime.value.push(dateFormatter.Formatter(response.data[i].created_at))
         }
-        console.log('响应灌注指数', response.data);
 
     } catch (error) {
         console.error("出错", error);
@@ -135,7 +137,16 @@ const updateChart = async () => {
     const option = {
 
         tooltip: {
-            trigger: 'axis'
+            trigger: 'axis',
+            formatter: function (params) {
+
+                return `
+                ${params.map((param, i) => {
+                    return `<div style="margin-bottom:5px">${dateFormatter.getDate(formattedTime.value)[i]}</div>
+                            <div>${param.marker + "  "}${param.data}</div>`;
+                }).join('')}
+                `;
+            }
         },
         grid: {
             top: '2%',
@@ -145,7 +156,7 @@ const updateChart = async () => {
         },
         xAxis: {
             type: 'category',
-            data: date.value,
+            data: dateFormatter.getTime(formattedTime.value),
             offset: 20,
             axisLabel: {
                 // 坐标轴字体颜色

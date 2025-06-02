@@ -2,7 +2,7 @@
     <div class="nowData">
         <span class="title">平均浓度</span>
         <div class="dataBox">
-            <span class="data">{{ data[data.length - 1] }}&nbsp;</span>
+            <span class="data">{{ nowData }}&nbsp;</span>
             <span class="unit">%</span>
         </div>
     </div>
@@ -65,6 +65,7 @@ import 'echarts-liquidfill'
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import dateFormatter from '../utils/dateFormatter';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 let user_id = userInfoStore.user_id.value
@@ -82,10 +83,10 @@ echarts.use([
     CanvasRenderer
 ]);
 
+const nowData = ref(0)
 const data = ref([])
-const date = ref([])
-
-
+const formattedTime = ref([])
+let pollInterval = null;
 
 const fetchOxygenData = async () => {
 
@@ -100,13 +101,25 @@ const fetchOxygenData = async () => {
             }
         });
 
+        if (data.value.length === 0) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].oxygenData)
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].oxygenData)
-            date.value.push(response.data[j].created_at)
+                formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+            }
+        } else {
+            for (let j = 0; j < response.data.length; j++) {
+                // data.value.push(response.data[j].heartData)
+                data.value[j] = response.data[j].oxygenData
+
+                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+                const tem = dateFormatter.Formatter(response.data[j].created_at)
+                formattedTime.value[j].time = tem.time
+                formattedTime.value[j].date = tem.date
+            }
         }
 
-
+        nowData.value = data.value[data.value.length - 1]
 
     } catch (error) {
         console.error("出错", error);
@@ -123,7 +136,7 @@ let myChart = null;
 var charts = {
     unit: '浓度',
     names: [''],
-    lineX: date.value,
+    lineX: [],
     value: [
         data.value,
     ]
@@ -171,9 +184,20 @@ const updateChart = async () => {
 
     await fetchOxygenData()
 
+    charts.lineX = dateFormatter.getTime(formattedTime.value)
+
     var option = {
         tooltip: {
-            trigger: 'axis'
+            trigger: 'axis',
+            formatter: function (params) {
+
+                return `
+                ${params.map((param, i) => {
+                    return `<div style="margin-bottom:5px">${dateFormatter.getDate(formattedTime.value)[i]}</div>
+                            <div>${param.marker + "  "}${param.data}</div>`;
+                }).join('')}
+                `;
+            }
         },
         legend: {
             data: charts.names,
@@ -241,6 +265,7 @@ const updateChart = async () => {
         },
         series: lineY
     }
+
     myChart.setOption(option);
 };
 
@@ -248,9 +273,13 @@ const updateChart = async () => {
 onMounted(() => {
     initChart();
     window.addEventListener('resize', () => myChart.resize());
+    pollInterval = setInterval(updateChart, 2000); // 每2秒轮询一次
 });
 
 onUnmounted(() => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
