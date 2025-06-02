@@ -2,7 +2,7 @@
     <div class="nowData">
         <span class="title">平均指数</span>
         <div class="dataBox">
-            <span class="data">{{ data[data.length - 1] }}</span>
+            <span class="data">{{ nowData }}</span>
             <span class="unit">mmol/L</span>
         </div>
     </div>
@@ -81,10 +81,10 @@ echarts.use([
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 
-
+const nowData = ref(0)
 const data = ref([])
-const date = ref([])
 const formattedTime = ref([])
+let pollInterval = null;
 
 const chart = ref(null);
 let myChart = null;
@@ -107,11 +107,25 @@ const fetchPiData = async () => {
             }
         )
 
-        for (let i = 0; i < response.data.length; i++) {
-            data.value.push(response.data[i].piData)
+        if (data.value.length === 0) {
+            for (let j = 0; j < response.data.length; j++) {
+                data.value.push(response.data[j].piData)
 
-            formattedTime.value.push(dateFormatter.Formatter(response.data[i].created_at))
+                formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+            }
+        } else {
+            for (let j = 0; j < response.data.length; j++) {
+                // data.value.push(response.data[j].heartData)
+                data.value[j] = response.data[j].piData
+
+                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+                const tem = dateFormatter.Formatter(response.data[j].created_at)
+                formattedTime.value[j].time = tem.time
+                formattedTime.value[j].date = tem.date
+            }
         }
+
+        nowData.value = data.value[data.value.length - 1]
 
     } catch (error) {
         console.error("出错", error);
@@ -234,9 +248,13 @@ const updateChart = async () => {
 onMounted(() => {
     initChart();
     window.addEventListener('resize', () => myChart.resize());
+    pollInterval = setInterval(updateChart, 2000); // 每2秒轮询一次
 });
 
 onUnmounted(() => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
     window.removeEventListener('resize', () => myChart.resize());
     myChart.dispose();
 });
