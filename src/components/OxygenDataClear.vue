@@ -49,7 +49,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -61,15 +61,13 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import 'echarts-liquidfill'
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 
-let userInfoStore = storeToRefs(useUserInfoStore())
-let user_id = userInfoStore.user_id.value
-
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
 
 echarts.use([
     LineChart,
@@ -83,17 +81,23 @@ echarts.use([
     CanvasRenderer
 ]);
 
-const nowData = ref(0)
-const data = ref([])
-const formattedTime = ref([])
+const nowData = ref(0);
+const data = ref([]);
+const formattedTime = ref([]);
 let pollInterval = null;
+const chart = ref(null);
+let myChart = null;
 
+// 颜色定义
+const color = ['rgba(0, 190, 250)', 'rgba(0,61,150)', 'rgba(0,0,225)'];
+// 限制数据点为最近30个
+const maxDataPoints = 30;
+
+// ============ 修改的代码 START =============
+// 改进的数据获取函数，限制数据点数量并优化更新逻辑
 const fetchOxygenData = async () => {
-
     try {
-
-        const url = `/api/oxygenData`;
-        const response = await axios.post(url, {
+        const response = await axios.post(`/api/oxygenData`, {
             user_id: user_id
         }, {
             headers: {
@@ -101,187 +105,198 @@ const fetchOxygenData = async () => {
             }
         });
 
-        if (data.value.length === 0) {
-            for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].oxygenData)
+        console.log('pidata', response.data);
 
-                formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
-            }
-        } else {
-            for (let j = 0; j < response.data.length; j++) {
-                // data.value.push(response.data[j].heartData)
-                data.value[j] = response.data[j].oxygenData
 
-                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
-                const tem = dateFormatter.Formatter(response.data[j].created_at)
-                formattedTime.value[j].time = tem.time
-                formattedTime.value[j].date = tem.date
-            }
+        // 只保留最新的 maxDataPoints 个数据点
+        const newDataArray = response.data.slice(-maxDataPoints);
+
+        // 重置数据数组
+        data.value = [];
+        formattedTime.value = [];
+
+        // 填充新数据
+        for (const item of newDataArray) {
+            data.value.push(item.oxygenData);
+            formattedTime.value.push(dateFormatter.Formatter(item.created_at));
         }
 
-        nowData.value = data.value[data.value.length - 1]
-
+        // 更新当前显示值
+        if (data.value.length > 0) {
+            nowData.value = data.value[data.value.length - 1];
+        }
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。");
-
     }
-}
+};
 
-
-
-const chart = ref(null);
-let myChart = null;
-
-var charts = {
-    unit: '浓度',
-    names: [''],
-    lineX: [],
-    value: [
-        data.value,
-    ]
-
-}
-var color = ['rgba(0, 190, 250', 'rgba(0,61,150', 'rgba(0,0,225']
-var lineY = []
-
-for (var i = 0; i < charts.names.length; i++) {
-    var x = i
-
-    let data = {
-        name: charts.names[i],
-        type: 'line',
-        color: color[x] + ')',
-        smooth: true,
-        areaStyle: {
-            normal: {
-                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-                    offset: 0,
-                    color: color[x] + ', 0.8)'
-                }, {
-                    offset: 0.8,
-                    color: color[x] + ', 0)'
-                }], false),
-                shadowColor: 'rgba(0, 0, 0, 0.1)',
-                shadowBlur: 10
-            }
-        },
-        symbol: 'circle',
-        symbolSize: 5,
-        data: charts.value[i]
-    }
-    lineY.push(data)
-}
-
+// ============ 修改的代码 START =============
+// 重构图表初始化函数，添加动画配置
 const initChart = () => {
     if (chart.value) {
         myChart = echarts.init(chart.value);
-        updateChart();
-    }
-};
 
-const updateChart = async () => {
-
-    await fetchOxygenData()
-
-    charts.lineX = dateFormatter.getTime(formattedTime.value)
-
-    var option = {
-        tooltip: {
-            trigger: 'axis',
-            formatter: function (params) {
-
-                return `
-                ${params.map((param, i) => {
-                    return `<div style="margin-bottom:5px">${dateFormatter.getDate(formattedTime.value)[i]}</div>
-                            <div>${param.marker + "  "}${param.data}</div>`;
-                }).join('')}
-                `;
-            }
-        },
-        legend: {
-            data: charts.names,
-            textStyle: {
-                fontSize: 12,
-                color: 'rgb(0,253,255,0.6)'
-            },
-            right: '4%'
-        },
-        grid: {
-            top: '2%',
-            bottom: '10%',
-            left: '10%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            offset: 20,
-            boundaryGap: false,
-            data: charts.lineX,
-            axisLine: {
-                lineStyle: {
-                    color: 'black'
-                }
-            },
-            axisLabel: {
-                textStyle: {
-                    color: '#666',
-                    fontSize: 16
-                },
+        // 启用数据动画效果
+        const option = {
+            animation: true,
+            animationDuration: 1000,
+            animationEasing: 'cubicOut',
+            tooltip: {
+                trigger: 'axis',
                 formatter: function (params) {
-                    return params.split(' ')[0]
+                    return `
+                    ${params.map((param, i) => {
+                        return `<div style="margin-bottom:5px">${dateFormatter.getDate(formattedTime.value)[i]}</div>
+                                <div>${param.marker + "  "}${param.data}</div>`;
+                    }).join('')}
+                    `;
                 }
-            }
-        },
-        yAxis: {
-            name: charts.unit,
-            type: 'value',
-            offset: 20,
-            axisLabel: {
-                formatter: '{value}',
+            },
+            legend: {
+                data: [''],
                 textStyle: {
-                    color: 'black',
-                    fontSize: 16
+                    fontSize: 12,
+                    color: 'rgb(0,253,255,0.6)'
+                },
+                right: '4%'
+            },
+            grid: {
+                top: '2%',
+                bottom: '10%',
+                left: '10%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                offset: 20,
+                boundaryGap: false,
+                data: dateFormatter.getTime(formattedTime.value),
+                axisLine: {
+                    lineStyle: {
+                        color: 'black'
+                    }
+                },
+                axisLabel: {
+                    textStyle: {
+                        color: '#666',
+                        fontSize: 16
+                    },
+                    formatter: function (params) {
+                        return params.split(' ')[0]
+                    }
                 }
             },
+            yAxis: {
+                name: '浓度',
+                type: 'value',
+                offset: 20,
+                axisLabel: {
+                    formatter: '{value}',
+                    textStyle: {
+                        color: 'black',
+                        fontSize: 16
+                    }
+                },
+                splitLine: {
+                    show: true,
+                    lineStyle: {
+                        color: '#CCCCCC',
+                        type: 'dashed'
+                    }
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: 'black'
+                    }
+                }
+            },
+            dataZoom: {
+                type: 'inside',
+                start: 50,
+                end: 100
+            },
+            series: [{
+                name: '浓度',
+                type: 'line',
+                // 增强动画效果
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 8,
+                itemStyle: {
+                    color: color[0]
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(
+                        0, 0, 0, 1,
+                        [
+                            { offset: 0, color: 'rgba(0, 190, 250, 0.8)' },
+                            { offset: 1, color: 'rgba(0, 190, 250, 0.1)' }
+                        ]
+                    ),
+                },
+                lineStyle: {
+                    width: 2,
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0, 190, 250, 0.3)',
+                    shadowOffsetY: 5
+                },
+                // 为数据点添加动画效果
+                emphasis: {
+                    focus: 'series',
+                    itemStyle: {
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        shadowBlur: 10,
+                        shadowColor: color[0]
+                    }
+                },
+                data: data.value
+            }]
+        };
 
-            splitLine: {
-                show: true,
-                lineStyle: {
-                    color: '#CCCCCC',
-                    type: 'dashed'
-                }
-            },
-            axisLine: {
-                lineStyle: {
-                    color: 'black'
-                }
-            }
-        },
-        dataZoom: {
-            type: 'inside',
-            start: 50,
-            end: 100
-        },
-        series: lineY
+        myChart.setOption(option);
     }
-
-    myChart.setOption(option);
 };
 
+// ============ 修改的代码 START =============
+// 优化的更新函数，使用局部更新提升性能
+const updateChart = async () => {
+    await fetchOxygenData();
+    if (!myChart) return;
+
+    // 更新数据点（局部更新）
+    myChart.setOption({
+        xAxis: {
+            data: dateFormatter.getTime(formattedTime.value)
+        },
+        series: [{
+            data: data.value
+        }]
+    });
+};
+// ============ 修改的代码 END =============
 
 onMounted(() => {
     initChart();
-    window.addEventListener('resize', () => myChart.resize());
-    pollInterval = setInterval(updateChart, 2000); // 每2秒轮询一次
+    window.addEventListener('resize', () => myChart?.resize());
+
+    // 初始加载数据
+    updateChart();
+
+    // 轮询获取新数据，并确保DOM更新后刷新图表
+    pollInterval = setInterval(async () => {
+        await nextTick();
+        await updateChart();
+    }, 2000);
 });
 
 onUnmounted(() => {
     if (pollInterval) {
         clearInterval(pollInterval);
     }
-    window.removeEventListener('resize', () => myChart.resize());
-    myChart.dispose();
+    window.removeEventListener('resize', () => myChart?.resize());
+    if (myChart) {
+        myChart.dispose();
+    }
 });
-
 </script>

@@ -88,8 +88,10 @@ let pollInterval = null;
 
 const chart = ref(null);
 let myChart = null;
+const maxY = ref(0)
 
 const textColor = '#666'
+
 
 
 const fetchPiData = async () => {
@@ -126,6 +128,9 @@ const fetchPiData = async () => {
         }
 
         nowData.value = data.value[data.value.length - 1]
+
+        maxY.value = Math.floor((Math.max(...data.value) + 10) / 10) * 10
+
 
     } catch (error) {
         console.error("出错", error);
@@ -195,6 +200,7 @@ const updateChart = async () => {
         yAxis: {
             type: 'value',
             min: 0,
+            max: maxY.value,
             name: '灌注指数',
             offset: 20,
             nameTextStyle: {

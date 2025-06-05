@@ -74,13 +74,13 @@ const getTestMessage = async () => {
           <span>{{ userInfoStore.Username.value }}</span>
           <!-- <ImageUpload></ImageUpload> -->
         </div>
-        <div class="test">
+        <!-- <div class="test">
           <span>测试发送数据（以String类型发送）：</span>
           <el-input v-model="testInput" style="width: 240px" placeholder="输入数据" />
           <el-button type="primary" @click="setTestMessage">发送</el-button>
           <el-input v-model="testOutput" style="width: 240px" />
           <el-button type="primary" @click="getTestMessage">获取</el-button>
-        </div>
+        </div> -->
       </div>
       <div class="flex-container">
         <div class="tw-flex">
