@@ -30,7 +30,7 @@ const calendarWeeks = computed(() => {
             } else {
                 const dateStr = `${year}-${month + 1}-${currentDate}`;
                 days.push({
-                    date: currentDate,
+                    date: currentDate-1,
                     isCurrentMonth: true,
                     isToday: isToday(year, month, currentDate),
                     hasEvent: events.value.includes(dateStr)

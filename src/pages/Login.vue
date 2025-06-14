@@ -50,7 +50,7 @@ const toRegister = () => {
             <div class="hero">
                 <h1>您好 用户<br>
                     <span class="heroTxt">欢迎来到 </span>
-                    <span class="gradient-text">智养生息</span>
+                    <span class="gradient-text">颐康智联</span>
                 </h1>
                 <p>如果您没有账号<br>可以<a @click="toRegister">点击这里</a>进行注册.</p>
             </div>
