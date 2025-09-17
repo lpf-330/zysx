@@ -65,6 +65,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { bloodData } from '../api/bloodData';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 
@@ -91,23 +92,15 @@ const fetchBloodData = async () => {
 
 
         const url = `/api/bloodData`;
-        const response = await axios.post(url, {
-            user_id: userInfoStore.user_id.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
+        const response = await bloodData(userInfoStore.user_id.value)
 
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].bloodData)
-            date.value.push(response.data[j].Date)
+        for (let j = 0; j < response.length; j++) {
+            data.value.push(response[j].bloodData)
+            date.value.push(response[j].Date)
         }
 
 
-        console.log('响应血糖', response.data);
+        console.log('响应血糖', response);
 
 
 

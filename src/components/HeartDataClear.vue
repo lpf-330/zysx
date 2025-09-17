@@ -77,6 +77,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
+import { heartData } from '../api/heartData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -124,13 +125,10 @@ const hexToRgba = (hex, opacity) => {
 // 使用maxDataPoints限制显示的数据点数量
 const fetchHeartData = async () => {
     try {
-        const response = await axios.post("/api/heartData",
-            { user_id },
-            { headers: { 'Content-Type': 'application/json' } }
-        );
+        const response = await heartData(user_id)
 
         // 取最近30个数据点
-        const newData = response.data.slice(-maxDataPoints).map(item => ({
+        const newData = response.slice(-maxDataPoints).map(item => ({
             heartData: item.heartData,
             time: dateFormatter.Formatter(item.created_at)
         }));

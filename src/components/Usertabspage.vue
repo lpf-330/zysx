@@ -118,6 +118,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
+import { userTabPageData } from '../api/userTabPageData'
 
 const activeName = ref('first')
 
@@ -144,22 +145,15 @@ const fetchUsertabpagedata = async () => {
   try {
     const url = '/api/personal_history'; //后端还没写 
 
-    const response = await axios.post(url, {
-      user_id: user_id.value
-    },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+    const response = await userTabPageData(user_id.value)
 
-    console.log('响应健康档案', response.data);
+    console.log('响应健康档案', response);
 
-    medicalHistoryStore.allergy_history.value = response.data.allergy_history
-    medicalHistoryStore.family_history.value = response.data.family_history
-    medicalHistoryStore.past_medical_history.value = response.data.past_medical_history
-    medicalHistoryStore.surgical_history.value = response.data.surgical_history
-    medicalHistoryStore.medication_compliance.value = response.data.medical_compliance
+    medicalHistoryStore.allergy_history.value = response.allergy_history
+    medicalHistoryStore.family_history.value = response.family_history
+    medicalHistoryStore.past_medical_history.value = response.past_medical_history
+    medicalHistoryStore.surgical_history.value = response.surgical_history
+    medicalHistoryStore.medication_compliance.value = response.medical_compliance
 
 
   } catch (error) {

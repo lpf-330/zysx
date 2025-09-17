@@ -5,6 +5,7 @@ import useUserInfoStore from './user'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 import useMedicalHistoryStore from './medicalHistory'
+import { userLogin } from '../api/login'
 
 export const useAuthStore = defineStore('auth', () => {
     const token = ref(localStorage.getItem('token') || null)
@@ -36,38 +37,29 @@ export const useAuthStore = defineStore('auth', () => {
 
             const url = "/api/userInfo"
             // const url = 'http://localhost:8081/api/userInfo'
-            const response = await axios.post(url, {
-                account: account,
-                password: password
-            },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }
-            );
+            const response = await userLogin(account, password)
 
-            console.log("响应登录", response.data);
+            console.log("响应登录", response);
 
-            if (response.data.code === 1) {
+            if (response.code === 1) {
                 const userInfoStore = storeToRefs(useUserInfoStore())
 
-                token.value = response.data.data.token
-                localStorage.setItem('token', response.data.data.token)
+                token.value = response.data.token
+                localStorage.setItem('token', response.data.token)
 
-                userInfoStore.user_id.value = response.data.data.user_id
-                userInfoStore.Username.value = response.data.data.username
-                userInfoStore.Age.value = response.data.data.age
-                userInfoStore.Avatar.value = response.data.data.avatar
-                userInfoStore.Height.value = response.data.data.height
-                userInfoStore.Weight.value = response.data.data.weight
-                userInfoStore.gender.value = response.data.data.gender
-                userInfoStore.phone_number.value = response.data.data.phone_number
+                userInfoStore.user_id.value = response.data.user_id
+                userInfoStore.Username.value = response.data.username
+                userInfoStore.Age.value = response.data.age
+                userInfoStore.Avatar.value = response.data.avatar
+                userInfoStore.Height.value = response.data.height
+                userInfoStore.Weight.value = response.data.weight
+                userInfoStore.gender.value = response.data.gender
+                userInfoStore.phone_number.value = response.data.phone_number
 
                 router.push({ name: 'index' })
 
             } else {
-                alert(response.data.msg)
+                alert(response.msg)
             }
 
         } catch (error) {

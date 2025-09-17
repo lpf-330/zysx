@@ -87,6 +87,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { pressureData } from '../api/pressureData';
 
 echarts.use([
     LineChart,
@@ -130,33 +131,25 @@ const fetchPressureData = async () => {
 
 
         const url = '/api/pressureData'
-        const response = await axios.post(url, {
-            user_id: userInfoStore.user_id.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        )
+        const response = await pressureData(userInfoStore.user_id.value)
 
-        for (let i = 0; i < response.data.length; i++) {
-            data2.value.push(response.data[i].diastolicBP)
-            data1.value.push('-' + response.data[i].systolicBP)
-            date.value.push(response.data[i].date)
+        for (let i = 0; i < response.length; i++) {
+            data2.value.push(response[i].diastolicBP)
+            data1.value.push('-' + response[i].systolicBP)
+            date.value.push(response[i].date)
 
-            avgData11.value += Number(response.data[i].diastolicBP)
-            avgData22.value += Number(response.data[i].systolicBP)
+            avgData11.value += Number(response[i].diastolicBP)
+            avgData22.value += Number(response[i].systolicBP)
         }
 
 
         console.log('avgData11', avgData11.value);
 
 
-        avgData11.value /= response.data.length
-        avgData22.value /= response.data.length
+        avgData11.value /= response.length
+        avgData22.value /= response.length
 
-        console.log('响应血压', response.data);
+        console.log('响应血压', response);
 
 
     } catch (error) {

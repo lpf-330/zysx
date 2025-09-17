@@ -66,6 +66,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
+import { piData } from '../api/piData'
 
 echarts.use([
     LineChart,
@@ -99,29 +100,21 @@ const fetchPiData = async () => {
     try {
 
         const url = '/api/piData'
-        const response = await axios.post(url, {
-            user_id: userInfoStore.user_id.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        )
+        const response = await piData(userInfoStore.user_id.value)
 
         if (data.value.length === 0) {
-            for (let j = 0; j < response.data.length; j++) {
-                data.value.push(response.data[j].piData)
+            for (let j = 0; j < response.length; j++) {
+                data.value.push(response[j].piData)
 
-                formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+                formattedTime.value.push(dateFormatter.Formatter(response[j].created_at))
             }
         } else {
-            for (let j = 0; j < response.data.length; j++) {
+            for (let j = 0; j < response.length; j++) {
                 // data.value.push(response.data[j].heartData)
-                data.value[j] = response.data[j].piData
+                data.value[j] = response[j].piData
 
                 // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
-                const tem = dateFormatter.Formatter(response.data[j].created_at)
+                const tem = dateFormatter.Formatter(response[j].created_at)
                 formattedTime.value[j].time = tem.time
                 formattedTime.value[j].date = tem.date
             }
