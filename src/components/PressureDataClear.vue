@@ -87,7 +87,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { pressureData } from '../api/pressureData';
+import { getPressureData } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -131,7 +131,7 @@ const fetchPressureData = async () => {
 
 
         const url = '/api/pressureData'
-        const response = await pressureData(userInfoStore.user_id.value)
+        const response = await getPressureData(userInfoStore.user_id.value)
 
         for (let i = 0; i < response.length; i++) {
             data2.value.push(response[i].diastolicBP)

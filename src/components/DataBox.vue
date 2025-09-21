@@ -72,7 +72,7 @@ import router from '../router';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { dataBox } from '../api/dataBox';
+import { getDataBox } from '../api/healthData';
 
 
 const heartData = ref([])
@@ -90,10 +90,7 @@ const fetchData = async () => {
 
     try {
 
-        const url = `/api/data`;
-        const response = await dataBox(user_id)
-
-        console.log("响应data", response);
+        const response = await getDataBox(user_id)
 
         for (let j = 0; j < 4; j++) {
             heartData.value.push(Number(response.heartData[j].heartData))

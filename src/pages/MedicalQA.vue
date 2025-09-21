@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import QueryItem from '../components/QueryItem.vue';
 import AnswerItem from '../components/AnswerItem.vue';
-import { userQuery } from '../api/query';
+import { userQuery } from '../api/medicalQA';
 
 const query = ref('')
 const QAList = ref([])
@@ -12,12 +12,7 @@ const postQuery = async () => {
     if (query.value !== '') {
         try {
 
-            console.log("666" + query.value);
-
-            const url = "/api/query"
             const response = await userQuery(query.value)
-
-            console.log("响应问答", response);
 
             if (response !== null) {
                 QAList.value.push({ query: query.value, answer: response.answer })

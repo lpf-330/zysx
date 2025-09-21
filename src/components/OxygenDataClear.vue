@@ -65,7 +65,8 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
-import { oxygenData } from '../api/oxygenData';
+import { getOxygenData } from '../api/healthData';
+import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -98,10 +99,8 @@ const maxDataPoints = 30;
 // 改进的数据获取函数，限制数据点数量并优化更新逻辑
 const fetchOxygenData = async () => {
     try {
-        const response = await oxygenData(user_id)
-
-        console.log('pidata', response);
-
+        await dataWebSocketService.connectIfNeeded();
+        const response = Array.from(await dataWebSocketService.requestData('oxygen', user_id));
 
         // 只保留最新的 maxDataPoints 个数据点
         const newDataArray = response.slice(-maxDataPoints);

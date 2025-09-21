@@ -9,44 +9,6 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<style scoped>
-.nowData {
-    height: 15%;
-    width: 35%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
-
-.title {
-    font-size: 0.18rem;
-    font-family: 'PuHuiTi';
-}
-
-.data {
-    font-size: 0.14rem;
-    color: #F7819B;
-}
-
-.dataBox {
-    background-color: #fff;
-    border-radius: 0.05rem;
-    width: 25%;
-    height: 60%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
-}
-</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
@@ -66,7 +28,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
-import { piData } from '../api/piData'
+import { dataWebSocketService } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -99,8 +61,10 @@ const fetchPiData = async () => {
 
     try {
 
-        const url = '/api/piData'
-        const response = await piData(userInfoStore.user_id.value)
+        // 先确保连接
+        await dataWebSocketService.connectIfNeeded();
+
+        const response = Array.from(await dataWebSocketService.requestData('pi', userInfoStore.user_id.value));
 
         if (data.value.length === 0) {
             for (let j = 0; j < response.length; j++) {
@@ -260,3 +224,43 @@ onUnmounted(() => {
 
 
 </script>
+
+
+<style scoped>
+.nowData {
+    height: 15%;
+    width: 35%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-size: 0.18rem;
+    font-family: 'PuHuiTi';
+}
+
+.data {
+    font-size: 0.14rem;
+    color: #F7819B;
+}
+
+.dataBox {
+    background-color: #fff;
+    border-radius: 0.05rem;
+    width: 25%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5%;
+}
+
+.unit {
+    font-size: 0.08rem;
+    font-family: 'PuHuiTi';
+    color: #8E9AAB;
+}
+</style>

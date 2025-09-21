@@ -11,54 +11,7 @@
     <div v-else ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<style scoped>
-.nowData {
-    height: 15%;
-    width: 35%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
 
-.title {
-    font-size: 0.18rem;
-    font-family: 'PuHuiTi';
-}
-
-.data {
-    font-size: 0.14rem;
-    color: #F7819B;
-}
-
-.dataBox {
-    background-color: #fff;
-    border-radius: 0.05rem;
-    width: 25%;
-    height: 60%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
-}
-
-.loading,
-.error {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.16rem;
-}
-</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
@@ -77,7 +30,8 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
-import { heartData } from '../api/heartData';
+import { getHeartData } from '../api/healthData';
+import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -105,7 +59,7 @@ let pollInterval = null;
 const maxY = ref(0)
 
 const color = ["#FF0000", "#00CA69"];
-const maxDataPoints = 30; // 保持最近30个数据点
+// const maxDataPoints = 30; // 保持最近30个数据点
 
 
 
@@ -120,15 +74,19 @@ const hexToRgba = (hex, opacity) => {
     return rgbaColor;
 };
 
-// ============ 修改的代码 START =============
-// 添加了加载状态和错误处理
-// 使用maxDataPoints限制显示的数据点数量
+// 修改fetchHeartData方法
 const fetchHeartData = async () => {
     try {
-        const response = await heartData(user_id)
+        // 先确保连接
+        await dataWebSocketService.connectIfNeeded();
 
+        // 然后发送请求
+        const response = Array.from(await dataWebSocketService.requestData('heart', user_id));
+        console.log('获取到的数据:', response);
+
+        // 处理返回的数据
         // 取最近30个数据点
-        const newData = response.slice(-maxDataPoints).map(item => ({
+        const newData = response.map(item => ({
             heartData: item.heartData,
             time: dateFormatter.Formatter(item.created_at)
         }));
@@ -140,12 +98,15 @@ const fetchHeartData = async () => {
 
         // 更新图表数据
         data.value = newData.map(item => item.heartData);
+        console.log('data.value:', data.value);
+
         formattedTime.value = newData.map(item => item.time);
 
-        maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20
+        maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20;
 
         loading.value = false;
         error.value = false;
+
     } catch (err) {
         console.error("数据获取失败", err);
         error.value = true;
@@ -321,12 +282,63 @@ onMounted(async () => {
         // 确保DOM已更新后再更新图表
         await nextTick();
         await updateChart();
-    }, 2000);
+    }, 500);
 });
 
 onUnmounted(() => {
     if (pollInterval) clearInterval(pollInterval);
     window.removeEventListener('resize', () => myChart?.resize());
     if (myChart) myChart.dispose();
+
 });
 </script>
+
+
+<style scoped>
+.nowData {
+    height: 15%;
+    width: 35%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-size: 0.18rem;
+    font-family: 'PuHuiTi';
+}
+
+.data {
+    font-size: 0.14rem;
+    color: #F7819B;
+}
+
+.dataBox {
+    background-color: #fff;
+    border-radius: 0.05rem;
+    width: 25%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5%;
+}
+
+.unit {
+    font-size: 0.08rem;
+    font-family: 'PuHuiTi';
+    color: #8E9AAB;
+}
+
+.loading,
+.error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.16rem;
+}
+</style>

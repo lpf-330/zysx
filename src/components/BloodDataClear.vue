@@ -9,44 +9,6 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<style scoped>
-.nowData {
-    height: 15%;
-    width: 35%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
-
-.title {
-    font-size: 0.18rem;
-    font-family: 'PuHuiTi';
-}
-
-.data {
-    font-size: 0.14rem;
-    color: #F7819B;
-}
-
-.dataBox {
-    background-color: #fff;
-    border-radius: 0.05rem;
-    width: 25%;
-    height: 60%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
-}
-</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
@@ -65,7 +27,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { bloodData } from '../api/bloodData';
+import { getHeartData } from '../api/healthData';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 
@@ -90,9 +52,7 @@ const fetchBloodData = async () => {
 
     try {
 
-
-        const url = `/api/bloodData`;
-        const response = await bloodData(userInfoStore.user_id.value)
+        const response = await getHeartData(userInfoStore.user_id.value)
 
         for (let j = 0; j < response.length; j++) {
             data.value.push(response[j].bloodData)
@@ -307,3 +267,43 @@ onUnmounted(() => {
 
 
 </script>
+
+
+<style scoped>
+.nowData {
+    height: 15%;
+    width: 35%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-size: 0.18rem;
+    font-family: 'PuHuiTi';
+}
+
+.data {
+    font-size: 0.14rem;
+    color: #F7819B;
+}
+
+.dataBox {
+    background-color: #fff;
+    border-radius: 0.05rem;
+    width: 25%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5%;
+}
+
+.unit {
+    font-size: 0.08rem;
+    font-family: 'PuHuiTi';
+    color: #8E9AAB;
+}
+</style>

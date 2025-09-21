@@ -118,7 +118,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
-import { userTabPageData } from '../api/userTabPageData'
+import { getUserTabPageData } from '../api/user'
 
 const activeName = ref('first')
 
@@ -130,24 +130,12 @@ const handleClick = (tab: TabsPaneContext, event: Event) => {
   console.log(tab, event);
 };//点击事件，用于切换页面
 
-/**
- * 获取用户医疗信息
- * 请求参数：
- * user_id：string,
- * 响应参数：
- * family_history:string,
- * allergy_history:string,
- * past_medical_history:string,
- * surgical_history:string,
- * status:string//status是返回的状态
- */
 const fetchUsertabpagedata = async () => {
   try {
-    const url = '/api/personal_history'; //后端还没写 
 
-    const response = await userTabPageData(user_id.value)
+    const response = await getUserTabPageData(user_id.value)
 
-    console.log('响应健康档案', response);
+    console.log("fetchUsertabpagedata", response)
 
     medicalHistoryStore.allergy_history.value = response.allergy_history
     medicalHistoryStore.family_history.value = response.family_history
