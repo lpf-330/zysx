@@ -47,6 +47,7 @@ class WebSocketService {
         this.isConnected = false;
         this.reconnectTimer = null;
         this.reconnectAttempts = 0;
+        this.manuallyClosed = false; // 👈 标记是否为主动关闭
 
         // 配置默认值
         this.reconnectInterval = options.reconnectInterval || 3000;
@@ -65,7 +66,10 @@ class WebSocketService {
      * 连接WebSocket服务器
      */
     connect() {
-        // 如果已经连接，则先断开
+        // 重置手动关闭标记
+        this.manuallyClosed = false;
+
+        // 如果已有连接，先断开
         if (this.ws) {
             this.disconnect();
         }
@@ -73,33 +77,41 @@ class WebSocketService {
         try {
             this.ws = new WebSocket(this.url);
 
-            // 连接成功回调
+            // 连接成功
             this.ws.onopen = (event) => {
                 console.log('WebSocket 连接成功');
                 this.isConnected = true;
-                this.reconnectAttempts = 0; // 重置重连次数
+                this.reconnectAttempts = 0;
                 this.trigger('open', event);
             };
 
-            // 接收消息回调
+            // 接收消息（自动尝试 JSON 解析）
             this.ws.onmessage = (event) => {
-                this.trigger('message', event.data);
+                let data = event.data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    // 非 JSON，保留原始字符串
+                }
+                this.trigger('message', data);
             };
 
-            // 错误回调
+            // 错误处理
             this.ws.onerror = (error) => {
                 console.error('WebSocket 错误:', error);
                 this.trigger('error', error);
             };
 
-            // 关闭回调
+            // 连接关闭
             this.ws.onclose = (event) => {
                 console.log('WebSocket 连接关闭:', event);
                 this.isConnected = false;
                 this.trigger('close', event);
 
-                // 自动重连
-                this.autoReconnect();
+                // 仅在非主动关闭时重连
+                if (!this.manuallyClosed) {
+                    this.autoReconnect();
+                }
             };
         } catch (error) {
             console.error('WebSocket 初始化失败:', error);
@@ -113,8 +125,13 @@ class WebSocketService {
      * @param {string} reason - 关闭原因
      */
     disconnect(code = 1000, reason = '正常关闭') {
+        this.manuallyClosed = true; // 标记为主动关闭
+
         if (this.ws) {
-            this.ws.close(code, reason);
+            // 只有 OPEN 或 CONNECTING 状态才调用 close()
+            if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+                this.ws.close(code, reason);
+            }
             this.ws = null;
             this.isConnected = false;
 
@@ -132,8 +149,8 @@ class WebSocketService {
      * @returns {boolean} - 发送成功返回true，否则返回false
      */
     send(data) {
-        if (!this.isConnected || !this.ws) {
-            console.error('WebSocket 未连接，无法发送消息');
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            console.error('WebSocket 未连接或未就绪，当前状态:', this.ws?.readyState);
             return false;
         }
 
@@ -175,7 +192,7 @@ class WebSocketService {
     }
 
     /**
-     * 触发事件
+     * 触发事件（隔离错误，避免一个回调崩溃影响其他）
      * @param {string} event - 事件名称
      * @param {*} data - 事件数据
      */
@@ -192,47 +209,67 @@ class WebSocketService {
     }
 
     /**
-     * 自动重连
+     * 自动重连（指数退避）
      */
     autoReconnect() {
-        // 如果已经达到最大重连次数，则停止重连
+        // 如果是主动关闭，不重连
+        if (this.manuallyClosed) {
+            console.log('主动关闭连接，取消自动重连');
+            return;
+        }
+
+        // 达到最大重连次数
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             console.error(`已达到最大重连次数(${this.maxReconnectAttempts})，停止重连`);
             this.trigger('error', new Error(`已达到最大重连次数(${this.maxReconnectAttempts})`));
             return;
         }
 
-        // 清除已有的重连定时器
+        // 清除旧定时器（防御性）
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
         }
 
-        // 计算下一次重连时间，采用指数退避策略
+        // 指数退避计算
         const nextReconnectTime = this.reconnectInterval * (this.reconnectAttempts + 1);
         this.reconnectAttempts++;
 
         console.log(`将在 ${nextReconnectTime}ms 后进行第 ${this.reconnectAttempts} 次重连...`);
 
         this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null; // 👈 显式清空，语义清晰
             console.log(`进行第 ${this.reconnectAttempts} 次重连...`);
             this.connect();
         }, nextReconnectTime);
     }
 
     /**
-     * 更新WebSocket URL并重新连接
+     * 更新WebSocket URL并重新连接（保留原逻辑，不考虑 token 过期）
      * @param {string} newUrl - 新的WebSocket URL
      */
     updateUrl(newUrl) {
         if (newUrl && newUrl !== this.url) {
             this.url = newUrl;
-            // 如果当前已连接，则先断开再重连
             if (this.isConnected) {
                 this.disconnect(1000, 'URL更新，重新连接');
                 this.connect();
             }
         }
     }
+
+    /**
+     * 获取当前连接状态
+     * @returns {boolean}
+     */
+    getStatus() {
+        return this.isConnected;
+    }
 }
 
-export { httpService, WebSocketService }
+// 创建实例（示例）
+const wsService = new WebSocketService("/ws/data", {
+    reconnectInterval: 3000,
+    maxReconnectAttempts: 5
+});
+
+export { httpService, wsService }
