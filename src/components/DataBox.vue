@@ -72,7 +72,7 @@ import router from '../router';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-
+import { getDataBox } from '../api/healthData';
 
 
 const heartData = ref([])
@@ -90,30 +90,21 @@ const fetchData = async () => {
 
     try {
 
-        const url = `/api/data`;
-        const response = await axios.post(url, {
-            user_id: user_id
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        console.log("响应data", response.data);
+        const response = await getDataBox(user_id)
 
         for (let j = 0; j < 4; j++) {
-            heartData.value.push(Number(response.data.heartData[j].heartData))
-            piData.value.push(Number(response.data.piData[j].piData))
-            sleepData.value.push(Number(response.data.sleepData[j].sleepData))
+            heartData.value.push(Number(response.heartData[j].heartData))
+            piData.value.push(Number(response.piData[j].piData))
+            sleepData.value.push(Number(response.sleepData[j].sleepData))
         }
 
         for (let j = 0; j < 7; j++) {
-            bloodData.value.push(Number(response.data.bloodData[j].bloodData))
+            bloodData.value.push(Number(response.bloodData[j].bloodData))
         }
 
-        oxygenData.value = Number(response.data.oxygenData[response.data.oxygenData.length - 1].oxygenData) * 0.01
-        pressureData.value.push(Number(response.data.pressureData[response.data.pressureData.length - 1].systolicBP))
-        pressureData.value.push(Number(response.data.pressureData[response.data.pressureData.length - 1].diastolicBP))
+        oxygenData.value = Number(response.oxygenData[response.oxygenData.length - 1].oxygenData) * 0.01
+        pressureData.value.push(Number(response.pressureData[response.pressureData.length - 1].systolicBP))
+        pressureData.value.push(Number(response.pressureData[response.pressureData.length - 1].diastolicBP))
 
 
         // console.log('heartData.value', heartData.value);

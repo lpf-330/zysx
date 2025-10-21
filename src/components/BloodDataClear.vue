@@ -9,44 +9,6 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<style scoped>
-.nowData {
-    height: 15%;
-    width: 35%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
-
-.title {
-    font-size: 0.18rem;
-    font-family: 'PuHuiTi';
-}
-
-.data {
-    font-size: 0.14rem;
-    color: #F7819B;
-}
-
-.dataBox {
-    background-color: #fff;
-    border-radius: 0.05rem;
-    width: 25%;
-    height: 60%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
-}
-</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
@@ -65,6 +27,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { getHeartData } from '../api/healthData';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 
@@ -89,25 +52,15 @@ const fetchBloodData = async () => {
 
     try {
 
+        const response = await getHeartData(userInfoStore.user_id.value)
 
-        const url = `/api/bloodData`;
-        const response = await axios.post(url, {
-            user_id: userInfoStore.user_id.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        for (let j = 0; j < response.data.length; j++) {
-            data.value.push(response.data[j].bloodData)
-            date.value.push(response.data[j].Date)
+        for (let j = 0; j < response.length; j++) {
+            data.value.push(response[j].bloodData)
+            date.value.push(response[j].Date)
         }
 
 
-        console.log('响应血糖', response.data);
+        console.log('响应血糖', response);
 
 
 
@@ -314,3 +267,43 @@ onUnmounted(() => {
 
 
 </script>
+
+
+<style scoped>
+.nowData {
+    height: 15%;
+    width: 35%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-size: 0.18rem;
+    font-family: 'PuHuiTi';
+}
+
+.data {
+    font-size: 0.14rem;
+    color: #F7819B;
+}
+
+.dataBox {
+    background-color: #fff;
+    border-radius: 0.05rem;
+    width: 25%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5%;
+}
+
+.unit {
+    font-size: 0.08rem;
+    font-family: 'PuHuiTi';
+    color: #8E9AAB;
+}
+</style>

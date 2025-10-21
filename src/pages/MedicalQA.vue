@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import QueryItem from '../components/QueryItem.vue';
 import AnswerItem from '../components/AnswerItem.vue';
+import { userQuery } from '../api/medicalQA';
 
 const query = ref('')
 const QAList = ref([])
@@ -11,23 +12,10 @@ const postQuery = async () => {
     if (query.value !== '') {
         try {
 
-            console.log("666" + query.value);
+            const response = await userQuery(query.value)
 
-            const url = "/api/query"
-            const response = await axios.post(url, {
-                question: query.value
-            },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }
-            );
-
-            console.log("响应问答", response.data);
-
-            if (response.data !== null) {
-                QAList.value.push({ query: query.value, answer: response.data.answer })
+            if (response !== null) {
+                QAList.value.push({ query: query.value, answer: response.answer })
             } else {
                 QAList.value.push({ query: query.value, answer: '很抱歉没能听懂您的问题' })
             }

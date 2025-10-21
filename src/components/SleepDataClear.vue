@@ -11,45 +11,6 @@
     <div ref="chart" style="width: 100%; height: 100%;"></div>
 </template>
 
-<style scoped>
-.nowData {
-    height: 15%;
-    width: 40%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
-
-.title {
-    font-size: 0.18rem;
-    font-family: 'PuHuiTi';
-}
-
-.data {
-    font-size: 0.14rem;
-    color: #F7819B;
-}
-
-.dataBox {
-    background-color: #fff;
-    border-radius: 0.05rem;
-    width: 25%;
-    height: 60%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
-}
-</style>
-
 <script setup>
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import * as echarts from 'echarts/core';
@@ -67,6 +28,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { sleepData } from '../api/sleepData';
 
 echarts.use([
     LineChart,
@@ -102,21 +64,13 @@ const fetchSleepData = async () => {
     try {
 
         const url = '/api/sleepData'    //这后面还没补上
-        const response = await axios.post(url, {
-            user_id: userInfoStore.user_id.value
-        },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        )
+        const response = await sleepData(userInfoStore.user_id.value)
 
-        for (let i = 0; i < response.data.length; i++) {
-            data.value.push(response.data[i].sleepData)
-            date.value.push(response.data[i].Date)
+        for (let i = 0; i < response.length; i++) {
+            data.value.push(response[i].sleepData)
+            date.value.push(response[i].Date)
         }
-        console.log('响应睡眠', response.data);
+        console.log('响应睡眠', response);
 
     } catch (error) {
         console.error("出错", error);
@@ -257,3 +211,42 @@ onUnmounted(() => {
 });
 
 </script>
+
+<style scoped>
+.nowData {
+    height: 15%;
+    width: 40%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-size: 0.18rem;
+    font-family: 'PuHuiTi';
+}
+
+.data {
+    font-size: 0.14rem;
+    color: #F7819B;
+}
+
+.dataBox {
+    background-color: #fff;
+    border-radius: 0.05rem;
+    width: 25%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5%;
+}
+
+.unit {
+    font-size: 0.08rem;
+    font-family: 'PuHuiTi';
+    color: #8E9AAB;
+}
+</style>
