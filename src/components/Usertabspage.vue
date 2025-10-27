@@ -13,7 +13,7 @@
               <span class="y_or_n_span">是否有家族遗传病史:</span>
               <span>&nbsp;{{ (medicalHistoryStore.family_history.value === '' ||
                 medicalHistoryStore.family_history.value ===
-                null) ? '否' : '是' }}</span>
+                null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -41,7 +41,7 @@
               <span class="y_or_n_span">是否有过敏史:</span>
               <span>&nbsp;{{ (medicalHistoryStore.allergy_history.value === '' ||
                 medicalHistoryStore.allergy_history.value
-                === null) ? '否' : '是' }}</span>
+                === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -66,7 +66,7 @@
             <div class="y_or_n">
               <span class="y_or_n_span">是否有既往病史:</span>
               <span>&nbsp;{{ (medicalHistoryStore.past_medical_history.value === '' ||
-                medicalHistoryStore.past_medical_history.value === null) ? '否' : '是' }}</span>
+                medicalHistoryStore.past_medical_history.value === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -91,7 +91,7 @@
             <div class="y_or_n">
               <span class="y_or_n_span">是否有手术史:</span>
               <span>&nbsp;{{ (medicalHistoryStore.surgical_history.value === '' ||
-                medicalHistoryStore.surgical_history.value === null) ? '否' : '是' }}</span>
+                medicalHistoryStore.surgical_history.value === null) ? '无' : '有' }}</span>
             </div>
           </div>
           <div class="detail">
@@ -137,11 +137,11 @@ const fetchUsertabpagedata = async () => {
 
     console.log("fetchUsertabpagedata", response)
 
-    medicalHistoryStore.allergy_history.value = response.allergyHistory
-    medicalHistoryStore.family_history.value = response.familyHistory
-    medicalHistoryStore.past_medical_history.value = response.pastMedicalHistory
-    medicalHistoryStore.surgical_history.value = response.surgicalHistory
-    medicalHistoryStore.medication_compliance.value = response.medicalCompliance
+    medicalHistoryStore.allergy_history.value = response.allergy_history
+    medicalHistoryStore.family_history.value = response.family_history
+    medicalHistoryStore.past_medical_history.value = response.past_medical_history
+    medicalHistoryStore.surgical_history.value = response.surgical_history
+    medicalHistoryStore.medication_compliance.value = response.medical_compliance
 
 
   } catch (error) {

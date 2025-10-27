@@ -1,6 +1,6 @@
 <template>
     <div class="nowData">
-        <span class="title">血氧浓度</span>
+        <span class="title">平均浓度</span>
         <div class="dataBox">
             <span class="data">{{ nowData }}&nbsp;</span>
             <span class="unit">%</span>
@@ -66,7 +66,7 @@ import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 import { getOxygenData } from '../api/healthData';
-import { wsService } from '../api/healthData';
+import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -99,28 +99,26 @@ const maxDataPoints = 30;
 // 改进的数据获取函数，限制数据点数量并优化更新逻辑
 const fetchOxygenData = async () => {
     try {
-        const response = await getOxygenData(user_id);
-        console.log('响应血氧数据', response);
+        await dataWebSocketService.connectIfNeeded();
+        const response = Array.from(await dataWebSocketService.requestData('oxygen', user_id));
 
-        // --- 修正 1: 取最新的 maxDataPoints 个数据点 ---
-        const latestDataArray = response.slice(0, maxDataPoints);
+        // 只保留最新的 maxDataPoints 个数据点
+        const newDataArray = response.slice(-maxDataPoints);
 
-        // 处理返回的数据
-        const processedData = latestDataArray.map(item => ({
-            oxygenData: item.oxygenData,
-            time: dateFormatter.Formatter(item.recordTime)
-        }));
+        // 重置数据数组
+        data.value = [];
+        formattedTime.value = [];
 
-        // --- 修正 2: 更新实时显示值
-        if (latestDataArray.length > 0) {
-            nowData.value = latestDataArray[0].oxygenData;
+        // 填充新数据
+        for (const item of newDataArray) {
+            data.value.push(item.oxygenData);
+            formattedTime.value.push(dateFormatter.Formatter(item.created_at));
         }
 
-        // --- 修正 3: 反转数组以使时间从左到右递增 ---
-        data.value = processedData.map(item => item.oxygenData).reverse();
-        console.log('data.value (血氧 after reverse):', data.value);
-        formattedTime.value = processedData.map(item => item.time).reverse();
-
+        // 更新当前显示值
+        if (data.value.length > 0) {
+            nowData.value = data.value[data.value.length - 1];
+        }
     } catch (error) {
         console.error("出错", error);
     }
@@ -270,19 +268,20 @@ const updateChart = async () => {
         }]
     });
 };
+// ============ 修改的代码 END =============
 
-
-onMounted(async () => { // 添加 async
+onMounted(() => {
+    initChart();
     window.addEventListener('resize', () => myChart?.resize());
 
-    // 首先获取数据
-    await fetchOxygenData(); // 等待数据获取完成
+    // 初始加载数据
+    updateChart();
 
-    // 然后初始化图表，此时 data.value 和 formattedTime.value 已经有值
-    initChart();
-
-    // 启动轮询
-    pollInterval = setInterval(updateChart, 2000); // 移除不必要的 nextTick
+    // 轮询获取新数据，并确保DOM更新后刷新图表
+    pollInterval = setInterval(async () => {
+        await nextTick();
+        await updateChart();
+    }, 2000);
 });
 
 onUnmounted(() => {

@@ -28,8 +28,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
-import { wsService } from '../api/healthData';
-import { getPiData } from '../api/healthData';
+import { dataWebSocketService } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -43,13 +42,13 @@ echarts.use([
     CanvasRenderer
 ]);
 
-const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
+const userInfoStore = storeToRefs(useUserInfoStore())
 
 const nowData = ref(0)
 const data = ref([])
 const formattedTime = ref([])
 let pollInterval = null;
+
 const chart = ref(null);
 let myChart = null;
 const maxY = ref(0)
@@ -59,39 +58,45 @@ const textColor = '#666'
 
 
 const fetchPiData = async () => {
+
     try {
-        const response = await getPiData(user_id);
-        console.log('响应灌注指数', response);
 
-        // 处理返回的数据
-        const newData = response.map(item => ({
-            piData: item.piData,
-            time: dateFormatter.Formatter(item.recordTime)
-        }));
+        // 先确保连接
+        await dataWebSocketService.connectIfNeeded();
 
-        // 更新实时显示值
-        if (response.length > 0) {
-            nowData.value = response[0].piData;
-        }
-        // 反转灌注指数数据数组
-        data.value = newData.map(item => item.piData).reverse();
-        console.log('data.value (灌注指数 after reverse):', data.value);
+        const response = Array.from(await dataWebSocketService.requestData('pi', userInfoStore.user_id.value));
 
-        // 反转时间标签数组
-        formattedTime.value = newData.map(item => item.time).reverse();
+        if (data.value.length === 0) {
+            for (let j = 0; j < response.length; j++) {
+                data.value.push(response[j].piData)
 
-        // 计算Y轴最大值 (在数据反转后进行，并检查数组非空)
-        if (data.value.length > 0) {
-            maxY.value = Math.floor((Math.max(...data.value) + 10) / 10) * 10;
+                formattedTime.value.push(dateFormatter.Formatter(response[j].created_at))
+            }
         } else {
-            maxY.value = 100;
+            for (let j = 0; j < response.length; j++) {
+                // data.value.push(response.data[j].heartData)
+                data.value[j] = response[j].piData
+
+                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
+                const tem = dateFormatter.Formatter(response[j].created_at)
+                formattedTime.value[j].time = tem.time
+                formattedTime.value[j].date = tem.date
+            }
         }
+
+        nowData.value = data.value[data.value.length - 1]
+
+        maxY.value = Math.floor((Math.max(...data.value) + 10) / 10) * 10
+
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示
+        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
     }
-};
+
+
+}
 
 
 

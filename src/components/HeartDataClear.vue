@@ -1,6 +1,6 @@
 <template>
     <div class="nowData">
-        <span class="title">心率</span>
+        <span class="title">平均心率</span>
         <div class="dataBox">
             <span class="data">{{ nowData }}</span>
             <span class="unit">bmp</span>
@@ -31,7 +31,7 @@ import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 import { getHeartData } from '../api/healthData';
-import { wsService } from "../utils/apiService"
+import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -77,33 +77,32 @@ const hexToRgba = (hex, opacity) => {
 // 修改fetchHeartData方法
 const fetchHeartData = async () => {
     try {
-        // 使用封装的函数
-        const response = await getHeartData(user_id);
-        console.log('心率数据响应:', response);
+        // 先确保连接
+        await dataWebSocketService.connectIfNeeded();
+
+        // 然后发送请求
+        const response = Array.from(await dataWebSocketService.requestData('heart', user_id));
+        console.log('获取到的数据:', response);
 
         // 处理返回的数据
+        // 取最近30个数据点
         const newData = response.map(item => ({
             heartData: item.heartData,
-            time: dateFormatter.Formatter(item.recordTime)
+            time: dateFormatter.Formatter(item.created_at)
         }));
 
         // 更新实时显示值
-        if (response.length > 0) {
-            nowData.value = response[0].heartData;
+        if (newData.length > 0) {
+            nowData.value = newData[newData.length - 1].heartData;
         }
 
-        data.value = newData.map(item => item.heartData).reverse();
-        console.log('data.value (after reverse):', data.value);
+        // 更新图表数据
+        data.value = newData.map(item => item.heartData);
+        console.log('data.value:', data.value);
 
-        formattedTime.value = newData.map(item => item.time).reverse();
+        formattedTime.value = newData.map(item => item.time);
 
-        // 计算Y轴最大值
-        if (data.value.length > 0) {
-             maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20;
-        } else {
-             maxY.value = 200; // 设置一个默认值，或者根据需要处理
-        }
-
+        maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20;
 
         loading.value = false;
         error.value = false;

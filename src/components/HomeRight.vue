@@ -6,21 +6,7 @@ import { storeToRefs } from 'pinia';
 import axios from 'axios';
 import { ref, onBeforeUnmount } from 'vue';
 
-// 计算年龄的函数
-const calculateAge = (birthDateString) => {
-  if (!birthDateString) return '';
-  const birthDate = new Date(birthDateString);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  // 如果还没过生日，则年龄减一岁
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  // 确保年龄不为负数
-  return Math.max(0, age);
-};
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 
@@ -42,12 +28,12 @@ const userInfoStore = storeToRefs(useUserInfoStore())
                 <div class="userMes">
                     <div class="age">
                         <span>年龄</span>
-                        <span>{{ calculateAge(userInfoStore.Age.value) }}岁</span>
+                        <span>{{ userInfoStore.Age }}岁</span>
 
                     </div>
                     <div class="height">
                         <span>身高</span>
-                        <span>{{ userInfoStore.Height }}厘米</span>
+                        <span>{{ userInfoStore.Height }}米</span>
 
                     </div>
                     <div class="weight">

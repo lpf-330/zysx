@@ -5,10 +5,9 @@ class dateFormatter {
      * @returns 
      */
     static Formatter(inputStr) {
-        console.log(inputStr)
         try {
             // 拆分日期和时间部分
-            const [datePart, timePart] = inputStr.split('T');
+            const [datePart, timePart] = inputStr.split(' ');
 
             // 处理日期部分
             const [year, month, day] = datePart.split('-');

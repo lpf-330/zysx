@@ -14,7 +14,7 @@
         <div class="y_or_n">
           <span class="y_or_n_span">是否服用过任何药物:</span>
           <span>&nbsp;{{ (medicalHistoryStore.medication_compliance.value === '' ||
-            medicalHistoryStore.medication_compliance.value === null) ? '否' : '是' }}</span>
+            medicalHistoryStore.medication_compliance.value === null) ? '无' : '有' }}</span>
         </div>
       </div>
       <div class="detail">

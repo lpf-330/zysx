@@ -8,21 +8,7 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 
 const testInput = ref('')
 const testOutput = ref('')
-// 计算年龄的函数
-const calculateAge = (birthDateString) => {
-  if (!birthDateString) return '';
-  const birthDate = new Date(birthDateString);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  // 如果还没过生日，则年龄减一岁
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  // 确保年龄不为负数
-  return Math.max(0, age);
-};
 const setTestMessage = async () => {
 
   try {
@@ -45,7 +31,10 @@ const setTestMessage = async () => {
     alert("加载失败，请稍后再试。"); // 友好的错误提示  
 
   }
+
+
 }
+
 const getTestMessage = async () => {
 
   try {
@@ -66,7 +55,10 @@ const getTestMessage = async () => {
   } catch (error) {
     console.error("出错", error);
     alert("加载失败，请稍后再试。"); // 友好的错误提示  
+
   }
+
+
 }
 
 </script>
@@ -94,11 +86,11 @@ const getTestMessage = async () => {
         <div class="tw-flex">
           <div class="gender">
             <img width="35%" height="85%" src="https://img.icons8.com/dusk/64/unisex.png" alt="unisex" />
-            <span>{{ userInfoStore.gender.value === 'male' ? '男' : (userInfoStore.gender.value === 'female' ? '女' : userInfoStore.gender.value) }}</span>
+            <span>{{ userInfoStore.gender.value }}</span>
           </div>
           <div class="age">
             <img width="35%" height="85%" src="https://img.icons8.com/dusk/64/age.png" alt="age" />
-            <span>{{ calculateAge(userInfoStore.Age.value) }}</span>
+            <span>{{ userInfoStore.Age.value }}</span>
           </div>
           <div class="phoneNumber">
             <img width="15%" height="85%" src="https://img.icons8.com/dusk/64/phone.png" alt="phone" />
@@ -106,11 +98,11 @@ const getTestMessage = async () => {
           </div>
           <div class="height">
             <img width="23%" height="80%" src="https://img.icons8.com/dusk/64/ruler.png" alt="ruler" />
-            <span>{{ Math.round(userInfoStore.Height.value) }}cm</span>
+            <span>{{ userInfoStore.Height.value * 100 }}cm</span>
           </div>
           <div class="weight">
             <img width="25%" height="85%" src="https://img.icons8.com/dusk/64/scale.png" alt="scale" />
-            <span>{{ Math.round(userInfoStore.Weight.value) }}kg</span>
+            <span>{{ userInfoStore.Weight.value }}kg</span>
           </div>
         </div>
         <!-- <div class="introduce"><span>智慧守护，每一刻健康关怀!</span></div> 
