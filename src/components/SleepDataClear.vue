@@ -28,7 +28,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { sleepData } from '../api/sleepData';
+import { getSlpData } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -42,44 +42,44 @@ echarts.use([
     CanvasRenderer
 ]);
 
-
-const userInfoStore = storeToRefs(useUserInfoStore())
-
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
 
 //数据
 //const data = ref([40, 58, 40, 44, 61, 58, 77]);
 const data = ref([])
+const date = ref([])
 //日期
 //const date = ref(['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00']);
 // const y1 = [50, 48, 44, 62, 41, 78, 57, 70, 68, 93, 60, 73];
-const date = ref([])
-
-
 const chart = ref(null);
 let myChart = null;
-
-
 const fetchSleepData = async () => {
-
     try {
+        const response = await getSlpData(user_id);
+        console.log('响应睡眠数据', response);
 
-        const url = '/api/sleepData'    //这后面还没补上
-        const response = await sleepData(userInfoStore.user_id.value)
+        // 重置数组，避免重复加载时数据累加
+        data.value = [];
+        date.value = [];
 
+        // 处理并填充数据数组
         for (let i = 0; i < response.length; i++) {
-            data.value.push(response[i].sleepData)
-            date.value.push(response[i].Date)
+            data.value.push(response[i].sleepData);
+            date.value.push(response[i].recordTime);
         }
+
+        // --- 修正：反转数组以使时间从左到右递增 ---
+        data.value.reverse();
+        date.value.reverse();
+
         console.log('响应睡眠', response);
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
-
+        alert("加载失败，请稍后再试。");
     }
-
-
-}
+};
 
 
 const initChart = () => {

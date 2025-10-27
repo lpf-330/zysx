@@ -47,14 +47,14 @@ export const useAuthStore = defineStore('auth', () => {
                 token.value = response.data.token
                 localStorage.setItem('token', response.data.token)
 
-                userInfoStore.user_id.value = response.data.user_id
+                userInfoStore.user_id.value = response.data.id
                 userInfoStore.Username.value = response.data.username
-                userInfoStore.Age.value = response.data.age
+                userInfoStore.Age.value = response.data.birthDate
                 userInfoStore.Avatar.value = response.data.avatar
                 userInfoStore.Height.value = response.data.height
                 userInfoStore.Weight.value = response.data.weight
                 userInfoStore.gender.value = response.data.gender
-                userInfoStore.phone_number.value = response.data.phone_number
+                userInfoStore.phone_number.value = response.data.phone
 
                 router.push({ name: 'index' })
 

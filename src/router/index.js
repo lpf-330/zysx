@@ -100,10 +100,10 @@ router.beforeEach(async (to, from) => {
         return true // 允许访问登录页
     }
 
-    // 检查其他页面是否登录
-    if (!authStore.token) {
-        return '/login'
-    }
+    // // 检查其他页面是否登录
+    // if (!authStore.token) {
+    //     return '/login'
+    // }
 
     // 已登录用户正常访问
     return true

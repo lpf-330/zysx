@@ -7,7 +7,7 @@
                 <span class="unit">mmHg</span>
             </div>
         </div>
-        <span class="title">平均血压</span>
+        <span class="title">血压</span>
         <div class="dataBox">
             <span class="classTitle" style="color: rgba(35, 157, 250, 1);">低压</span>
             <div class="class">
@@ -87,7 +87,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { getPressureData } from '../api/healthData';
+import { getPreData } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -121,43 +121,56 @@ const avgData22 = ref(0)
 const chart = ref(null);
 let myChart = null;
 
-const userInfoStore = storeToRefs(useUserInfoStore())
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
 
 
 const fetchPressureData = async () => {
     try {
+        const response = await getPreData(user_id);
+        console.log('响应血压数据', response);
 
-        console.log('user_id', userInfoStore.user_id.value);
+        // 重置数组，避免重复累加
+        data1.value = [];
+        data2.value = [];
+        date.value = [];
 
+        // 计算平均值的临时变量
+        let sumDiastolic = 0;
+        let sumSystolic = 0;
 
-        const url = '/api/pressureData'
-        const response = await getPressureData(userInfoStore.user_id.value)
-
+        // 处理并填充数据数组
         for (let i = 0; i < response.length; i++) {
-            data2.value.push(response[i].diastolicBP)
-            data1.value.push('-' + response[i].systolicBP)
-            date.value.push(response[i].date)
+            data1.value.push('-' + response[i].systolicBp);
+            data2.value.push(response[i].diastolicBp);
+            date.value.push(response[i].recordTime);
 
-            avgData11.value += Number(response[i].diastolicBP)
-            avgData22.value += Number(response[i].systolicBP)
+            sumDiastolic += Number(response[i].diastolicBp);
+            sumSystolic += Number(response[i].systolicBp);
         }
 
+        // --- 修正：反转所有数组以使时间从左到右递增 ---
+        data1.value.reverse();
+        data2.value.reverse();
+        date.value.reverse();
+
+        // 计算平均值
+        if (response.length > 0) {
+            avgData11.value = sumDiastolic / response.length;
+            avgData22.value = sumSystolic / response.length;
+        } else {
+            avgData11.value = 0;
+            avgData22.value = 0;
+        }
 
         console.log('avgData11', avgData11.value);
-
-
-        avgData11.value /= response.length
-        avgData22.value /= response.length
-
         console.log('响应血压', response);
-
 
     } catch (error) {
         console.error("出错", error);
         alert("加载失败，请稍后再试。");
-
     }
-}
+};
 
 const initChart = () => {
     if (chart.value) {

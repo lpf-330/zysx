@@ -13,14 +13,14 @@
           </div>
           <div class="info-item">
             <label>性别:</label>
-            <select v-model="userInfoStore.gender.value" id="select1" class="gender">
+            <select v-model="selectedGender" id="select1" class="gender">
               <option value="男">男</option>
               <option value="女">女</option>
             </select>
           </div>
           <div class="info-item">
             <label>年龄:</label>
-            <input v-model.number="userInfoStore.Age.value" id="input2" />
+            <input v-model.number="calculatedAge" id="input2" />
           </div>
           <div class="info-item">
             <label>手机号:</label>
@@ -28,7 +28,7 @@
           </div>
           <div class="info-item">
             <label>身高:</label>
-            <input v-model="userInfoStore.Height.value" placeholder="m" id="input4" />
+            <input v-model="userInfoStore.Height.value" placeholder="cm" id="input4" />
           </div>
           <div class="info-item">
             <label>体重:</label>
@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Edit } from '@element-plus/icons-vue';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
@@ -82,6 +82,32 @@ import { storeToRefs } from 'pinia';
 
 const drawer = ref(false);
 
+// 计算年龄
+const calculatedAge = computed(() => {
+  const birthDateStr = userInfoStore.Age.value;
+  if (!birthDateStr) return '';
+  const birthDate = new Date(birthDateStr);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return Math.max(0, age);
+});
+
+// 性别双向绑定的计算属性
+const selectedGender = computed({
+  get() {
+    return userInfoStore.gender.value === 'male' ? '男' :
+           userInfoStore.gender.value === 'female' ? '女' : '';
+  },
+  set(value) {
+    const internalValue = value === '男' ? 'male' : (value === '女' ? 'female' : '');
+    userInfoStore.gender.value = internalValue;
+  }
+});
 function cancelClick() {
   drawer.value = false;
 }
