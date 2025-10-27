@@ -32,22 +32,18 @@ httpService.interceptors.response.use(
 class WebSocketService {
     /**
      * 构造函数
-     * @param {string} url - WebSocket服务器地址
+     * @param {string} baseUrl - WebSocket服务器基础地址 (例如: localhost:8081)
      * @param {Object} options - 配置选项
-     * @param {number} options.reconnectInterval - 重连间隔时间(ms)，默认3000
-     * @param {number} options.maxReconnectAttempts - 最大重连次数，默认5
      */
-    constructor(url, options = {}) {
-        if (!url) {
-            throw new Error('WebSocket URL 不能为空');
+    constructor(baseUrl, options = {}) {
+        if (!baseUrl) {
+            throw new Error('WebSocket 基础URL 不能为空');
         }
 
-        this.url = url;
-        this.ws = null;
-        this.isConnected = false;
-        this.reconnectTimer = null;
-        this.reconnectAttempts = 0;
-        this.manuallyClosed = false; // 👈 标记是否为主动关闭
+        this.baseUrl = baseUrl;
+        this.wsMap = new Map(); // 储不同类型的WebSocket连接
+        this.isConnectedMap = new Map();
+        this.manuallyClosedMap = new Map();
 
         // 配置默认值
         this.reconnectInterval = options.reconnectInterval || 3000;
@@ -60,109 +56,134 @@ class WebSocketService {
             error: [],
             close: []
         };
+
+        // 请求-响应相关
+        this.requestId = 0;
+        this.pendingRequests = new Map();
     }
 
     /**
-     * 连接WebSocket服务器
+     * 接特定类型的WebSocket服务器
+     * @param {string} dataType - 数据类型 (blood, heart, oxygen, pi, pre, slp)
+     * @param {string} userId - 用户ID
      */
-    connect() {
-        // 重置手动关闭标记
-        this.manuallyClosed = false;
-
-        // 如果已有连接，先断开
-        if (this.ws) {
-            this.disconnect();
+    connect(dataType, userId) {
+        // 据数据类型构建URL
+        let endpoint;
+        switch (dataType) {
+            case 'blood':
+                endpoint = `/websocket/bloodSugar?userId=${userId}`;
+                break;
+            case 'heart':
+                endpoint = `/websocket/heartRate?userId=${userId}`;
+                break;
+            case 'oxygen':
+                endpoint = `/websocket/bloodOxygen?userId=${userId}`;
+                break;
+            case 'pi':
+                endpoint = `/websocket/perfusionIndex?userId=${userId}`;
+                break;
+            case 'pre':
+                endpoint = `/websocket/bloodPressure?userId=${userId}`;
+                break;
+            case 'slp':
+                endpoint = `/websocket/sleepData?userId=${userId}`;
+                break;
+            default:
+                throw new Error(`不支持的数据类型: ${dataType}`);
         }
 
-        try {
-            this.ws = new WebSocket(this.url);
+        const wsUrl = this.baseUrl.startsWith('http') 
+            ? this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://') + endpoint
+            : `ws://${this.baseUrl}${endpoint}`;
 
-            // 连接成功
-            this.ws.onopen = (event) => {
-                console.log('WebSocket 连接成功');
-                this.isConnected = true;
-                this.reconnectAttempts = 0;
-                this.trigger('open', event);
+        console.log(`尝试连接到 WebSocket: ${wsUrl}`);
+
+        // 标记为非手动关闭
+        this.manuallyClosedMap.set(dataType, false);
+
+        try {
+            const ws = new WebSocket(wsUrl);
+            this.wsMap.set(dataType, ws);
+            this.isConnectedMap.set(dataType, false);
+
+            ws.onopen = (event) => {
+                console.log(`${dataType} WebSocket 接成功`);
+                this.isConnectedMap.set(dataType, true);
+                this.trigger('open', { dataType, event });
             };
 
-            // 接收消息（自动尝试 JSON 解析）
-            this.ws.onmessage = (event) => {
-                let data = event.data;
+            ws.onmessage = (event) => {
+                console.log(`${dataType} 收到消息:`, event.data);
+                let data;
                 try {
                     data = JSON.parse(event.data);
+                    console.log(`${dataType} 解析消息:`, data);
+                    
+                    // 处理后端返回的HealthDataMessage格式
+                    if (data && data.data && Array.isArray(data.data)) {
+                        // 触发消息事件，传递解析后的数据
+                        this.trigger('message', { dataType, data: data.data });
+                    } else {
+                        console.warn(`${dataType} 息格式不符合HealthDataMessage格式:`, data);
+                    }
                 } catch (e) {
-                    // 非 JSON，保留原始字符串
-                }
-                this.trigger('message', data);
-            };
-
-            // 错误处理
-            this.ws.onerror = (error) => {
-                console.error('WebSocket 错误:', error);
-                this.trigger('error', error);
-            };
-
-            // 连接关闭
-            this.ws.onclose = (event) => {
-                console.log('WebSocket 连接关闭:', event);
-                this.isConnected = false;
-                this.trigger('close', event);
-
-                // 仅在非主动关闭时重连
-                if (!this.manuallyClosed) {
-                    this.autoReconnect();
+                    console.error(`${dataType} 解析消息失败:`, e);
+                    this.trigger('error', { dataType, error: e });
                 }
             };
+
+            ws.onerror = (error) => {
+                console.error(`${dataType} WebSocket 错误:`, error);
+                this.trigger('error', { dataType, error });
+            };
+
+            ws.onclose = (event) => {
+                console.log(`${dataType} WebSocket 接关闭:`, event.code, event.reason);
+                this.isConnectedMap.set(dataType, false);
+                this.wsMap.delete(dataType);
+                this.trigger('close', { dataType, event });
+            };
+
         } catch (error) {
-            console.error('WebSocket 初始化失败:', error);
-            this.trigger('error', error);
+            console.error(`创建 ${dataType} WebSocket 连接失败:`, error);
+            this.trigger('error', { dataType, error });
         }
     }
 
     /**
-     * 断开WebSocket连接
-     * @param {number} code - 关闭代码，默认1000（正常关闭）
-     * @param {string} reason - 关闭原因
+     * 断开特定类型的WebSocket连接
+     * @param {string} dataType - 数据类型
      */
-    disconnect(code = 1000, reason = '正常关闭') {
-        this.manuallyClosed = true; // 标记为主动关闭
-
-        if (this.ws) {
-            // 只有 OPEN 或 CONNECTING 状态才调用 close()
-            if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-                this.ws.close(code, reason);
+    disconnect(dataType) {
+        this.manuallyClosedMap.set(dataType, true);
+        
+        const ws = this.wsMap.get(dataType);
+        if (ws) {
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                ws.close();
             }
-            this.ws = null;
-            this.isConnected = false;
-
-            // 清除重连定时器
-            if (this.reconnectTimer) {
-                clearTimeout(this.reconnectTimer);
-                this.reconnectTimer = null;
-            }
+            this.wsMap.delete(dataType);
+            this.isConnectedMap.set(dataType, false);
         }
     }
 
     /**
-     * 发送消息
-     * @param {string|Object} data - 要发送的数据，对象会自动转为JSON字符串
-     * @returns {boolean} - 发送成功返回true，否则返回false
+     * 断开所有WebSocket连接
      */
-    send(data) {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            console.error('WebSocket 未连接或未就绪，当前状态:', this.ws?.readyState);
-            return false;
+    disconnectAll() {
+        for (const dataType of this.wsMap.keys()) {
+            this.disconnect(dataType);
         }
+    }
 
-        try {
-            const sendData = typeof data === 'object' ? JSON.stringify(data) : data;
-            this.ws.send(sendData);
-            return true;
-        } catch (error) {
-            console.error('WebSocket 发送消息失败:', error);
-            this.trigger('error', error);
-            return false;
-        }
+    /**
+     * 获取连接状态
+     * @param {string} dataType - 数据类型
+     * @returns {boolean}
+     */
+    getStatus(dataType) {
+        return this.isConnectedMap.get(dataType) || false;
     }
 
     /**
@@ -177,9 +198,9 @@ class WebSocketService {
     }
 
     /**
-     * 移除事件监听
+     * 除事件监听
      * @param {string} event - 事件名称
-     * @param {Function} callback - 要移除的回调函数，不传则移除所有该事件的回调
+     * @param {Function} callback - 要移除的回调函数
      */
     off(event, callback) {
         if (this.events[event]) {
@@ -192,7 +213,7 @@ class WebSocketService {
     }
 
     /**
-     * 触发事件（隔离错误，避免一个回调崩溃影响其他）
+     * 触发事件
      * @param {string} event - 事件名称
      * @param {*} data - 事件数据
      */
@@ -207,67 +228,10 @@ class WebSocketService {
             });
         }
     }
-
-    /**
-     * 自动重连（指数退避）
-     */
-    autoReconnect() {
-        // 如果是主动关闭，不重连
-        if (this.manuallyClosed) {
-            console.log('主动关闭连接，取消自动重连');
-            return;
-        }
-
-        // 达到最大重连次数
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.error(`已达到最大重连次数(${this.maxReconnectAttempts})，停止重连`);
-            this.trigger('error', new Error(`已达到最大重连次数(${this.maxReconnectAttempts})`));
-            return;
-        }
-
-        // 清除旧定时器（防御性）
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-        }
-
-        // 指数退避计算
-        const nextReconnectTime = this.reconnectInterval * (this.reconnectAttempts + 1);
-        this.reconnectAttempts++;
-
-        console.log(`将在 ${nextReconnectTime}ms 后进行第 ${this.reconnectAttempts} 次重连...`);
-
-        this.reconnectTimer = setTimeout(() => {
-            this.reconnectTimer = null; // 👈 显式清空，语义清晰
-            console.log(`进行第 ${this.reconnectAttempts} 次重连...`);
-            this.connect();
-        }, nextReconnectTime);
-    }
-
-    /**
-     * 更新WebSocket URL并重新连接（保留原逻辑，不考虑 token 过期）
-     * @param {string} newUrl - 新的WebSocket URL
-     */
-    updateUrl(newUrl) {
-        if (newUrl && newUrl !== this.url) {
-            this.url = newUrl;
-            if (this.isConnected) {
-                this.disconnect(1000, 'URL更新，重新连接');
-                this.connect();
-            }
-        }
-    }
-
-    /**
-     * 获取当前连接状态
-     * @returns {boolean}
-     */
-    getStatus() {
-        return this.isConnected;
-    }
 }
 
-// 创建实例（示例）
-const wsService = new WebSocketService("/ws/data", {
+// 创建实例
+const wsService = new WebSocketService("localhost:8081", {
     reconnectInterval: 3000,
     maxReconnectAttempts: 5
 });
