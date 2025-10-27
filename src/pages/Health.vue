@@ -3,6 +3,8 @@ import TimeBox from '../components/TimeBox.vue'
 import { RouterView } from 'vue-router';
 import DataBox from '../components/DataBox.vue';
 import { ref } from 'vue';
+import HistoricalData from '../components/HistoricalData.vue';
+import DayView from '../components/DayView.vue';
 
 const shouldAnimate = ref(true);
 
@@ -28,48 +30,61 @@ const shiftControlBox = () => {
 </script>
 
 <template>
-    <div class="mid">
-        <TimeBox></TimeBox>
-        <div class="health">
-            <RouterView></RouterView>
-        </div>
-    </div>
-    <div class="right">
-        <div class="spring" @click="shiftControlBox">
-            <div class="round roundTop"></div>
-            <div class="springMid">
-                <span class="iconfont icon-lachu"></span>
+    <div class="main-container">
+        <div class="mid">
+            <TimeBox></TimeBox>
+            <div class="health">
+                <RouterView></RouterView>
             </div>
-            <div class="round roundBottom"></div>
+            <div class="spring" @click="shiftControlBox">
+                <div class="round roundTop"></div>
+                <div class="springMid">
+                    <span class="iconfont icon-lachu"></span>
+                </div>
+                <div class="round roundBottom"></div>
+            </div>
         </div>
-    </div>
-    <div class="controlBox comeOut">
-        <DataBox :onClick="shiftControlBox"></DataBox>
+
+        <div class="controlBox comeOut">
+            <DataBox :onClick="shiftControlBox"></DataBox>
+        </div>
+        <div class="right">
+            <HistoricalData></HistoricalData>
+        </div>
     </div>
 </template>
 
 <style scoped>
+.main-container {
+    width: 87%;
+    height: 100%;
+    display: flex;
+}
+
 .controlBox {
-    width: 6rem;
-    height: 3.5rem;
+    width: 5.5rem;
+    height: 3.2rem;
     background-color: #ffffff;
     position: absolute;
-    transform: translate(39%, 35%);
-    border-radius: 0.2rem;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 0.2rem 0.2rem 0.2rem 0.2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0.04rem 0.04rem 0.05rem 0.005rem rgba(115, 115, 115, 0.211);
     z-index: 1;
     overflow: hidden;
+    transition: transform 1.5s ease;
 }
 
 .comeIn {
-    transform: translate(39%, 35%);
+    transform: translateX(-59%) translateY(-8%);
 }
 
 .comeOut {
-    transform: translate(160%, 35%);
+    transform: translateX(-59%) translateY(100%);
 }
 
 .buttonAlt {
@@ -77,16 +92,16 @@ const shiftControlBox = () => {
 }
 
 .mid {
-    width: 78%;
+    width: 73%;
     height: 100%;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .health {
     width: 100%;
     height: 90%;
-    /* background-color: bisque; */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -95,24 +110,26 @@ const shiftControlBox = () => {
 
 .right {
     height: 100%;
-    width: 9%;
-    background-color: #ffffff;
+    width: 27%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 2;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .spring {
     height: 0.6rem;
     width: 0.35rem;
-    position: relative;
+    position: absolute;
+    margin-top: 0.01rem;
+    left: 50%;
+    transform: translateX(-50%) rotate(90deg);
     z-index: 3;
 }
 
 .round {
     height: 0.35rem;
-    width: 0.35rem;
+    width: 0.3rem;
     border-radius: 50%;
     position: absolute;
     box-sizing: border-box;
@@ -124,15 +141,17 @@ const shiftControlBox = () => {
 
 .roundTop {
     top: -0.175rem;
+    background-color: #ffffff;
 }
 
 .roundBottom {
     top: 0.425rem;
+    background-color: #ffffff;
 }
 
 .springMid {
     height: 0.6rem;
-    width: 0.35rem;
+    width: 0.3rem;
     box-sizing: border-box;
     border-style: solid;
     border-color: rgba(112, 128, 144, 0.635);
