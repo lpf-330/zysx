@@ -1,6 +1,7 @@
 <script setup>
 import Calendar from './Calendar.vue';
 import Memo from './Memo.vue';
+import TodoManagement from './TodoManagment.vue'; // 导入待办管理组件
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import axios from 'axios';
@@ -24,7 +25,18 @@ const calculateAge = (birthDateString) => {
 
 const userInfoStore = storeToRefs(useUserInfoStore())
 
+// 控制待办管理窗口的显示
+const showTodoManagement = ref(false);
 
+// 打开待办管理窗口
+const openTodoManagement = () => {
+  showTodoManagement.value = true;
+};
+
+// 关闭待办管理窗口
+const closeTodoManagement = () => {
+  showTodoManagement.value = false;
+};
 </script>
 
 <template>
@@ -43,17 +55,14 @@ const userInfoStore = storeToRefs(useUserInfoStore())
                     <div class="age">
                         <span>年龄</span>
                         <span>{{ calculateAge(userInfoStore.Age.value) }}岁</span>
-
                     </div>
                     <div class="height">
                         <span>身高</span>
                         <span>{{ userInfoStore.Height }}厘米</span>
-
                     </div>
                     <div class="weight">
                         <span>体重</span>
                         <span>{{ userInfoStore.Weight }}公斤</span>
-
                     </div>
                 </div>
             </div>
@@ -67,7 +76,7 @@ const userInfoStore = storeToRefs(useUserInfoStore())
                 <Calendar></Calendar>
             </div>
         </div>
-        <div class="memoBox">
+        <div class="memoBox" @click="openTodoManagement">
             <div class="title">
                 <div></div>
                 <span>待办</span>
@@ -77,6 +86,15 @@ const userInfoStore = storeToRefs(useUserInfoStore())
             </div>
         </div>
     </div>
+
+    <!-- 待办管理窗口 -->
+    <Teleport to="body">
+        <div v-if="showTodoManagement" class="todo-modal-overlay" @click="closeTodoManagement">
+            <div class="todo-modal-content" @click.stop>
+                <TodoManagement @close="closeTodoManagement" />
+            </div>
+        </div>
+    </Teleport>
 </template>
 
 <style scoped>
@@ -131,7 +149,6 @@ const userInfoStore = storeToRefs(useUserInfoStore())
     width: 0.5rem;
     border-radius: 50%;
     background-color: cadetblue;
-    /* background-image: url('../assets/img/userAvater.jpg'); */
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -172,7 +189,6 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 .calendarBox {
     width: 100%;
     height: 43%;
-    /* background-color: aquamarine; */
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
@@ -185,18 +201,46 @@ const userInfoStore = storeToRefs(useUserInfoStore())
     padding-left: 8%;
     padding-right: 8%;
     box-sizing: border-box;
-    margin-top: 0.11rem;
+    cursor: pointer; /* 添加手型光标 */
+}
+
+.memoBox:hover {
+    opacity: 0.8; /* 添加悬停效果 */
 }
 
 .memo {
     width: 100%;
     height: 1.7rem;
-    margin-top: 0.08rem;
+    margin-top: 0.05rem;
 }
 
 .calendar {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* 待办管理窗口样式 */
+.todo-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.todo-modal-content {
+    width: 90%;
+    max-width: 8rem;
+    height: 90vh;
+    background: white;
+    border-radius: 0.1rem;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 </style>

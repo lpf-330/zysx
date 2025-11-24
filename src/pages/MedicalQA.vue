@@ -11,7 +11,6 @@ const QAList = ref([])
 const postQuery = async () => {
     if (query.value !== '') {
         try {
-
             const response = await userQuery(query.value)
 
             if (response !== null) {
@@ -21,7 +20,6 @@ const postQuery = async () => {
             }
 
             query.value = ''
-
 
         } catch (error) {
             console.error("出错", error);
@@ -33,8 +31,6 @@ const postQuery = async () => {
         alert('请输入问题')
     }
 }
-
-
 </script>
 
 <template>
@@ -50,20 +46,28 @@ const postQuery = async () => {
                     <query-item :query="data.query"></query-item>
                     <answer-item :answer="data.answer"></answer-item>
                 </div>
-
-
             </el-scrollbar>
-
         </div>
 
         <div class="footer">
             <el-scrollbar class="inputBoxMain" max-height="2rem">
-                <el-input class="inputArea" v-model="query" style="width: 100%" autosize type="textarea"
-                    placeholder="请输入要咨询的问题" />
+                <el-input 
+                    class="inputArea" 
+                    v-model="query" 
+                    style="width: 100%" 
+                    autosize 
+                    type="textarea"
+                    placeholder="请输入要咨询的问题" 
+                    :rows="1"
+                />
             </el-scrollbar>
 
             <div class="inputBoxFooter">
-                <button :class="query === '' ? 'subButton' : 'submitButton'" @click="postQuery">
+                <button 
+                    :class="query === '' ? 'subButton' : 'submitButton'" 
+                    @click="postQuery"
+                    :disabled="query === ''"
+                >
                     <span class="iconfont icon-tijiaoxinxi"></span>
                 </button>
             </div>
@@ -75,81 +79,74 @@ const postQuery = async () => {
 .container {
     height: 100%;
     width: 80%;
-    background-color: rgba(231, 248, 252, 0.579);
+    background: linear-gradient(135deg, rgba(231, 248, 252, 0.8) 0%, rgba(240, 248, 255, 0.6) 100%);
     box-sizing: border-box;
     padding-left: 15%;
     padding-right: 15%;
     position: relative;
     display: flex;
     align-items: center;
+    backdrop-filter: blur(10px);
 }
 
 .header {
     width: 100%;
     height: 8%;
     padding: 0;
-    background-color: rgba(231, 248, 252, 0.579);
+    background: linear-gradient(135deg, rgba(231, 248, 252, 0.8) 0%, rgba(240, 248, 255, 0.6) 100%);
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
     flex-direction: column;
     position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .header div {
     width: 100%;
     height: 50%;
-    background-color: linear-gradient(rgba(231, 248, 252, 0.579) 0%, rgba(255, 255, 255, 0) 100%);
     background-image: linear-gradient(rgba(231, 248, 252, 0.579) 0%, rgba(255, 255, 255, 0) 100%);
-    background-position-x: initial;
-    background-position-y: initial;
-    background-size: initial;
-    background-repeat: initial;
-    background-attachment: initial;
-    background-origin: initial;
-    background-clip: initial;
-    background-color: initial;
     position: absolute;
     top: 100%;
 }
 
 .header span {
-    font-family: 'SiYuanHeiTi';
-    font-size: 0.15rem;
+    font-family: 'SiYuanHeiTi', 'Microsoft YaHei', sans-serif;
+    font-size: 0.18rem;
     font-weight: 600;
+    color: #2c3e50;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .main {
-    width: 88%;
-    height: 78%;
-    background-color: #fff;
+    width: 106%;
+    height: 70%;
+    background-color: rgba(255, 255, 255, 0.9);
     box-sizing: border-box;
     padding-top: 2.4%;
+    border-radius: 0.15rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
 }
 
 .footer {
     width: 70%;
-    /* min-height: auto; */
     z-index: 1;
     padding: 0;
     padding-bottom: 0.6%;
     box-sizing: content-box;
-    border-radius: 0.12rem;
+    border-radius: 0.15rem;
     position: absolute;
     left: 15%;
     bottom: 5%;
-    background-color: rgb(243 244 246);
-    border-radius: 0.13rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 0.15rem;
     display: flex;
     flex-direction: column;
-    border-style: solid;
-    border-color: rgb(231, 231, 231);
-    border-width: 0.01rem;
-    box-sizing: border-box;
-    padding-right: 0.5%;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
 }
-
-
 
 .inputBoxFooter {
     height: 33%;
@@ -158,52 +155,106 @@ const postQuery = async () => {
     align-items: flex-start;
     padding-left: 0.8%;
     padding-right: 0.8%;
+    margin-top: 0.05rem;
 }
 
 .inputBoxMain {
-    /* max-height: 35%; */
+    margin-left: 0.8%;
+    margin-right: 0.8%;
+    margin-top: 0.05rem;
 }
 
 .inputBoxFooter button {
-    height: 0.225rem;
-    width: 0.225rem;
+    height: 0.25rem;
+    width: 0.25rem;
     border-radius: 50%;
     border-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .inputBoxFooter .subButton {
-    background-color: rgb(214 222 232);
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.inputBoxFooter .subButton:hover {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .inputBoxFooter .submitButton {
-    background-color: #4d6bfe;
+    background: linear-gradient(135deg, #4d6bfe 0%, #6a8bff 100%);
+}
+
+.inputBoxFooter .submitButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(77, 107, 254, 0.3);
+}
+
+.inputBoxFooter .submitButton:active {
+    transform: scale(0.95);
 }
 
 :deep(.inputArea .el-textarea__inner) {
     background-color: transparent;
     border: none;
-    /* resize: none; */
-    /* 可选：禁用文本域拖拽调整大小 */
     margin-top: 1%;
     margin-bottom: 1%;
     padding-left: 2%;
     padding-right: 2%;
     box-shadow: none !important;
     font-size: 0.09rem;
+    font-family: 'OpenSans', 'Microsoft YaHei', sans-serif;
+    resize: none;
+    border-radius: 0.07rem;
+    transition: all 0.3s ease;
 }
 
 :deep(.inputArea .el-textarea__inner:focus) {
     outline: none !important;
     box-shadow: none !important;
+    background-color: rgba(249, 250, 251, 0.5);
 }
 
-.iconfont {
-    font-size: 0.12rem;
-    color: #fff;
+/* 添加滚动条样式 */
+:deep(.el-scrollbar__bar.is-vertical) {
+    width: 6px !important;
+}
 
+:deep(.el-scrollbar__bar.is-vertical > div) {
+    background-color: rgba(148, 163, 184, 0.5) !important;
+    border-radius: 3px !important;
+}
+
+:deep(.el-scrollbar__bar.is-horizontal) {
+    height: 6px !important;
+}
+
+:deep(.el-scrollbar__bar.is-horizontal > div) {
+    background-color: rgba(148, 163, 184, 0.5) !important;
+    border-radius: 3px !important;
+}
+
+/* 添加响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding-left: 2.5%;
+        padding-right: 2.5%;
+    }
+    
+    .footer {
+        width: 90%;
+        left: 5%;
+    }
+    
+    .header span {
+        font-size: 0.16rem;
+    }
 }
 </style>
