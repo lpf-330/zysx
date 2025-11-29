@@ -1,15 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, defineEmits } from 'vue';
 
 const currentDate = ref(new Date());
 const events = ref(['2025-5-11', '2025-5-22']);
+// 添加选中日期的响应式引用
+const selectedDate = ref(null);
 
+// 定义事件发射器，用于通知父组件日期被选中
+const emit = defineEmits(['date-selected']);
 
 const yearMonth = computed(() => ({
     year: currentDate.value.getFullYear(),
     month: currentDate.value.getMonth()
 }));
-
 
 const calendarWeeks = computed(() => {
     const { year, month } = yearMonth.value;
@@ -17,39 +20,42 @@ const calendarWeeks = computed(() => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-
     let dayOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
-
-    let currentDate = 1;
+    let currentDateNum = 1;
     for (let week = 0; week < 6; week++) {
         const days = [];
         for (let day = 0; day < 7; day++) {
-            if ((week === 0 && day < dayOffset) || currentDate > lastDay.getDate()) {
+            if ((week === 0 && day < dayOffset) || currentDateNum > lastDay.getDate()) {
                 days.push(createCalendarDay(false));
             } else {
-                const dateStr = `${year}-${month + 1}-${currentDate}`;
+                const dateStr = `${year}-${month + 1}-${currentDateNum}`;
+                const fullDate = new Date(year, month, currentDateNum);
                 days.push({
-                    date: currentDate,
+                    date: currentDateNum,
                     isCurrentMonth: true,
-                    isToday: isToday(year, month, currentDate),
-                    hasEvent: events.value.includes(dateStr)
+                    isToday: isToday(year, month, currentDateNum),
+                    hasEvent: events.value.includes(dateStr),
+                    fullDate: fullDate,
+                    // 检查是否为选中日期
+                    isSelected: isSelectedDate(fullDate)
                 });
-                currentDate++;
+                currentDateNum++;
             }
         }
         weeks.push(days);
-        if (currentDate > lastDay.getDate()) break;
+        if (currentDateNum > lastDay.getDate()) break;
     }
     return weeks;
 });
-
 
 const createCalendarDay = (isCurrentMonth) => ({
     date: null,
     isCurrentMonth,
     isToday: false,
-    hasEvent: false
+    hasEvent: false,
+    fullDate: null,
+    isSelected: false
 });
 
 const isToday = (y, m, d) => {
@@ -59,6 +65,11 @@ const isToday = (y, m, d) => {
         d === today.getDate();
 };
 
+// 检查是否为选中日期
+const isSelectedDate = (date) => {
+    if (!selectedDate.value) return false;
+    return date.toDateString() === selectedDate.value.toDateString();
+};
 
 const prevMonth = () => {
     currentDate.value = new Date(
@@ -74,6 +85,13 @@ const nextMonth = () => {
     );
 };
 
+// 处理日期点击事件
+const handleDateClick = (day) => {
+    if (day.isCurrentMonth && day.date) {
+        selectedDate.value = day.fullDate;
+        emit('date-selected', day.fullDate);
+    }
+};
 
 const formattedMonth = computed(() => {
     return currentDate.value.toLocaleDateString('zh-CN', {
@@ -88,10 +106,9 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 <template>
     <div class="calendar-container">
         <div class="header">
-            <button @click="prevMonth">
-                < </button>
-                    <span>{{ formattedMonth }}</span>
-                    <button @click="nextMonth"> > </button>
+            <button @click="prevMonth"><</button>
+            <span>{{ formattedMonth }}</span>
+            <button @click="nextMonth">></button>
         </div>
 
         <table class="calendar-grid">
@@ -102,11 +119,17 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
             </thead>
             <tbody>
                 <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
-                    <td v-for="(day, dayIndex) in week" :key="dayIndex" :class="[
-                        { 'current-month': day.isCurrentMonth },
-                        { 'today': day.isToday },
-                        { 'has-event': day.hasEvent }
-                    ]">
+                    <td 
+                        v-for="(day, dayIndex) in week" 
+                        :key="dayIndex" 
+                        :class="[
+                            { 'current-month': day.isCurrentMonth },
+                            { 'today': day.isToday },
+                            { 'has-event': day.hasEvent },
+                            { 'selected': day.isSelected }
+                        ]"
+                        @click="handleDateClick(day)"
+                    >
                         <div class="date">{{ day.date }}</div>
                         <div v-if="day.hasEvent" class="event-indicator"></div>
                     </td>
@@ -115,8 +138,6 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
         </table>
     </div>
 </template>
-
-
 
 <style scoped>
 .calendar-container {
@@ -153,6 +174,8 @@ td {
     height: 0.2rem;
     text-align: center;
     position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .current-month {
@@ -163,6 +186,20 @@ td {
     background-color: rgba(201, 226, 255, 1) !important;
     color: white;
     border-radius: 0.06rem;
+}
+
+/* 选中日期样式 */
+.selected {
+    background-color: rgb(95, 182, 239) !important; 
+    color: white !important;
+    border-radius: 0.06rem;
+    font-weight: bold;
+}
+
+/* 选中日期同时是今天的样式 */
+.selected.today {
+    background-color: rgb(95, 182, 239) !important; 
+    color: white !important;
 }
 
 .event-indicator {
@@ -177,7 +214,6 @@ td {
     border-radius: 50%;
 }
 
-/** */
 .date {
     font-size: 0.12rem;
     font-weight: 700;
@@ -187,6 +223,15 @@ td {
 
 .current-month:hover {
     background-color: #ddd;
+}
+
+td:hover {
+    background-color: #f0f8ff;
+}
+
+/* 选中日期不应用悬停效果 */
+.selected:hover {
+    background-color: rgb(95, 182, 239) !important;
 }
 
 button {

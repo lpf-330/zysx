@@ -47,7 +47,7 @@
                 {{ entity.name }} ({{ entity.type }})
               </span>
               <button 
-                @click="deleteEntity(entity.id)"
+                @click="deleteEntityById(entity.id)"
                 class="delete-entity-btn"
               >
                 ×
@@ -61,7 +61,7 @@
           <div class="form-group">
             <label>待办名称：</label>
             <input 
-              v-model="currentTodo.name" 
+              v-model="currentTodo.eventName" 
               type="text" 
               required
               :placeholder="activeTab === 'medication' ? '请输入药品名称' : '请输入事件名称'"
@@ -76,7 +76,7 @@
             </div>
             <div class="form-group">
               <label>服用时间：</label>
-              <input v-model="currentTodo.time" type="time" required>
+              <input v-model="currentTodo.startTime" type="time" required>
             </div>
             <div class="form-group">
               <label>起止时间：</label>
@@ -91,12 +91,20 @@
           <!-- 日程特有字段 -->
           <div v-else class="schedule-fields">
             <div class="form-group">
+              <label>开始日期：</label>
+              <input v-model="currentTodo.startDate" type="date" required>
+            </div>
+            <div class="form-group">
               <label>开始时间：</label>
-              <input v-model="currentTodo.startTime" type="datetime-local" required>
+              <input v-model="currentTodo.startTime" type="time" required>
+            </div>
+            <div class="form-group">
+              <label>结束日期：</label>
+              <input v-model="currentTodo.endDate" type="date" required>
             </div>
             <div class="form-group">
               <label>结束时间：</label>
-              <input v-model="currentTodo.endTime" type="datetime-local" required>
+              <input v-model="currentTodo.endTime" type="time" required>
             </div>
             <div class="form-group">
               <label>地点：</label>
@@ -129,30 +137,30 @@
             :key="todo.id" 
             class="todo-item"
             :class="{
-              'medication-item': todo.type === 'medication',
-              'schedule-item': todo.type === 'schedule',
+              'medication-item': todo.todoType === 'medication',
+              'schedule-item': todo.todoType === 'schedule',
               'overdue': isOverdue(todo),
-              'completed': todo.completed
+              'completed': todo.completed === 1
             }"
           >
             <div class="todo-header">
               <div class="todo-info">
-                <span class="todo-name">{{ todo.name }}</span>
-                <span class="todo-type">{{ todo.type === 'medication' ? '用药' : '日程' }}</span>
+                <span class="todo-name">{{ todo.eventName }}</span>
+                <span class="todo-type">{{ todo.todoType === 'medication' ? '用药' : '日程' }}</span>
               </div>
               <div class="todo-status">
-                <div class="status-indicator" :class="{ active: !todo.completed }"></div>
+                <div class="status-indicator" :class="{ active: todo.completed !== 1 }"></div>
               </div>
             </div>
             
             <div class="todo-details">
-              <div v-if="todo.type === 'medication'">
+              <div v-if="todo.todoType === 'medication'">
                 <span>剂量：{{ todo.dosage || '未设置' }}</span>
-                <span>&nbsp;|&nbsp;时间：{{ formatTime(todo.time) }}</span>
+                <span>&nbsp;|&nbsp;时间：{{ formatTime(todo.startTime) }}</span>
                 <span>&nbsp;|&nbsp;起止：{{ formatDate(todo.startDate) }} 至 {{ formatDate(todo.endDate) }}</span>
               </div>
               <div v-else>
-                <span>时间：{{ formatDateTime(todo.startTime) }} - {{ formatDateTime(todo.endTime) }}</span>
+                <span>时间：{{ formatDate(todo.startDate) }} {{ formatTime(todo.startTime) }} - {{ formatDate(todo.endDate) }} {{ formatTime(todo.endTime) }}</span>
                 <span v-if="todo.location">&nbsp;|&nbsp;地点：{{ todo.location }}</span>
               </div>
             </div>
@@ -165,11 +173,11 @@
               </button>
               <button @click="toggleComplete(todo)" class="action-btn complete">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path v-if="todo.completed" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  <path v-if="todo.completed === 1" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   <path v-else d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </button>
-              <button @click="deleteTodo(todo.id)" class="action-btn delete">
+              <button @click="deleteTodoById(todo.id)" class="action-btn delete">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
@@ -179,7 +187,7 @@
 
           <div v-if="filteredTodos.length === 0" class="empty-tips">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
               <path d="M7 12h10v2H7z"/>
             </svg>
             <p>暂无待办事项</p>
@@ -193,16 +201,16 @@
       <div class="reminder-content" @click.stop>
         <div class="close-modal" @click="closeReminder">×</div>
         <div class="reminder-icon">
-          <svg v-if="reminderTodo.type === 'medication'" viewBox="0 0 24 24" fill="currentColor">
+          <svg v-if="reminderTodo.todoType === 'medication'" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18 14c0-.33-.04-.65-.1-1H19c.55 0 1-.45 1-1s-.45-1-1-1h-1.1c-.06-.35-.1-1.1-.1-1.45 0-2.43-1.76-4.44-4.07-4.78C12.69 5.27 11.5 4.39 11.5 3c0-.55-.45-1-1-1s-1 .45-1 1c0 1.39-1.19 2.27-2.23 2.77C4.96 6.11 3 8.12 3 10.55c0 .35-.04 1.1-.1 1.45H3c-.55 0-1 .45-1 1s.45 1 1 1h1.1c.06.35.1 1.1.1 1.45 0 2.43 1.76 4.44 4.07 4.78 1.04.5 2.23 1.38 2.23 2.77 0 .55.45 1 1 1s1-.45 1-1c0-1.39 1.19-2.27 2.23-2.77 2.31-.34 4.07-2.35 4.07-4.78 0-.35.04-1.1.1-1.45H19c.55 0 1-.45 1-1s-.45-1-1-1h-1.1c-.06-.35-.1-1.1-.1-1.45 0-.35.04-1.1.1-1.45H18zm-7 7c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
           </svg>
           <svg v-else viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
           </svg>
         </div>
-        <h3>{{ reminderTodo.type === 'medication' ? '用药提醒' : '日程提醒' }}</h3>
-        <p>{{ reminderTodo.name }}</p>
-        <p v-if="reminderTodo.type === 'medication'">
+        <h3>{{ reminderTodo.todoType === 'medication' ? '用药提醒' : '日程提醒' }}</h3>
+        <p>{{ reminderTodo.eventName }}</p>
+        <p v-if="reminderTodo.todoType === 'medication'">
           请按时服用：{{ reminderTodo.dosage }}
         </p>
         <div class="reminder-actions">
@@ -216,21 +224,30 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { getTodosByDate, createTodo, updateTodoMS, deleteTodoMS, updateTodoStatusMS } from '../api/user';
+import axios from 'axios'
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+// 导入 Element Plus 消息提示组件
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
 
 // 响应式数据
 const activeTab = ref('medication')
 const currentTodo = ref({
-  name: '',
-  type: 'medication',
-  time: '',
+  eventName: '',
+  todoType: 'medication',
+  startTime: '',
+  endTime: '',
   dosage: '',
   startDate: '',
   endDate: '',
-  startTime: '',
-  endTime: '',
   location: '',
   remarks: '',
-  completed: false
+  completed: 0  // tinylnt(1)类型
 })
 const todos = ref([])
 const entities = ref([])
@@ -239,6 +256,56 @@ const selectedEntity = ref('')
 const showReminder = ref(false)
 const reminderTodo = ref(null)
 const showEntities = ref(false)
+
+// 转换时间格式的辅助函数
+const formatTime = (time) => {
+  if (!time) return '未设置';
+  // 处理数据库时间格式 HH:mm:ss
+  if (time.includes(':')) {
+    return time.substring(0, 5); // 取 HH:mm
+  }
+  return time;
+};
+
+// 格式化日期为 YYYY-MM-DD 格式（不涉及时区转换）
+const formatDate = (date) => {
+  if (!date) return '未设置';
+  if (typeof date === 'string') {
+    date = new Date(date);
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// 格式化日期时间为可读格式
+const formatDateTime = (datetime) => {
+  if (!datetime) return '未设置';
+  return new Date(datetime).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// 从本地缓存获取待办实体
+const loadEntitiesFromStorage = () => {
+  const stored = localStorage.getItem('todo-entities')
+  return stored ? JSON.parse(stored) : []
+}
+
+// 保存待办实体到本地缓存
+const saveEntitiesToStorage = (entities) => {
+  localStorage.setItem('todo-entities', JSON.stringify(entities))
+}
+
+// 初始化待办实体
+onMounted(() => {
+  entities.value = loadEntitiesFromStorage()
+})
 
 // 计算属性
 const filteredTodos = computed(() => {
@@ -254,6 +321,111 @@ const filteredEntities = computed(() => {
   )
 })
 
+// API请求方法
+// 获取待办事项列表
+const fetchTodos = async (date) => {
+  try {
+    const start_date = formatDate(date);
+    const response = await getTodosByDate(start_date, user_id);
+    console.log('获取待办',response);
+    // 将后端返回的数据格式转换为前端需要的格式
+    todos.value = response.data.map(item => ({
+      ...item,
+      type: item.todoType, // 映射字段
+      name: item.eventName, // 映射字段
+      time: item.startTime, // 映射字段
+      completed: item.completed // tinylnt(1)类型
+    }));
+  } catch (error) {
+    console.error('获取待办事项失败:', error)
+    ElMessage.error('获取待办事项失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 创建待办事项
+const createTodoApi = async (todoData) => {
+  try {
+    // 将前端数据格式转换为后端需要的格式
+    const backendData = {
+      ...todoData,
+      todoType: activeTab.value,
+      user_id: user_id, 
+      // 确保数据类型正确
+      dosage: todoData.dosage ? parseFloat(todoData.dosage) : null,
+      location: todoData.location || null,
+      remarks: todoData.remarks || null
+    };
+    const response = await createTodo(backendData)
+    ElMessage.success('待办事项创建成功！')
+    await fetchTodos(new Date()) // 重新获取数据
+    return response
+  } catch (error) {
+    console.error('创建待办事项失败:', error)
+    ElMessage.error('创建待办事项失败: ' + (error.message || '未知错误'))
+    throw error
+  }
+}
+
+// 更新待办事项
+const updateTodo = async (id, todoData) => {
+  try {
+    // 将前端数据格式转换为后端需要的格式
+    const backendData = {
+      ...todoData,
+      todoType: activeTab.value,
+      // 确保数据类型正确
+      dosage: todoData.dosage ? parseFloat(todoData.dosage) : null,
+      location: todoData.location || null,
+      remarks: todoData.remarks || null
+    };
+    const response = await updateTodoMS(id, backendData);
+    ElMessage.success('待办事项更新成功！')
+    await fetchTodos(new Date()) // 重新获取数据
+    return response.data
+  } catch (error) {
+    console.error('更新待办事项失败:', error)
+    ElMessage.error('更新待办事项失败: ' + (error.message || '未知错误'))
+    throw error
+  }
+}
+
+// 删除待办事项
+const deleteTodo = async (id) => {
+  try {
+    await deleteTodoMS(id);
+    ElMessage.success('待办事项删除成功！')
+    await fetchTodos(new Date()) // 重新获取数据
+  } catch (error) {
+    console.error('删除待办事项失败:', error)
+    ElMessage.error('删除待办事项失败: ' + (error.message || '未知错误'))
+    throw error
+  }
+}
+
+// 更新待办事项完成状态
+const updateTodoStatus = async (id, completed) => {
+  try {
+    await updateTodoStatusMS(id, completed)
+    await fetchTodos(new Date()) // 重新获取数据
+  } catch (error) {
+    console.error('更新待办事项状态失败:', error)
+    ElMessage.error('更新待办事项状态失败: ' + (error.message || '未知错误'))
+    throw error
+  }
+}
+
+// 本地缓存操作 - 创建待办实体
+const createEntity = (entityData) => {
+  entities.value.push(entityData)
+  saveEntitiesToStorage(entities.value)
+}
+
+// 本地缓存操作 - 删除待办实体
+const deleteEntity = (id) => {
+  entities.value = entities.value.filter(e => e.id !== id)
+  saveEntitiesToStorage(entities.value)
+}
+
 // 方法
 const switchTab = (tab) => {
   activeTab.value = tab
@@ -262,60 +434,60 @@ const switchTab = (tab) => {
 
 const resetForm = () => {
   currentTodo.value = {
-    name: '',
-    type: activeTab.value,
-    time: '',
+    eventName: '',
+    todoType: activeTab.value,
+    startTime: '',
+    endTime: '',
     dosage: '',
     startDate: '',
     endDate: '',
-    startTime: '',
-    endTime: '',
     location: '',
     remarks: '',
-    completed: false
+    completed: 0  // tinylnt(1)类型
   }
   editingId.value = null
   selectedEntity.value = ''
 }
 
-const saveTodo = () => {
-  if (editingId.value) {
-    // 更新现有待办
-    const index = todos.value.findIndex(t => t.id === editingId.value)
-    if (index !== -1) {
-      todos.value[index] = { ...currentTodo.value, id: editingId.value }
+const saveTodo = async () => {
+  try {
+    if (editingId.value) {
+      // 更新现有待办
+      await updateTodo(editingId.value, currentTodo.value)
+    } else {
+      // 添加新待办 - 使用你定义的createTodoApi函数
+      const newTodo = {
+        ...currentTodo.value,
+        todoType: activeTab.value
+      }
+      await createTodoApi(newTodo) // 使用createTodoApi而不是直接调用createTodo
+      
+      // 同时创建待办实体到本地缓存
+      const entityExists = entities.value.some(e => e.name === newTodo.eventName && e.type === activeTab.value)
+      if (!entityExists) {
+        createEntity({
+          id: Date.now().toString(),
+          name: newTodo.eventName,
+          type: activeTab.value
+        })
+      }
     }
-  } else {
-    // 添加新待办
-    const newTodo = {
-      ...currentTodo.value,
-      id: Date.now().toString(),
-      type: activeTab.value,
-      createdAt: new Date()
-    }
-    todos.value.push(newTodo)
-    
-    // 同时创建待办实体
-    const entityExists = entities.value.some(e => e.name === newTodo.name && e.type === newTodo.type)
-    if (!entityExists) {
-      entities.value.push({
-        id: Date.now().toString(),
-        name: newTodo.name,
-        type: newTodo.type
-      })
-    }
+    resetForm()
+  } catch (error) {
+    console.error('保存待办事项失败:', error)
+    // 错误信息已经在API函数中处理了
   }
-  
-  resetForm()
 }
 
 const editTodo = (todo) => {
   // 根据待办类型切换到对应的标签页
-  if (todo.type !== activeTab.value) {
-    activeTab.value = todo.type
+  if (todo.todoType !== activeTab.value) {
+    activeTab.value = todo.todoType
   }
   
-  currentTodo.value = { ...todo }
+  currentTodo.value = { 
+    ...todo
+  }
   editingId.value = todo.id
 }
 
@@ -323,24 +495,56 @@ const cancelEdit = () => {
   resetForm()
 }
 
-const deleteTodo = (id) => {
-  if (confirm('确定要删除这个待办事项吗？')) {
-    todos.value = todos.value.filter(t => t.id !== id)
+const deleteTodoById = async (id) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这个待办事项吗？',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+    
+    await deleteTodo(id)
+  } catch (error) {
+    // 用户取消删除或发生错误
+    if (error !== 'cancel') {
+      console.error('删除待办事项失败:', error)
+    }
   }
 }
 
-const toggleComplete = (todo) => {
-  todo.completed = !todo.completed
+const toggleComplete = async (todo) => {
+  try {
+    const newCompleted = todo.completed === 1 ? 0 : 1  // tinylnt(1)类型切换
+    await updateTodoStatus(todo.id, newCompleted)
+    ElMessage.success(newCompleted === 1 ? '标记为已完成！' : '标记为未完成！')
+  } catch (error) {
+    console.error('更新状态失败:', error)
+  }
 }
 
 const selectEntity = (entity) => {
-  currentTodo.value.name = entity.name
+  currentTodo.value.eventName = entity.name
 }
 
-const deleteEntity = (id) => {
-  if (confirm('确定要删除这个待办实体吗？')) {
-    entities.value = entities.value.filter(e => e.id !== id)
-  }
+const deleteEntityById = (id) => {
+  ElMessageBox.confirm(
+    '确定要删除这个待办实体吗？',
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    deleteEntity(id)
+    ElMessage.success('待办实体删除成功！')
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 const toggleEntitySection = () => {
@@ -349,43 +553,43 @@ const toggleEntitySection = () => {
 
 const isTodayTodo = (todo) => {
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayStr = formatDate(today) // 获取今天的日期字符串格式 YYYY-MM-DD
   
-  if (todo.type === 'medication') {
-    const startDate = new Date(todo.startDate)
-    const endDate = new Date(todo.endDate)
-    return todo.time && today >= startDate && today <= endDate // 在起止日期范围内
-  } else {
-    const todoDate = new Date(todo.startTime)
-    return todoDate.toDateString() === today.toDateString()
-  }
+  // 检查今天是否在待办事项的开始日期和结束日期范围内
+  const startDate = new Date(todo.startDate)
+  const endDate = new Date(todo.endDate)
+  const startStr = formatDate(startDate)
+  const endStr = formatDate(endDate)
+  
+  // 将字符串转换为可比较的数字格式 YYYYMMDD
+  const todayNum = parseInt(todayStr.replace(/-/g, ''))
+  const startNum = parseInt(startStr.replace(/-/g, ''))
+  const endNum = parseInt(endStr.replace(/-/g, ''))
+  
+  return todayNum >= startNum && todayNum <= endNum
 }
 
 const isOverdue = (todo) => {
-  if (todo.completed) return false
+  if (todo.completed === 1) return false
   
   const now = new Date()
-  if (todo.type === 'medication') {
-    const [hours, minutes] = todo.time.split(':')
+  if (todo.todoType === 'medication') {
+    const [hours, minutes] = todo.startTime.split(':')
     const todoTime = new Date()
     todoTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
     return todoTime < now
   } else {
-    const todoTime = new Date(todo.endTime)
-    return todoTime < now
+    // 对于日程，检查是否已经过了结束时间
+    const [startHours, startMinutes] = todo.startTime.split(':')
+    const [endHours, endMinutes] = todo.endTime.split(':')
+    const todoStartDate = new Date(todo.startDate)
+    const todoEndDate = new Date(todo.endDate)
+    
+    const todoStartTime = new Date(todoStartDate.getFullYear(), todoStartDate.getMonth(), todoStartDate.getDate(), parseInt(startHours), parseInt(startMinutes), 0, 0)
+    const todoEndTime = new Date(todoEndDate.getFullYear(), todoEndDate.getMonth(), todoEndDate.getDate(), parseInt(endHours), parseInt(endMinutes), 0, 0)
+    
+    return todoEndTime < now
   }
-}
-
-const formatTime = (time) => {
-  return time || '未设置'
-}
-
-const formatDate = (date) => {
-  return date ? new Date(date).toLocaleDateString() : '未设置'
-}
-
-const formatDateTime = (dateTime) => {
-  return dateTime ? new Date(dateTime).toLocaleString() : '未设置'
 }
 
 // 提醒相关方法
@@ -395,11 +599,17 @@ const checkReminders = () => {
   const currentMinute = now.getMinutes()
   
   todos.value.forEach(todo => {
-    if (!todo.completed) {
-      if (todo.type === 'medication') {
-        const [hours, minutes] = todo.time.split(':')
+    if (todo.completed !== 1) {
+      if (todo.todoType === 'medication') {
+        const [hours, minutes] = todo.startTime.split(':')
         if (parseInt(hours) === currentHour && parseInt(minutes) === currentMinute) {
           showMedicationReminder(todo)
+        }
+      } else {
+        // 对于日程，检查是否接近开始时间
+        const [startHours, startMinutes] = todo.startTime.split(':')
+        if (parseInt(startHours) === currentHour && parseInt(startMinutes) === currentMinute) {
+          showScheduleReminder(todo)
         }
       }
     }
@@ -410,22 +620,24 @@ const showMedicationReminder = (todo) => {
   reminderTodo.value = todo
   showReminder.value = true
   
-  // 不同类型的提醒效果
-  if (todo.type === 'medication') {
-    // 用药提醒：声音+震动
-    console.log('用药提醒触发')
-    // 这里可以添加音频播放或震动效果
-  } else {
-    // 日程提醒：仅视觉提醒
-    console.log('日程提醒触发')
-  }
+  // 用药提醒：声音+震动
+  console.log('用药提醒触发')
+  // 这里可以添加音频播放或震动效果
+}
+
+const showScheduleReminder = (todo) => {
+  reminderTodo.value = todo
+  showReminder.value = true
+  
+  // 日程提醒：仅视觉提醒
+  console.log('日程提醒触发')
 }
 
 const markAsDone = () => {
   if (reminderTodo.value) {
     const todo = todos.value.find(t => t.id === reminderTodo.value.id)
     if (todo) {
-      todo.completed = true
+      todo.completed = 1  // tinylnt(1)类型
     }
   }
   closeReminder()
@@ -436,7 +648,11 @@ const snoozeReminder = () => {
   closeReminder()
   setTimeout(() => {
     if (reminderTodo.value) {
-      showMedicationReminder(reminderTodo.value)
+      if (reminderTodo.value.todoType === 'medication') {
+        showMedicationReminder(reminderTodo.value)
+      } else {
+        showScheduleReminder(reminderTodo.value)
+      }
     }
   }, 10 * 60 * 1000) // 10分钟
 }
@@ -447,13 +663,9 @@ const closeReminder = () => {
 }
 
 // 生命周期
-onMounted(() => {
-  // 初始化一些示例数据
-  entities.value = [
-    { id: '1', name: '降压药', type: 'medication' },
-    { id: '2', name: '散步', type: 'schedule' },
-    { id: '3', name: '体检', type: 'schedule' }
-  ]
+onMounted(async () => {
+  // 初始化数据
+  await fetchTodos(new Date())
   
   // 模拟定时检查提醒
   const reminderInterval = setInterval(checkReminders, 60000) // 每分钟检查一次
@@ -465,10 +677,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 您的样式代码保持不变 */
 .todo-management {
   width: 100%;
   height: 100%;
-  font-family: 'SiYuanHeiTi', 'Microsoft YaHei', Arial, sans-serif;
+  font-family: 'SiYuanHeiTi';
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   overflow: hidden;
   display: flex;

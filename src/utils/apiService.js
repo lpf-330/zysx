@@ -97,7 +97,7 @@ class WebSocketService {
             ? this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://') + endpoint
             : `ws://${this.baseUrl}${endpoint}`;
 
-        console.log(`尝试连接到 WebSocket: ${wsUrl}`);
+        // console.log(`尝试连接到 WebSocket: ${wsUrl}`); // 注释掉调试信息
 
         // 标记为非手动关闭
         this.manuallyClosedMap.set(dataType, false);
@@ -108,24 +108,24 @@ class WebSocketService {
             this.isConnectedMap.set(dataType, false);
 
             ws.onopen = (event) => {
-                console.log(`${dataType} WebSocket 接成功`);
+                // console.log(`${dataType} WebSocket 接成功`);
                 this.isConnectedMap.set(dataType, true);
                 this.trigger('open', { dataType, event });
             };
 
             ws.onmessage = (event) => {
-                console.log(`${dataType} 收到消息:`, event.data);
+                // console.log(`${dataType} 收到消息:`, event.data); // 注释掉调试信息
                 let data;
                 try {
                     data = JSON.parse(event.data);
-                    console.log(`${dataType} 解析消息:`, data);
+                    // console.log(`${dataType} 解析消息:`, data); // 注释掉调试信息
                     
                     // 处理后端返回的HealthDataMessage格式
                     if (data && data.data && Array.isArray(data.data)) {
                         // 触发消息事件，传递解析后的数据
                         this.trigger('message', { dataType, data: data.data });
                     } else {
-                        console.warn(`${dataType} 息格式不符合HealthDataMessage格式:`, data);
+                        // console.warn(`${dataType} 息格式不符合HealthDataMessage格式:`, data); // 注释掉调试信息
                     }
                 } catch (e) {
                     console.error(`${dataType} 解析消息失败:`, e);
@@ -139,7 +139,7 @@ class WebSocketService {
             };
 
             ws.onclose = (event) => {
-                console.log(`${dataType} WebSocket 接关闭:`, event.code, event.reason);
+                // console.log(`${dataType} WebSocket 接关闭:`, event.code, event.reason); // 注释掉调试信息
                 this.isConnectedMap.set(dataType, false);
                 this.wsMap.delete(dataType);
                 this.trigger('close', { dataType, event });

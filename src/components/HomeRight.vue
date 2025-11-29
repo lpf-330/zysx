@@ -37,6 +37,13 @@ const openTodoManagement = () => {
 const closeTodoManagement = () => {
   showTodoManagement.value = false;
 };
+
+const selectedDate = ref(null);
+
+const handleDateSelected = (date) => {
+    selectedDate.value = date;
+    console.log('选中的日期:', date);
+};
 </script>
 
 <template>
@@ -73,7 +80,7 @@ const closeTodoManagement = () => {
                 <span>日历</span>
             </div>
             <div class="calendar">
-                <Calendar></Calendar>
+                <Calendar @date-selected="handleDateSelected" />
             </div>
         </div>
         <div class="memoBox" @click="openTodoManagement">
@@ -82,7 +89,7 @@ const closeTodoManagement = () => {
                 <span>待办</span>
             </div>
             <div class="memo">
-                <Memo></Memo>
+                <Memo :selected-date="selectedDate" />
             </div>
         </div>
     </div>
