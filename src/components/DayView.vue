@@ -30,7 +30,11 @@
                     { 'current-month': day.isCurrentMonth },
                     { 'today': day.isToday },
                     { 'has-event': day.hasEvent },
-                    { 'selected': day.isSelected }
+                    { 'selected': day.isSelected },
+                    { 'week-start': dayIndex === 0 },
+                    { 'week-end': dayIndex === 6 },
+                    { 'week-selected': isWeekSelected(week) },
+                    { 'today-in-week': day.isToday && isWeekSelected(week) }
                   ]"
                   @click="selectDate(day)">
                   <div class="date">{{ day.date }}</div>
@@ -56,7 +60,11 @@
                     { 'current-month': day.isCurrentMonth },
                     { 'today': day.isToday },
                     { 'has-event': day.hasEvent },
-                    { 'selected': day.isSelected }
+                    { 'selected': day.isSelected },
+                    { 'week-start': dayIndex === 0 },
+                    { 'week-end': dayIndex === 6 },
+                    { 'week-selected': isWeekSelected(week) },
+                    { 'today-in-week': day.isToday && isWeekSelected(week) }
                   ]"
                   @click="selectDate(day)">
                   <div class="date">{{ day.date }}</div>
@@ -82,7 +90,11 @@
                     { 'current-month': day.isCurrentMonth },
                     { 'today': day.isToday },
                     { 'has-event': day.hasEvent },
-                    { 'selected': day.isSelected }
+                    { 'selected': day.isSelected },
+                    { 'week-start': dayIndex === 0 },
+                    { 'week-end': dayIndex === 6 },
+                    { 'week-selected': isWeekSelected(week) },
+                    { 'today-in-week': day.isToday && isWeekSelected(week) }
                   ]"
                   @click="selectDate(day)">
                   <div class="date">{{ day.date }}</div>
@@ -99,9 +111,13 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useCalendarSelectionStore } from '@/stores/calendarSelection'; // 引入Store
+
+const calendarSelectionStore = useCalendarSelectionStore(); // 获取Store实例
 
 const currentDate = ref(new Date());
-const selectedDate = ref(null);
+// 从 Pinia Store 获取选中状态，而不是本地状态
+const selectedDate = computed(() => calendarSelectionStore.selectedDate); 
 const events = ref(['2025-5-11', '2025-5-22']);
 const isAnimating = ref(false);
 const animationDirection = ref('none');
@@ -141,6 +157,7 @@ const getCalendarWeeks = (year, month) => {
                 const date = prevMonthStart + day;
                 const dateStr = `${prevMonth.getFullYear()}-${prevMonth.getMonth() + 1}-${date}`;
                 const fullDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), date);
+                // 使用 Store 的选中状态
                 const isSelected = selectedDate.value && isSameDay(selectedDate.value, fullDate);
                 const isTodayDate = isToday(prevMonth.getFullYear(), prevMonth.getMonth(), date);
                 
@@ -155,6 +172,7 @@ const getCalendarWeeks = (year, month) => {
             } else if (dayCount <= lastDay.getDate()) {
                 const dateStr = `${year}-${month + 1}-${dayCount}`;
                 const fullDate = new Date(year, month, dayCount);
+                // 使用 Store 的选中状态
                 const isSelected = selectedDate.value && isSameDay(selectedDate.value, fullDate);
                 const isTodayDate = isToday(year, month, dayCount);
                 
@@ -172,6 +190,7 @@ const getCalendarWeeks = (year, month) => {
                 const date = dayCount - lastDay.getDate();
                 const dateStr = `${nextMonth.getFullYear()}-${nextMonth.getMonth() + 1}-${date}`;
                 const fullDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), date);
+                // 使用 Store 的选中状态
                 const isSelected = selectedDate.value && isSameDay(selectedDate.value, fullDate);
                 const isTodayDate = isToday(nextMonth.getFullYear(), nextMonth.getMonth(), date);
                 
@@ -236,9 +255,23 @@ const formattedMonth = computed(() => {
     return `${month}月`;
 });
 
+// 判断是否为当前周
+const isCurrentWeek = (week) => {
+    const today = new Date();
+    return week.some(day => isSameDay(day.fullDate, today));
+};
+
+// 判断是否为选中周 - 修正：根据 Store 的 selectedDate 判断
+const isWeekSelected = (week) => {
+    if (!selectedDate.value) return false;
+    return week.some(day => isSameDay(day.fullDate, selectedDate.value));
+};
+
+// 修改 selectDate 函数：不再修改本地 selectedDate，而是调用 Store
 const selectDate = (day) => {
     if (day.fullDate) {
-        selectedDate.value = day.fullDate;
+        calendarSelectionStore.setSelectedDate(day.fullDate); // 调用Store方法
+        console.log("Dayview: 选中日期", day.fullDate);
         // 清除缓存，因为选中状态可能改变
         calendarCache.value.clear();
     }
@@ -267,7 +300,7 @@ const prevMonth = async () => {
             1
         );
         
-        // 等待DOM更新后滚动到当前月份
+        // 待DOM更新后滚动到当前月份
         nextTick(() => {
           scrollToCurrentMonth();
         });
@@ -313,7 +346,7 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 
 // 监听日期变化，预加载相邻月份数据
 watch(currentDate, () => {
-    // 预加载下下个月的数据到缓存
+    // 加载下下个月的数据到缓存
     const nextNextMonth = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth() + 2,
@@ -338,14 +371,43 @@ const scrollToCurrentMonth = () => {
             const elementHeight = currentMonthElement.offsetHeight;
             const elementTop = currentMonthElement.offsetTop;
             
-            // 动到使当前月份居中
+            // 滚动到使当前月份居中
             monthsWrapper.value.scrollTop = elementTop - (wrapperHeight / 2) + (elementHeight / 2);
         }
     }
 };
 
 onMounted(() => {
-    scrollToCurrentMonth();
+    const today = new Date();
+    
+    // 检查Store中是否已经有选中的日期，如果没有则设置为当天
+    const hasSelectedDate = calendarSelectionStore.selectedDate;
+    
+    if (!hasSelectedDate) {
+        // 设置选中日期为当天
+        calendarSelectionStore.setSelectedDate(today);
+        console.log("Dayview: 默认选中当天", today);
+    } else {
+        // 如果已经有选中的日期，确保当前月份与该日期对齐
+        console.log("Dayview: 已有选中日期", calendarSelectionStore.selectedDate);
+        
+        // 将当前月份视图设置为选中的日期所在的月份
+        if (!isSameDay(currentDate.value, calendarSelectionStore.selectedDate)) {
+            currentDate.value = new Date(
+                calendarSelectionStore.selectedDate.getFullYear(),
+                calendarSelectionStore.selectedDate.getMonth(),
+                1
+            );
+        }
+    }
+    
+    // 清除缓存以确保最新的选中状态生效
+    calendarCache.value.clear();
+    
+    // 等待DOM更新后滚动到当前月份
+    nextTick(() => {
+        scrollToCurrentMonth();
+    });
 });
 </script>
 

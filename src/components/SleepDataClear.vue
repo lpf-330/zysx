@@ -1,7 +1,9 @@
+<!-- SleepDataClear.vue -->
 <template>
     <div class="nowData">
         <span class="title">平均时长</span>
         <div class="dataBox">
+            <!-- 关键修改：处理最新数据 -->
             <span class="data">{{ Math.floor(data[data.length - 1] / 60) }}&nbsp;</span>
             <span class="unit">h&nbsp;</span>
             <span class="data">{{ data[data.length - 1] % 60 }}&nbsp;</span>
@@ -12,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -24,11 +26,18 @@ import {
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
-import axios from 'axios';
 import useUserInfoStore from '../stores/user';
+import { useCalendarSelectionStore } from '../stores/calendarSelection';
 import { storeToRefs } from 'pinia';
-import { getSlpData } from '../api/healthData';
+
+
+// 导入新的聚合API
+import { 
+    getSleepDataByDate, 
+    getSleepDataByWeek, 
+    getSleepDataByMonth, 
+    getSleepDataByYear 
+} from '../api/healthData'; // 假设您已将这些函数添加到 healthData.js
 
 echarts.use([
     LineChart,
@@ -44,54 +53,151 @@ echarts.use([
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
+const calendarSelectionStore = useCalendarSelectionStore(); // 获取新的 Store 实例
 
-//数据
-//const data = ref([40, 58, 40, 44, 61, 58, 77]);
-const data = ref([])
-const date = ref([])
-//日期
-//const date = ref(['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00']);
-// const y1 = [50, 48, 44, 62, 41, 78, 57, 70, 68, 93, 60, 73];
+// 数据
+const data = ref([]);
+const date = ref([]);
 const chart = ref(null);
 let myChart = null;
-const fetchSleepData = async () => {
-    try {
-        const response = await getSlpData(user_id);
-        console.log('响应睡眠数据', response);
+let isMounted = false; // 添加挂载状态标志
 
-        // 重置数组，避免重复加载时数据累加
+const formatDate = (dateObj) => {
+    if (!(dateObj instanceof Date)) return '';
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const formatMonth = (year, month) => {
+    const monthStr = String(month).padStart(2, '0');
+    return `${year}-${monthStr}`;
+};
+
+// --- 修改的代码 START: fetchAggregatedData 替代 fetchSleepData ---
+const fetchAggregatedData = async () => {
+    if (!isMounted) {
+        console.warn("SleepDataClear 组件已卸载，停止数据获取");
+        return;
+    }
+
+    console.log("=== SleepDataClear 开始获取数据 ===");
+
+    if (!user_id) {
+        console.warn("用户ID无效，无法获取数据");
         data.value = [];
         date.value = [];
+        updateChart();
+        return;
+    }
 
-        // 处理并填充数据数组
-        for (let i = 0; i < response.length; i++) {
-            data.value.push(response[i].sleepData);
-            date.value.push(response[i].recordTime);
+    const selection = calendarSelectionStore;
+    let response = null;
+
+    try {
+        if (selection.selectedDate) {
+            const dateStr = formatDate(selection.selectedDate);
+            response = await getSleepDataByDate(user_id, dateStr);
+            console.log(`获取单日睡眠数据: ${dateStr}`, response);
+        } else if (selection.selectedWeek) {
+            const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
+            response = await getSleepDataByWeek(user_id, dateInWeekStr);
+            console.log(`获取周睡眠数据: ${dateInWeekStr}`, response);
+        } else if (selection.selectedMonth) {
+            response = await getSleepDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
+            console.log(`获取月睡眠数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
+        } else if (selection.selectedYear) {
+            response = await getSleepDataByYear(user_id, selection.selectedYear);
+            console.log(`获取年睡眠数据: ${selection.selectedYear}`, response);
+        } else {
+            console.log("当前无选中日期/周期");
+            data.value = [];
+            date.value = [];
+            updateChart();
+            return;
         }
 
-        // --- 修正：反转数组以使时间从左到右递增 ---
-        data.value.reverse();
-        date.value.reverse();
+        // 检查组件是否已卸载
+        if (!isMounted) {
+            console.warn("SleepDataClear 组件在数据获取期间已卸载");
+            return;
+        }
 
-        console.log('响应睡眠', response);
+        const apiResponse = response.data; // 假设 httpService.post 返回 {  {...} }
+        const responseData = apiResponse.data; // 业务数据数组
 
+        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
+            console.log(`响应${calendarSelectionStore.currentViewType}聚合睡眠数据`, responseData);
+
+            let processedData = [];
+            let processedDates = [];
+
+            if (calendarSelectionStore.currentViewType === 'day') {
+                // 处理单日原始数据: [{"sleepData": 420, "recordTime": "2025-12-20 22:30:00"}] (假设 sleepData 是分钟数)
+                processedData = responseData.map(item => item.sleepData);
+                processedDates = responseData.map(item => dateFormatter.Formatter(item.recordTime)); // 使用您的格式化工具
+            } else {
+                // 处理周/月/年聚合数据: [{"avgDuration": 480, "date": "2025-12-20"}, ...] (假设 avgDuration 是分钟数)
+                processedData = responseData.map(item => item.avgDuration);
+                processedDates = responseData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+            }
+
+            // --- 关键：更新响应式变量 ---
+            data.value = processedData;
+            date.value = processedDates;
+
+            console.log('处理后的聚合睡眠数据:', data.value);
+            console.log('处理后的聚合日期:', date.value);
+
+            updateChart();
+        } else {
+            console.warn("API返回的睡眠聚合数据格式不正确、为空数组或无数据", apiResponse);
+            data.value = [];
+            date.value = [];
+            updateChart();
+        }
     } catch (error) {
-        console.error("出错", error);
-        alert("加载失败，请稍后再试。");
-    }
-};
-
-
-const initChart = () => {
-    if (chart.value) {
-        myChart = echarts.init(chart.value);
+        console.error("获取睡眠聚合数据失败", error);
+        if (!isMounted) return; // 检查组件是否已卸载
+        data.value = [];
+        date.value = [];
         updateChart();
     }
+
+    console.log("=== SleepDataClear 数据获取完成 ===");
+};
+// --- 修改的代码 END ---
+
+const initChart = () => {
+    if (chart.value && isMounted) {
+        if (myChart) {
+            try {
+                myChart.dispose();
+            } catch (e) {
+                console.warn("销毁图表实例时出错:", e);
+            }
+        }
+        myChart = echarts.init(chart.value);
+        // 不再在这里调用 updateChart，因为数据获取由 watch 触发
+    }
 };
 
-const updateChart = async () => {
+// --- 修改的代码 START: updateChart ---
+const updateChart = () => {
+    if (!isMounted) {
+        console.warn("SleepDataClear 组件已卸载，停止图表更新");
+        return;
+    }
 
-    await fetchSleepData()
+    console.log("=== SleepDataClear 开始更新图表 ===");
+    console.log("data.value:", data.value);
+    console.log("date.value:", date.value);
+
+    if (!myChart || !chart.value) {
+        console.warn("图表实例不存在或DOM未挂载");
+        return;
+    }
 
     const option = {
         tooltip: {
@@ -125,13 +231,12 @@ const updateChart = async () => {
             containLabel: true
         },
         xAxis: {
-            data: date.value,
+            data: date.value, // 使用 date.value
             type: 'category',
             boundaryGap: true,
             offset: 20,
             axisLabel: {
                 textStyle: {
-                    // color: '#B5C5D4',
                     fontSize: 16
                 }
             },
@@ -139,7 +244,7 @@ const updateChart = async () => {
                 show: false
             },
             axisTick: {
-                show: false // 去除刻度线  
+                show: false // 去除刻度线
             }
         },
         yAxis: {
@@ -157,7 +262,6 @@ const updateChart = async () => {
             },
             axisLabel: {
                 textStyle: {
-                    // color: '#B5C5D4',
                     fontSize: 16
                 }
             },
@@ -178,10 +282,13 @@ const updateChart = async () => {
                     color: 'rgba(253, 190, 93, 1)'
                 },
                 areaStyle: {
-                    color: 'rgba(0,0,0,0)' // 将阴影颜色设置为透明  
-                }
+                    color: 'rgba(0,0,0,0)' // 将阴影颜色设置为透明
+                },
+                // 添加一个空数据系列以保持图表结构（可选，取决于设计）
+                data: [] // 可以留空或提供占位数据
             },
             {
+                name: '平均时长', // 添加系列名称
                 smooth: true,
                 type: 'line',
                 showSymbol: false,
@@ -189,30 +296,75 @@ const updateChart = async () => {
                 itemStyle: {
                     color: 'rgba(26, 119, 221, 1)'
                 },
-                data: data.value,
+                 data:data.value, // 使用 data.value
                 areaStyle: {
-                    color: 'rgba(0,0,0,0)' // 将阴影颜色设置为透明  
+                    color: 'rgba(0,0,0,0)' // 将阴影颜色设置为透明
                 }
             }
         ]
     };
+
     myChart.setOption(option);
 };
+// --- 修改的代码 END ---
 
+// --- 添加 watch 监听 Store 状态 ---
+watch(
+    () => [
+        calendarSelectionStore.selectedDate,
+        calendarSelectionStore.selectedWeek,
+        calendarSelectionStore.selectedMonth,
+        calendarSelectionStore.selectedYear
+    ],
+    () => {
+        console.log("SleepDataClear: CalendarSelectionStore 状态变化，重新获取聚合数据");
+        fetchAggregatedData();
+    },
+    { immediate: true } // 组件挂载时立即获取一次数据
+);
 
 onMounted(() => {
-    initChart();
-    window.addEventListener('resize', () => myChart.resize());
+    isMounted = true;
+    console.log("=== SleepDataClear.vue 组件已挂载 ===");
+    // initChart(); // 在 watch 的 immediate: true 时会触发 fetchAggregatedData，进而调用 updateChart，此时图表实例还未初始化
+    initChart(); // 先初始化图表实例
+    fetchAggregatedData(); // 然后获取初始数据
+    window.addEventListener('resize', () => {
+        if (myChart && isMounted) {
+            try {
+                myChart.resize();
+            } catch (error) {
+                console.error("调整图表大小时出错:", error);
+            }
+        }
+    });
 });
 
 onUnmounted(() => {
-    window.removeEventListener('resize', () => myChart.resize());
-    myChart.dispose();
-});
+    console.log("=== SleepDataClear.vue 组件已卸载 ===");
+    isMounted = false;
 
+    // 移除事件监听器
+    window.removeEventListener('resize', () => {
+        if (myChart && isMounted) {
+            myChart.resize();
+        }
+    });
+
+    // 销毁图表实例
+    if (myChart) {
+        try {
+            myChart.dispose();
+        } catch (error) {
+            console.warn("销毁图表实例时出错:", error);
+        }
+        myChart = null;
+    }
+});
 </script>
 
 <style scoped>
+/* 保持原始样式不变 */
 .nowData {
     height: 15%;
     width: 40%;

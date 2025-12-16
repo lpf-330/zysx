@@ -1,10 +1,11 @@
+<!-- Yearview.vue -->
 <template>
   <div class="calendar-container" @wheel="handleWheel">
     <div class="year-header">
       <div 
         v-for="(year, index) in years" :key="index" 
         class="year-display"
-        :class="{ 'selected-year': year === currentYear && isCurrentYearSelected }"
+        :class="{ 'selected-year': year === currentYear && isCurrentYearSelected }" 
         @click="selectYear(year)"
       >
         {{ year }}
@@ -28,7 +29,8 @@
             <div v-for="(month, monthIndex) in prevYearMonths" :key="'prev-'+monthIndex" 
               :class="[
                 { 'current-year': month.isCurrentYear },
-                { 'today': month.isToday }
+                { 'today': month.isToday },
+                { 'selected': month.isSelected }
               ]"
               @click="selectMonth(month)">
               <div class="month-name">{{ month.name }}</div>
@@ -40,11 +42,12 @@
           <div class="year-header-current">
             <div class="year-display-current">{{ currentYear }}年</div>
           </div>
-          <div class="months-grid current-year" :class="{ 'selected': isCurrentYearSelected }">
+          <div class="months-grid current-year" :class="{ 'selected': isCurrentYearSelected }"> <!-- 修正：根据 Store 状态判断 -->
             <div v-for="(month, monthIndex) in currentYearMonths" :key="'current-'+monthIndex" 
               :class="[
                 { 'current-year': month.isCurrentYear },
-                { 'today': month.isToday }
+                { 'today': month.isToday },
+                { 'selected': month.isSelected }
               ]"
               @click="selectMonth(month)">
               <div class="month-name">{{ month.name }}</div>
@@ -60,7 +63,8 @@
             <div v-for="(month, monthIndex) in nextYearMonths" :key="'next-'+monthIndex" 
               :class="[
                 { 'current-year': month.isCurrentYear },
-                { 'today': month.isToday }
+                { 'today': month.isToday },
+                { 'selected': month.isSelected }
               ]"
               @click="selectMonth(month)">
               <div class="month-name">{{ month.name }}</div>
@@ -74,9 +78,13 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useCalendarSelectionStore } from '@/stores/calendarSelection'; // 引入Store
+
+const calendarSelectionStore = useCalendarSelectionStore(); // 获取Store实例
 
 const currentDate = ref(new Date());
-const selectedDate = ref(new Date()); // 默认选中当前日期
+// 从 Pinia Store 获取选中状态
+const selectedDate = computed(() => calendarSelectionStore.selectedDate); 
 const isAnimating = ref(false);
 const animationDirection = ref('none');
 const monthsWrapper = ref(null);
@@ -86,15 +94,23 @@ const monthCache = ref(new Map());
 
 const currentYear = computed(() => currentDate.value.getFullYear());
 
-// 计算当前年份是否被选中
+// 计算当前年份是否被选中 - 修正：根据 Store 的 selectedYear 判断
 const isCurrentYearSelected = computed(() => {
-  return selectedDate.value && selectedDate.value.getFullYear() === currentYear.value;
+  // 如果 Store 中选中的是月份，则判断月份的年份是否是当前年
+  if (calendarSelectionStore.selectedMonth) {
+    return calendarSelectionStore.selectedMonth.year === currentYear.value;
+  }
+  // 如果 Store 中选中的是年份，则判断是否是当前年
+  if (calendarSelectionStore.selectedYear) {
+    return calendarSelectionStore.selectedYear === currentYear.value;
+  }
+  // 否则返回 false
+  return false;
 });
 
 const getMonthsForYear = (year) => {
     const cacheKey = `${year}`;
     
-    // 如果缓存中存在，直接返回缓存结果
     if (monthCache.value.has(cacheKey)) {
         return monthCache.value.get(cacheKey);
     }
@@ -104,8 +120,8 @@ const getMonthsForYear = (year) => {
     
     for (let i = 0; i < 12; i++) {
         const monthName = getMonthName(i);
-        const isSelected = selectedDate.value && 
-                          selectedDate.value.getFullYear() === year;
+        // 修正：根据 Store 的 selectedYear 判断月份是否被选中
+        const isSelected = calendarSelectionStore.selectedYear === year; // 整个年份被选中，则所有月份都选中
         const isTodayMonth = today.getFullYear() === year && today.getMonth() === i;
         
         months.push({
@@ -114,11 +130,10 @@ const getMonthsForYear = (year) => {
             month: i,
             isCurrentYear: year === currentYear.value,
             isToday: isTodayMonth && !isSelected,
-            isSelected: isSelected
+            isSelected: isSelected // 将计算结果赋值给 isSelected
         });
     }
     
-    // 缓存结果
     monthCache.value.set(cacheKey, months);
     return months;
 };
@@ -150,17 +165,22 @@ const getMonthName = (month) => {
     return monthNames[month];
 };
 
+// 修改 selectMonth 函数：点击某个月份时，选中该月份所在的年份
 const selectMonth = (month) => {
     if (month.year !== undefined) {
-        selectedDate.value = new Date(month.year, month.month, 1);
+        // 点击月份时，选中该年份
+        calendarSelectionStore.setSelectedYear(month.year);
+        console.log("Yearview: 选中年", month.year);
         // 清除缓存，因为选中状态可能改变
         monthCache.value.clear();
     }
 };
 
+// 修改 selectYear 函数：不再修改本地 selectedDate，而是调用 Store
 const selectYear = (year) => {
     // 选择年份时，将该年份设置为选中状态
-    selectedDate.value = new Date(year, 0, 1); // 选择该年1月1日
+    calendarSelectionStore.setSelectedYear(year);
+    console.log("Yearview: 选中年", year);
     if (year !== currentYear.value) {
         currentDate.value = new Date(year, currentDate.value.getMonth(), 1);
     }
@@ -191,7 +211,6 @@ const prevYear = async () => {
             1
         );
         
-        // 等待DOM更新后滚动到当前年份
         nextTick(() => {
           scrollToCurrentYear();
         });
@@ -199,7 +218,7 @@ const prevYear = async () => {
         setTimeout(() => {
             isAnimating.value = false;
             animationDirection.value = 'none';
-        }, 50); 
+        }, 50);
     }, 200); 
 };
 
@@ -215,7 +234,6 @@ const nextYear = async () => {
             1
         );
         
-        // 等待DOM更新后滚动到当前年份
         nextTick(() => {
           scrollToCurrentYear();
         });
@@ -223,7 +241,7 @@ const nextYear = async () => {
         setTimeout(() => {
             isAnimating.value = false;
             animationDirection.value = 'none';
-        }, 50); 
+        }, 50);
     }, 200);
 };
 
@@ -259,13 +277,16 @@ const scrollToCurrentYear = () => {
 };
 
 onMounted(() => {
-    // 默认选中当前年份
-    selectedDate.value = new Date();
+    // 初始化时，默认选中当前年份（只影响年份标题高亮）
+    if (!calendarSelectionStore.selectedYear) {
+        calendarSelectionStore.setSelectedYear(new Date().getFullYear()); // 初始化Store状态
+    }
     scrollToCurrentYear();
 });
 </script>
 
 <style scoped>
+/* ... 您原有的样式 ... */
 .calendar-container {
     width: 100%;
     height: 100%;
@@ -388,8 +409,8 @@ onMounted(() => {
     grid-template-columns: repeat(4, 1fr);
     gap: 0.05rem;
     padding: 0.05rem;
-    border-radius: 0.05rem;
-    transition: all 0.2s ease;
+    border-radius: 0.05rem; /* 保留原始样式中的圆角 */
+    transition: all 0.2s ease; /* 保留原始样式中的过渡 */
 }
 
 .months-grid div {
@@ -401,10 +422,10 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.05rem;
+    border-radius: 0.05rem; /* 保留原始样式中的圆角 */
     font-size: 0.09rem;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease; /* 保留原始样式中的过渡 */
 }
 
 .current-year {
@@ -436,18 +457,19 @@ onMounted(() => {
 
 .current-year:hover {
     background-color: #f0f0f0;
-    border-radius: 0.05rem;
+    border-radius: 0.05rem; /* 保留原始样式中的悬停圆角 */
 }
 
 .other-year:hover {
     background-color: #f5f5f5;
-    border-radius: 0.05rem;
+    border-radius: 0.05rem; /* 保留原始样式中的悬停圆角 */
 }
 
 .selected:hover {
     background-color: rgb(76, 174, 240) !important;
 }
 
+/* --- 保留原始样式中的关键年份选中样式 --- */
 .months-grid.current-year.selected {
     background-color: rgb(95, 182, 239) !important;
     color: white;
@@ -461,4 +483,5 @@ onMounted(() => {
 .months-grid.current-year.selected .current-year:hover {
     background-color: rgba(255, 255, 255, 0.1) !important;
 }
+/* ... 您原有的样式 ... */
 </style>

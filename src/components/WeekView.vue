@@ -1,3 +1,4 @@
+<!-- Weekview.vue -->
 <template>
   <div class="calendar-container" @wheel="handleWheel">
     <div class="week-header">
@@ -111,9 +112,13 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useCalendarSelectionStore } from '@/stores/calendarSelection'; // 引入Store
+
+const calendarSelectionStore = useCalendarSelectionStore(); // 获取Store实例
 
 const currentDate = ref(new Date());
-const selectedDate = ref(new Date()); // 默认选中当前日期
+// 从 Pinia Store 获取选中状态
+const selectedDate = computed(() => calendarSelectionStore.selectedDate); 
 const events = ref(['2025-5-11', '2025-5-22']);
 const isAnimating = ref(false);
 const animationDirection = ref('none');
@@ -130,7 +135,6 @@ const yearMonth = computed(() => ({
 const getCalendarWeeks = (year, month) => {
     const cacheKey = `${year}-${month}`;
     
-    // 如果缓存中存在，直接返回缓存结果
     if (calendarCache.value.has(cacheKey)) {
         return calendarCache.value.get(cacheKey);
     }
@@ -202,7 +206,6 @@ const getCalendarWeeks = (year, month) => {
         if (dayCount > lastDay.getDate() + 7) break;
     }
     
-    // 缓存结果
     calendarCache.value.set(cacheKey, weeks);
     return weeks;
 };
@@ -243,26 +246,42 @@ const isSameDay = (date1, date2) => {
            date1.getDate() === date2.getDate();
 };
 
+// 判断是否为选中周 - 修正：根据 Store 的 selectedDate 判断，但逻辑改为判断周
+const isWeekSelected = (week) => {
+    if (!calendarSelectionStore.selectedWeek) return false; // 检查 selectedWeek 而不是 selectedDate
+    const { startDate, endDate } = calendarSelectionStore.selectedWeek;
+    // 检查周中的任何一天是否在选中的周范围内
+    return week.some(day => 
+        day.fullDate >= startDate && day.fullDate <= endDate
+    );
+};
+
 const formattedMonth = computed(() => {
     const month = currentDate.value.getMonth() + 1;
     return `${month}月`;
 });
 
-// 判断是否为当前周
 const isCurrentWeek = (week) => {
     const today = new Date();
     return week.some(day => isSameDay(day.fullDate, today));
 };
 
-// 判断是否为选中周
-const isWeekSelected = (week) => {
-    if (!selectedDate.value) return false;
-    return week.some(day => isSameDay(day.fullDate, selectedDate.value));
-};
-
+// 修改 selectDate 函数：点击某一天来选中整周
 const selectDate = (day) => {
     if (day.fullDate) {
-        selectedDate.value = day.fullDate;
+        // 计算这一周的开始和结束日期 (周一到周日)
+        const selectedDateObj = day.fullDate;
+        const dayOfWeek = selectedDateObj.getDay(); // 0 (Sunday) to 6 (Saturday)
+        const diffToMonday = selectedDateObj.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // 计算到周一的差值
+        const startDateOfWeek = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), diffToMonday);
+        const endDateOfWeek = new Date(startDateOfWeek);
+        endDateOfWeek.setDate(startDateOfWeek.getDate() + 6);
+
+        calendarSelectionStore.setSelectedWeek({
+            startDate: new Date(startDateOfWeek),
+            endDate: new Date(endDateOfWeek)
+        });
+        console.log("Weekview: 选中周", startDateOfWeek, "至", endDateOfWeek);
         // 清除缓存，因为选中状态可能改变
         calendarCache.value.clear();
     }
@@ -291,7 +310,6 @@ const prevMonth = async () => {
             1
         );
         
-        // 待DOM更新后滚动到当前月份
         nextTick(() => {
           scrollToCurrentMonth();
         });
@@ -315,7 +333,6 @@ const nextMonth = async () => {
             1
         );
         
-        // 等待DOM更新后滚动到当前月份
         nextTick(() => {
           scrollToCurrentMonth();
         });
@@ -332,12 +349,9 @@ const getMonthName = (month) => {
     return monthNames[month];
 };
 
-// 星期标题
 const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 
-// 监听日期变化，预加载相邻月份数据
 watch(currentDate, () => {
-    // 加载下下个月的数据到缓存
     const nextNextMonth = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth() + 2,
@@ -345,7 +359,6 @@ watch(currentDate, () => {
     );
     getCalendarWeeks(nextNextMonth.getFullYear(), nextNextMonth.getMonth());
     
-    // 加载上上个月的数据到缓存
     const prevPrevMonth = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth() - 2,
@@ -362,18 +375,32 @@ const scrollToCurrentMonth = () => {
             const elementHeight = currentMonthElement.offsetHeight;
             const elementTop = currentMonthElement.offsetTop;
             
-            // 到使当前月份居中
             monthsWrapper.value.scrollTop = elementTop - (wrapperHeight / 2) + (elementHeight / 2);
         }
     }
 };
 
 onMounted(() => {
+    // 初始化时，如果 Store 中没有选中周，则默认选中当前周
+    if (!calendarSelectionStore.selectedWeek) {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const startDateOfWeek = new Date(today.getFullYear(), today.getMonth(), diffToMonday);
+        const endDateOfWeek = new Date(startDateOfWeek);
+        endDateOfWeek.setDate(startDateOfWeek.getDate() + 6);
+
+        calendarSelectionStore.setSelectedWeek({
+            startDate: new Date(startDateOfWeek),
+            endDate: new Date(endDateOfWeek)
+        });
+    }
     scrollToCurrentMonth();
 });
 </script>
 
 <style scoped>
+/* ... 您原有的样式 ... */
 .calendar-container {
     width: 100%;
     height: 100%;
@@ -510,11 +537,6 @@ td {
     color: white;
 }
 
-.selected {
-    background-color: rgb(95, 182, 239) !important;
-    color: white;
-}
-
 .week-selected {
     background-color: rgb(95, 182, 239) !important;
     color: white;
@@ -558,4 +580,5 @@ td {
 .week-selected:hover {
     background-color: rgb(76, 174, 240) !important;
 }
+/* ... 您原有的样式 ... */
 </style>

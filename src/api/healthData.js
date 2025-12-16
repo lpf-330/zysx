@@ -1,6 +1,6 @@
 import { wsService } from "../utils/apiService"
+import { httpService } from "../utils/apiService"
 
-// 确保WebSocket连接的工具函数
 const ensureWsConnected = (dataType, userId, timeout = 5000) => {
     return new Promise((resolve, reject) => {
         if (wsService.getStatus(dataType)) {
@@ -36,7 +36,6 @@ const ensureWsConnected = (dataType, userId, timeout = 5000) => {
     });
 };
 
-
 const getBloodData = async (user_id) => {
     await ensureWsConnected('blood', user_id);
     
@@ -57,9 +56,6 @@ const getBloodData = async (user_id) => {
 
         wsService.on('message', handleMessage);
         wsService.on('error', onError);
-        
-        // 发送请求消息（如果后端需要的话）
-        // 这里根据实际需求决定是否需要发送请求
     });
 }
 
@@ -178,12 +174,76 @@ const getSlpData = async (user_id) => {
     });
 }
 
+// --- 新增：用于图表展示的聚合数据获取 (通过 HTTP POST) ---
+
+// 血糖
+const getBloodDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/blood-data-by-date', { userId, date });
+const getBloodDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/blood-data-by-week', { userId, dateInWeek });
+const getBloodDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/blood-data-by-month', { userId, year, month });
+const getBloodDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/blood-data-by-year', { userId, year });
+
+// 心率
+const getHeartDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/heart-data-by-date', { userId, date });
+const getHeartDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/heart-data-by-week', { userId, dateInWeek });
+const getHeartDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/heart-data-by-month', { userId, year, month });
+const getHeartDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/heart-data-by-year', { userId, year });
+
+// 血氧
+const getOxygenDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/oxygen-data-by-date', { userId, date });
+const getOxygenDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/oxygen-data-by-week', { userId, dateInWeek });
+const getOxygenDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/oxygen-data-by-month', { userId, year, month });
+const getOxygenDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/oxygen-data-by-year', { userId, year });
+
+// 睡眠
+const getSlpDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/slp-data-by-date', { userId, date });
+const getSlpDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/slp-data-by-week', { userId, dateInWeek });
+const getSlpDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/slp-data-by-month', { userId, year, month });
+const getSlpDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/slp-data-by-year', { userId, year });
+
+// 血压
+const getPreDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/pre-data-by-date', { userId, date });
+const getPreDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/pre-data-by-week', { userId, dateInWeek });
+const getPreDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/pre-data-by-month', { userId, year, month });
+const getPreDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/pre-data-by-year', { userId, year });
+
+// 灌注指数
+const getPiDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/pi-data-by-date', { userId, date });
+const getPiDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/pi-data-by-week', { userId, dateInWeek });
+const getPiDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/pi-data-by-month', { userId, year, month });
+const getPiDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/pi-data-by-year', { userId, year });
+
 export {
+    // 原有导出
     getBloodData,
     getHeartData,
     getOxygenData,
     getPiData,
     getPreData,
     getSlpData,
-    wsService
+    wsService,
+    // 新增导出 (用于图表的聚合数据)
+    getBloodDataByDate,
+    getBloodDataByWeek,
+    getBloodDataByMonth,
+    getBloodDataByYear,
+    getHeartDataByDate,
+    getHeartDataByWeek,
+    getHeartDataByMonth,
+    getHeartDataByYear,
+    getOxygenDataByDate,
+    getOxygenDataByWeek,
+    getOxygenDataByMonth,
+    getOxygenDataByYear,
+    getSlpDataByDate,
+    getSlpDataByWeek,
+    getSlpDataByMonth,
+    getSlpDataByYear,
+    getPreDataByDate,
+    getPreDataByWeek,
+    getPreDataByMonth,
+    getPreDataByYear,
+    getPiDataByDate,
+    getPiDataByWeek,
+    getPiDataByMonth,
+    getPiDataByYear,
 }
