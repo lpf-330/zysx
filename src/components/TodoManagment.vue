@@ -195,30 +195,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 提醒模态框 -->
-    <div v-if="showReminder" class="reminder-modal" @click="closeReminder">
-      <div class="reminder-content" @click.stop>
-        <div class="close-modal" @click="closeReminder">×</div>
-        <div class="reminder-icon">
-          <svg v-if="reminderTodo.todoType === 'medication'" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18 14c0-.33-.04-.65-.1-1H19c.55 0 1-.45 1-1s-.45-1-1-1h-1.1c-.06-.35-.1-1.1-.1-1.45 0-2.43-1.76-4.44-4.07-4.78C12.69 5.27 11.5 4.39 11.5 3c0-.55-.45-1-1-1s-1 .45-1 1c0 1.39-1.19 2.27-2.23 2.77C4.96 6.11 3 8.12 3 10.55c0 .35-.04 1.1-.1 1.45H3c-.55 0-1 .45-1 1s.45 1 1 1h1.1c.06.35.1 1.1.1 1.45 0 2.43 1.76 4.44 4.07 4.78 1.04.5 2.23 1.38 2.23 2.77 0 .55.45 1 1 1s1-.45 1-1c0-1.39 1.19-2.27 2.23-2.77 2.31-.34 4.07-2.35 4.07-4.78 0-.35.04-1.1.1-1.45H19c.55 0 1-.45 1-1s-.45-1-1-1h-1.1c-.06-.35-.1-1.1-.1-1.45 0-.35.04-1.1.1-1.45H18zm-7 7c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
-          </svg>
-          <svg v-else viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-          </svg>
-        </div>
-        <h3>{{ reminderTodo.todoType === 'medication' ? '用药提醒' : '日程提醒' }}</h3>
-        <p>{{ reminderTodo.eventName }}</p>
-        <p v-if="reminderTodo.todoType === 'medication'">
-          请按时服用：{{ reminderTodo.dosage }}
-        </p>
-        <div class="reminder-actions">
-          <button @click="markAsDone" class="done-btn">已完成</button>
-          <button @click="snoozeReminder" class="snooze-btn">稍后提醒</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -253,10 +229,28 @@ const todos = ref([])
 const entities = ref([])
 const editingId = ref(null)
 const selectedEntity = ref('')
-const showReminder = ref(false)
-const reminderTodo = ref(null)
 const showEntities = ref(false)
 
+
+// 在待办管理组件中监听全局状态变化
+const handleTodoStatusChanged = (event) => {
+  const { id, completed } = event.detail
+  // 更新本地待办列表的状态
+  const todoIndex = todos.value.findIndex(todo => todo.id === id)
+  if (todoIndex !== -1) {
+    todos.value[todoIndex].completed = completed
+  }
+}
+
+onMounted(() => {
+  // 监听全局事件
+  window.addEventListener('todoStatusChanged', handleTodoStatusChanged)
+})
+
+onUnmounted(() => {
+  // 移除监听器
+  window.removeEventListener('todoStatusChanged', handleTodoStatusChanged)
+})
 // 转换时间格式的辅助函数
 const formatTime = (time) => {
   if (!time) return '未设置';
@@ -592,87 +586,10 @@ const isOverdue = (todo) => {
   }
 }
 
-// 提醒相关方法
-const checkReminders = () => {
-  const now = new Date()
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
-  
-  todos.value.forEach(todo => {
-    if (todo.completed !== 1) {
-      if (todo.todoType === 'medication') {
-        const [hours, minutes] = todo.startTime.split(':')
-        if (parseInt(hours) === currentHour && parseInt(minutes) === currentMinute) {
-          showMedicationReminder(todo)
-        }
-      } else {
-        // 对于日程，检查是否接近开始时间
-        const [startHours, startMinutes] = todo.startTime.split(':')
-        if (parseInt(startHours) === currentHour && parseInt(startMinutes) === currentMinute) {
-          showScheduleReminder(todo)
-        }
-      }
-    }
-  })
-}
-
-const showMedicationReminder = (todo) => {
-  reminderTodo.value = todo
-  showReminder.value = true
-  
-  // 用药提醒：声音+震动
-  console.log('用药提醒触发')
-  // 这里可以添加音频播放或震动效果
-}
-
-const showScheduleReminder = (todo) => {
-  reminderTodo.value = todo
-  showReminder.value = true
-  
-  // 日程提醒：仅视觉提醒
-  console.log('日程提醒触发')
-}
-
-const markAsDone = () => {
-  if (reminderTodo.value) {
-    const todo = todos.value.find(t => t.id === reminderTodo.value.id)
-    if (todo) {
-      todo.completed = 1  // tinylnt(1)类型
-    }
-  }
-  closeReminder()
-}
-
-const snoozeReminder = () => {
-  // 暂停提醒10分钟
-  closeReminder()
-  setTimeout(() => {
-    if (reminderTodo.value) {
-      if (reminderTodo.value.todoType === 'medication') {
-        showMedicationReminder(reminderTodo.value)
-      } else {
-        showScheduleReminder(reminderTodo.value)
-      }
-    }
-  }, 10 * 60 * 1000) // 10分钟
-}
-
-const closeReminder = () => {
-  showReminder.value = false
-  reminderTodo.value = null
-}
-
 // 生命周期
 onMounted(async () => {
   // 初始化数据
   await fetchTodos(new Date())
-  
-  // 模拟定时检查提醒
-  const reminderInterval = setInterval(checkReminders, 60000) // 每分钟检查一次
-  
-  onUnmounted(() => {
-    clearInterval(reminderInterval)
-  })
 })
 </script>
 
@@ -1166,123 +1083,6 @@ onMounted(async () => {
   height: 0.3rem;
   fill: #cbd5e0;
   margin-bottom: 0.075rem;
-}
-
-.reminder-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-}
-
-.reminder-content {
-  background: white;
-  padding: 0.225rem;
-  border-radius: 0.075rem;
-  text-align: center;
-  max-width: 0.3rem;
-  width: 90%;
-  animation: slideIn 0.3s ease;
-  box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.2);
-  border: 0.005rem solid #e2e8f0;
-  position: relative;
-}
-
-.close-modal {
-  position: absolute;
-  top: 0.05rem;
-  right: 0.05rem;
-  width: 0.15rem;
-  height: 0.15rem;
-  background: #dc3545;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.1rem;
-  z-index: 1001;
-}
-
-.close-modal:hover {
-  background: #c82333;
-  transform: scale(1.1);
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-0.25rem);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.reminder-icon {
-  width: 0.225rem;
-  height: 0.225rem;
-  fill: #dc3545;
-  margin: 0 auto 0.075rem;
-}
-
-.reminder-content h3 {
-  color: #5fb6ef;
-  margin-bottom: 0.1rem;
-  font-size: 0.12rem;
-  font-weight: 700;
-}
-
-.reminder-actions {
-  display: flex;
-  gap: 0.075rem;
-  margin-top: 0.15rem;
-}
-
-.done-btn {
-  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-  color: white;
-  border: none;
-  padding: 0.075rem 0.15rem;
-  border-radius: 0.03rem;
-  cursor: pointer;
-  flex: 1;
-  font-size: 0.1rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.done-btn:hover {
-  transform: translateY(-0.01rem);
-  box-shadow: 0 0.02rem 0.04rem rgba(40, 167, 69, 0.3);
-}
-
-.snooze-btn {
-  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-  color: #212529;
-  border: none;
-  padding: 0.075rem 0.15rem;
-  border-radius: 0.03rem;
-  cursor: pointer;
-  flex: 1;
-  font-size: 0.1rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.snooze-btn:hover {
-  transform: translateY(-0.01rem);
-  box-shadow: 0 0.02rem 0.04rem rgba(255, 193, 7, 0.3);
 }
 
 @media (max-width: 768px) {

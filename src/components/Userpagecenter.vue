@@ -1,5 +1,5 @@
 <template>
-  <el-button type="primary" class="Edit" @click="drawer = true" :icon="Edit" title="编辑"></el-button>
+  <el-button type="primary" class="Edit" @click="openDrawer" :icon="Edit" title="编辑"></el-button>
   <el-drawer v-model="drawer" title="I am the title" :with-header="false" size="4.5rem">
     <div class="personal-info-container">
       <div class="info-card-header">
@@ -9,30 +9,30 @@
         <div class="content">
           <div class="info-item">
             <label>姓名:</label>
-            <input v-model="userInfoStore.Username.value" type="text" id="input1" />
+            <input v-model="tempUserData.Username" type="text" id="input1" />
           </div>
           <div class="info-item">
             <label>性别:</label>
-            <select v-model="selectedGender" id="select1" class="gender">
-              <option value="男">男</option>
-              <option value="女">女</option>
+            <select v-model="tempUserData.gender" id="select1" class="gender">
+              <option value="male">男</option>
+              <option value="female">女</option>
             </select>
           </div>
           <div class="info-item">
             <label>年龄:</label>
-            <input v-model.number="calculatedAge" id="input2" />
+            <input v-model.number="tempCalculatedAge" id="input2" />
           </div>
           <div class="info-item">
             <label>手机号:</label>
-            <input v-model="userInfoStore.phone_number.value" type="tel" id="input3" />
+            <input v-model="tempUserData.phone_number" type="tel" id="input3" />
           </div>
           <div class="info-item">
             <label>身高:</label>
-            <input v-model="userInfoStore.Height.value" placeholder="cm" id="input4" />
+            <input v-model="tempUserData.Height" placeholder="cm" id="input4" />
           </div>
           <div class="info-item">
             <label>体重:</label>
-            <input v-model="userInfoStore.Weight.value" placeholder="kg" id="input5" />
+            <input v-model="tempUserData.Weight" placeholder="kg" id="input5" />
           </div>
         </div>
       </div>
@@ -42,25 +42,124 @@
           <h2>医疗信息</h2>
         </div>
         <div class="medical-content">
+          <!-- 家族遗传病史 - 增强自动补全 -->
           <div class="info-item">
             <label>家族遗传病史:</label>
-            <textarea v-model="medicalHistoryStore.family_history.value" placeholder="请输入家族遗传病史" />
+            <textarea 
+              ref="family_history_ref"
+              v-model="tempMedicalData.family_history" 
+              placeholder="请输入家族遗传病史"
+              @input="handleInput('family_history', $event)"
+              @keydown.tab="handleTab('family_history', $event)"
+              @keydown.esc="hideSuggestions('family_history')"
+              class="medical-textarea"
+            ></textarea>
+            <div class="suggestions-container family_history" v-if="showSuggestions.family_history">
+              <div 
+                v-for="(suggestion, index) in filteredSuggestions.family_history" 
+                :key="index"
+                :class="['suggestion-item', { active: activeIndex.family_history === index }]"
+                @click="selectSuggestion('family_history', suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
+          
+          <!-- 过敏史 - 增强自动补全 -->
           <div class="info-item">
             <label>过敏史:</label>
-            <textarea v-model="medicalHistoryStore.allergy_history.value" placeholder="请输入过敏史" />
+            <textarea 
+              ref="allergy_history_ref"
+              v-model="tempMedicalData.allergy_history" 
+              placeholder="请输入过敏史"
+              @input="handleInput('allergy_history', $event)"
+              @keydown.tab="handleTab('allergy_history', $event)"
+              @keydown.esc="hideSuggestions('allergy_history')"
+              class="medical-textarea"
+            ></textarea>
+            <div class="suggestions-container allergy_history" v-if="showSuggestions.allergy_history">
+              <div 
+                v-for="(suggestion, index) in filteredSuggestions.allergy_history" 
+                :key="index"
+                :class="['suggestion-item', { active: activeIndex.allergy_history === index }]"
+                @click="selectSuggestion('allergy_history', suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
+          
+          <!-- 既往病史 - 增强自动补全 -->
           <div class="info-item">
             <label>既往病史:</label>
-            <textarea v-model="medicalHistoryStore.past_medical_history.value" placeholder="请输入既往病史" />
+            <textarea 
+              ref="past_medical_history_ref"
+              v-model="tempMedicalData.past_medical_history" 
+              placeholder="请输入既往病史"
+              @input="handleInput('past_medical_history', $event)"
+              @keydown.tab="handleTab('past_medical_history', $event)"
+              @keydown.esc="hideSuggestions('past_medical_history')"
+              class="medical-textarea"
+            ></textarea>
+            <div class="suggestions-container past_medical_history" v-if="showSuggestions.past_medical_history">
+              <div 
+                v-for="(suggestion, index) in filteredSuggestions.past_medical_history" 
+                :key="index"
+                :class="['suggestion-item', { active: activeIndex.past_medical_history === index }]"
+                @click="selectSuggestion('past_medical_history', suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
+          
+          <!-- 手术史 - 增强自动补全 -->
           <div class="info-item">
             <label>手术史:</label>
-            <textarea v-model="medicalHistoryStore.surgical_history.value" placeholder="请输入手术史" />
+            <textarea 
+              ref="surgical_history_ref"
+              v-model="tempMedicalData.surgical_history" 
+              placeholder="请输入手术史"
+              @input="handleInput('surgical_history', $event)"
+              @keydown.tab="handleTab('surgical_history', $event)"
+              @keydown.esc="hideSuggestions('surgical_history')"
+              class="medical-textarea"
+            ></textarea>
+            <div class="suggestions-container surgical_history" v-if="showSuggestions.surgical_history">
+              <div 
+                v-for="(suggestion, index) in filteredSuggestions.surgical_history" 
+                :key="index"
+                :class="['suggestion-item', { active: activeIndex.surgical_history === index }]"
+                @click="selectSuggestion('surgical_history', suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
+          
+          <!-- 用药依从性记录 - 增强自动补全 -->
           <div class="info-item">
             <label>用药依从性记录:</label>
-            <textarea v-model="medicalHistoryStore.medication_compliance.value" placeholder="请输入用药依从性记录" />
+            <textarea 
+              ref="medication_compliance_ref"
+              v-model="tempMedicalData.medication_compliance" 
+              placeholder="请输入用药依从性记录"
+              @input="handleInput('medication_compliance', $event)"
+              @keydown.tab="handleTab('medication_compliance', $event)"
+              @keydown.esc="hideSuggestions('medication_compliance')"
+              class="medical-textarea"
+            ></textarea>
+            <div class="suggestions-container medication_compliance" v-if="showSuggestions.medication_compliance">
+              <div 
+                v-for="(suggestion, index) in filteredSuggestions.medication_compliance" 
+                :key="index"
+                :class="['suggestion-item', { active: activeIndex.medication_compliance === index }]"
+                @click="selectSuggestion('medication_compliance', suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -73,70 +172,152 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { Edit } from '@element-plus/icons-vue';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
+import medicalTerms from '@/utils/medicalTerms'; // 导入医学术语库
 
+// 导入 getCurrentInstance
+import { getCurrentInstance } from 'vue';
+
+// 保留原有所有逻辑
 const drawer = ref(false);
 
-// 计算年龄
-const calculatedAge = computed(() => {
-  const birthDateStr = userInfoStore.Age.value;
-  if (!birthDateStr) return '';
-  const birthDate = new Date(birthDateStr);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return Math.max(0, age);
+// 临时数据存储 - 修复编辑实时更新问题
+const tempUserData = ref({
+  Username: '',
+  gender: '', // 直接存储 'male'/'female'
+  Age: '',
+  phone_number: '',
+  Height: '',
+  Weight: ''
 });
 
-// 性别双向绑定的计算属性
-const selectedGender = computed({
+const tempMedicalData = ref({
+  family_history: '',
+  allergy_history: '',
+  past_medical_history: '',
+  surgical_history: '',
+  medication_compliance: ''
+});
+
+// 临时计算年龄
+const tempCalculatedAge = computed({
   get() {
-    return userInfoStore.gender.value === 'male' ? '男' :
-           userInfoStore.gender.value === 'female' ? '女' : '';
+    if (!tempUserData.value.Age) return '';
+    const birthDate = new Date(tempUserData.value.Age);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return Math.max(0, age);
   },
   set(value) {
-    const internalValue = value === '男' ? 'male' : (value === '女' ? 'female' : '');
-    userInfoStore.gender.value = internalValue;
+    // 从年龄反推出生日期
+    if (!value || isNaN(value)) return;
+    const today = new Date();
+    const birthYear = today.getFullYear() - value;
+    // 设置为当年1月1日
+    tempUserData.value.Age = new Date(birthYear, 0, 1).toISOString().split('T')[0];
   }
 });
+
+// 为每个 textarea 创建 refs
+const family_history_ref = ref(null);
+const allergy_history_ref = ref(null);
+const past_medical_history_ref = ref(null);
+const surgical_history_ref = ref(null);
+const medication_compliance_ref = ref(null);
+
+// 用于通过字段名获取对应的 ref
+const getTextAreaRef = (field) => {
+  switch(field) {
+    case 'family_history': return family_history_ref;
+    case 'allergy_history': return allergy_history_ref;
+    case 'past_medical_history': return past_medical_history_ref;
+    case 'surgical_history': return surgical_history_ref;
+    case 'medication_compliance': return medication_compliance_ref;
+    default: return null;
+  }
+};
+
+// 获取 stores
+const userInfoStore = useUserInfoStore();
+const medicalHistoryStore = useMedicalHistoryStore();
+const { user_id } = storeToRefs(userInfoStore);
+
+// 打开抽屉时加载当前数据到临时变量
+const openDrawer = () => {
+  // 重置临时数据
+  tempUserData.value = {
+    Username: userInfoStore.Username,
+    gender: userInfoStore.gender,
+    Age: userInfoStore.Age,
+    phone_number: userInfoStore.phone_number,
+    Height: userInfoStore.Height,
+    Weight: userInfoStore.Weight
+  };
+  
+  tempMedicalData.value = {
+    family_history: medicalHistoryStore.family_history,
+    allergy_history: medicalHistoryStore.allergy_history,
+    past_medical_history: medicalHistoryStore.past_medical_history,
+    surgical_history: medicalHistoryStore.surgical_history,
+    medication_compliance: medicalHistoryStore.medication_compliance
+  };
+  
+  // 重置建议面板
+  Object.keys(showSuggestions).forEach(field => {
+    hideSuggestions(field);
+  });
+  
+  drawer.value = true;
+};
+
 function cancelClick() {
+  // 隐藏所有建议面板
+  Object.keys(showSuggestions).forEach(field => {
+    hideSuggestions(field);
+  });
   drawer.value = false;
 }
 
-function confirmClick() {
-  fetchUserpagecenterdata();
+async function confirmClick() {
+  // 隐藏所有建议面板
+  Object.keys(showSuggestions).forEach(field => {
+    hideSuggestions(field);
+  });
+  
+  try {
+    // 调用保存API
+    await fetchUserpagecenterdata();
+    
+    // 保存成功后更新store
+    userInfoStore.Username = tempUserData.value.Username;
+    userInfoStore.gender = tempUserData.value.gender;
+    userInfoStore.Age = tempUserData.value.Age;
+    userInfoStore.phone_number = tempUserData.value.phone_number;
+    userInfoStore.Height = tempUserData.value.Height;
+    userInfoStore.Weight = tempUserData.value.Weight;
+    
+    medicalHistoryStore.family_history = tempMedicalData.value.family_history;
+    medicalHistoryStore.allergy_history = tempMedicalData.value.allergy_history;
+    medicalHistoryStore.past_medical_history = tempMedicalData.value.past_medical_history;
+    medicalHistoryStore.surgical_history = tempMedicalData.value.surgical_history;
+    medicalHistoryStore.medication_compliance = tempMedicalData.value.medication_compliance;
+    
+    drawer.value = false;
+  } catch (error) {
+    console.error("保存失败", error);
+    alert("保存失败，请稍后再试。");
+  }
 }
-
-const userInfoStore = storeToRefs(useUserInfoStore());
-const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
-let user_id = userInfoStore.user_id.value;
-
-// const formData = ref({
-//   user_id: '',
-//   Username: userInfoStore.Username.value,
-//   gender: userInfoStore.gender.value,
-//   Age: userInfoStore.Age.value,
-//   phone_number: userInfoStore.phone_number.value,
-//   Height: userInfoStore.Height.value * 100,
-//   Weight: userInfoStore.Weight.value,
-//   family_history: medicalHistoryStore.family_history.value,
-//   allergy_history: medicalHistoryStore.allergy_history.value,
-//   past_medical_history: medicalHistoryStore.past_medical_history.value,
-//   surgical_history: medicalHistoryStore.surgical_history.value,
-//   medication_compliance: medicalHistoryStore.medication_compliance.value
-// });
-
-// console.log(medicalHistoryStore.family_history.value);
-
 
 /*
  * 保存用户的基本信息
@@ -157,25 +338,22 @@ let user_id = userInfoStore.user_id.value;
  * 返回成功或者失败
  */
 // const fetchUserpagecenterdata = async () => {
-//   console.log('userInfoStore.Username.value', typeof (userInfoStore.Username.value));
-
-
 //   try {
-//     const url = '/api/fetchUserPageCenterData'; //后端还没写 
+//     const url = '/api/fetchUserPageCenterData'; // 后端API地址
 
 //     const response = await axios.post(url, {
-//       user_id: user_id,
-//       Username: userInfoStore.Username.value,
-//       gender: userInfoStore.gender.value,
-//       Age: userInfoStore.Age.value,
-//       phone_number: userInfoStore.phone_number.value,
-//       Height: userInfoStore.Height.value,
-//       Weight: userInfoStore.Weight.value,
-//       family_history: medicalHistoryStore.family_history.value,
-//       allergy_history: medicalHistoryStore.allergy_history.value,
-//       past_medical_history: medicalHistoryStore.past_medical_history.value,
-//       surgical_history: medicalHistoryStore.surgical_history.value,
-//       medical_compliance: medicalHistoryStore.medication_compliance.value
+//       user_id: user_id.value,
+//       Username: tempUserData.value.Username,
+//       gender: tempUserData.value.gender,
+//       Age: tempUserData.value.Age,
+//       phone_number: tempUserData.value.phone_number,
+//       Height: tempUserData.value.Height,
+//       Weight: tempUserData.value.Weight,
+//       family_history: tempMedicalData.value.family_history,
+//       allergy_history: tempMedicalData.value.allergy_history,
+//       past_medical_history: tempMedicalData.value.past_medical_history,
+//       surgical_history: tempMedicalData.value.surgical_history,
+//       medical_compliance: tempMedicalData.value.medication_compliance
 //     }, {
 //       headers: {
 //         'Content-Type': 'application/json',
@@ -183,20 +361,215 @@ let user_id = userInfoStore.user_id.value;
 //     });
 
 //     console.log('fetchUserpagecenterdata', response.data);
-
-
+//     return response.data;
 //   } catch (error) {
 //     console.error("出错", error);
-//     alert("保存失败，请稍后再试。");
+//     throw error; // 重新抛出错误以便在confirmClick中捕获
 //   }
 // };
 
-const fetchUserpagecenterdata = () => {
-  alert("修改成功")
+// =============== 修正：医学术语自动补全功能 ===============
+// 自动补全状态
+const showSuggestions = reactive({
+  family_history: false,
+  allergy_history: false,
+  past_medical_history: false,
+  surgical_history: false,
+  medication_compliance: false
+});
+
+const filteredSuggestions = reactive({
+  family_history: [],
+  allergy_history: [],
+  past_medical_history: [],
+  surgical_history: [],
+  medication_compliance: [],
+});
+
+const activeIndex = reactive({
+  family_history: 0,
+  allergy_history: 0,
+  past_medical_history: 0,
+  surgical_history: 0,
+  medication_compliance: 0
+});
+
+const lastCursorPos = reactive({
+  family_history: 0,
+  allergy_history: 0,
+  past_medical_history: 0,
+  surgical_history: 0,
+  medication_compliance: 0
+});
+
+// 修复：使用临时医疗数据
+const getMedicalField = (field) => {
+  return tempMedicalData.value[field];
+};
+
+const setMedicalField = (field, value) => {
+  tempMedicalData.value[field] = value;
+};
+
+// 处理输入事件
+const handleInput = (field, event) => {
+  const textareaRef = getTextAreaRef(field);
+  if (!textareaRef || !textareaRef.value) return;
+  
+  const textarea = textareaRef.value;
+  lastCursorPos[field] = textarea.selectionStart;
+  
+  // 获取光标前的文本
+  const textBeforeCursor = textarea.value.substring(0, lastCursorPos[field]);
+  
+  // 提取光标前最后一个中文词（2-8个字符）
+  const lastWordMatch = textBeforeCursor.match(/[\u4e00-\u9fa5]{2,8}$/);
+  
+  if (lastWordMatch && lastWordMatch[0].length >= 2) {
+    const searchTerm = lastWordMatch[0];
+    filterSuggestions(field, searchTerm);
+  } else {
+    hideSuggestions(field);
+  }
+};
+
+// 过滤建议
+const filterSuggestions = (field, searchTerm) => {
+  const terms = medicalTerms[field] || [];
+  filteredSuggestions[field] = terms.filter(term => 
+    term.includes(searchTerm) && term !== searchTerm
+  ).slice(0, 5);
+  
+  showSuggestions[field] = filteredSuggestions[field].length > 0;
+  activeIndex[field] = 0;
+};
+
+// 隐藏建议
+const hideSuggestions = (field) => {
+  showSuggestions[field] = false;
+  filteredSuggestions[field] = [];
+};
+
+// 选择建议
+const selectSuggestion = async (field, suggestion) => {
+  const textareaRef = getTextAreaRef(field);
+  if (!textareaRef || !textareaRef.value) return;
+  
+  const textarea = textareaRef.value;
+  const cursorPos = lastCursorPos[field];
+  const textBefore = textarea.value.substring(0, cursorPos);
+  const textAfter = textarea.value.substring(cursorPos);
+  
+  // 替换最后一个中文词
+  const newTextBefore = textBefore.replace(/[\u4e00-\u9fa5]{2,8}$/, '');
+  const newValue = newTextBefore + suggestion + textAfter;
+  
+  // 更新临时数据（不直接影响store）
+  setMedicalField(field, newValue);
+  
+  // 等待 DOM 更新
+  await nextTick();
+  
+  // 设置新光标位置
+  const newCursorPos = newTextBefore.length + suggestion.length;
+  setTimeout(() => {
+    if (textarea) {
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+    }
+    hideSuggestions(field);
+  }, 0);
+};
+
+// 处理Tab键
+const handleTab = (field, event) => {
+  if (showSuggestions[field] && filteredSuggestions[field].length > 0) {
+    event.preventDefault();
+    selectSuggestion(field, filteredSuggestions[field][activeIndex[field]]);
+  }
+};
+
+// 定义全局事件处理函数
+function handleDocumentClick(e) {
+  const instance = getCurrentInstance();
+  if (!instance || !instance.proxy || !instance.proxy.drawer?.value) return;
+  
+  // 检查是否点击了建议项
+  if (e.target.closest('.suggestion-item')) {
+    return;
+  }
+  
+  const fields = ['family_history', 'allergy_history', 'past_medical_history', 'surgical_history', 'medication_compliance'];
+  
+  fields.forEach(field => {
+    const textareaRef = instance.proxy[`${field}_ref`];
+    const textarea = textareaRef?.value;
+    
+    if (!textarea) return;
+    
+    // 检查是否点击了 textarea 或其建议面板
+    const suggestionsContainer = document.querySelector(`.suggestions-container.${field}`);
+    const clickedOnTextarea = textarea.contains(e.target);
+    const clickedOnSuggestions = suggestionsContainer && suggestionsContainer.contains(e.target);
+    
+    if (!clickedOnTextarea && !clickedOnSuggestions) {
+      instance.proxy.hideSuggestions(field);
+    }
+  });
 }
+
+function handleKeydown(e) {
+  const instance = getCurrentInstance();
+  if (!instance || !instance.proxy || !instance.proxy.drawer?.value) return;
+  
+  // 找出当前有建议的字段
+  const activeField = Object.keys(instance.proxy.showSuggestions).find(field => 
+    instance.proxy.showSuggestions[field]
+  );
+  
+  if (!activeField || !instance.proxy.filteredSuggestions[activeField].length) return;
+  
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    instance.proxy.activeIndex[activeField] = 
+      (instance.proxy.activeIndex[activeField] + 1) % instance.proxy.filteredSuggestions[activeField].length;
+  } 
+  else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    instance.proxy.activeIndex[activeField] = 
+      (instance.proxy.activeIndex[activeField] - 1 + instance.proxy.filteredSuggestions[activeField].length) % 
+      instance.proxy.filteredSuggestions[activeField].length;
+  }
+  else if (e.key === 'Enter' && instance.proxy.showSuggestions[activeField]) {
+    e.preventDefault();
+    instance.proxy.selectSuggestion(activeField, instance.proxy.filteredSuggestions[activeField][instance.proxy.activeIndex[activeField]]);
+  }
+};
+
+// 使用安全的方式来管理事件监听
+onMounted(() => {
+  // 确保安全地添加事件监听
+  try {
+    document.addEventListener('click', handleDocumentClick);
+    document.addEventListener('keydown', handleKeydown);
+  } catch (error) {
+    console.error('添加事件监听失败', error);
+  }
+});
+
+onUnmounted(() => {
+  // 安全地移除事件监听
+  try {
+    document.removeEventListener('click', handleDocumentClick);
+    document.removeEventListener('keydown', handleKeydown);
+  } catch (error) {
+    console.error('移除事件监听失败', error);
+  }
+});
 </script>
 
 <style scoped>
+/* 保留所有原有样式不变 */
 .Edit {
   position: absolute;
   width: 0.35rem;
@@ -260,6 +633,7 @@ const fetchUserpagecenterdata = () => {
   display: flex;
   flex-direction: column;
   margin-bottom: 0.08rem;
+  position: relative; /* 为建议面板定位 */
 }
 
 .info-item label {
@@ -289,14 +663,8 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
 }
 
-
-textarea:focus {
-  outline: none;
-  border-color: #7ab8ff;
-  box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
-}
-
-textarea {
+.medical-textarea {
+  width: 100%;
   height: 0.6rem;
   resize: vertical;
   padding: 0.05rem 0.05rem;
@@ -306,6 +674,61 @@ textarea {
   font-size: 0.09rem;
   transition: all 0.3s ease;
   background-color: #f8fbfe;
+  box-sizing: border-box;
+}
+
+.medical-textarea:focus {
+  outline: none;
+  border-color: #7ab8ff;
+  box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+}
+
+.suggestions-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.05rem);
+  background: white;
+  border: 1px solid #d3e3f4;
+  border-radius: 0.06rem;
+  box-shadow: 0 0.05rem 0.15rem rgba(0, 0, 0, 0.1);
+  z-index: 2000 !important; /* 确保在最上层 */
+  max-height: 1.2rem;
+  overflow-y: auto;
+  font-family: 'FanYuanTi';
+  font-size: 0.09rem;
+}
+
+.suggestion-item {
+  padding: 0.08rem 0.1rem; /* 增加点击区域 */
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+  background-color: #eef5ff;
+  color: #3d97e1;
+}
+
+/* 滚动条样式 */
+.suggestions-container::-webkit-scrollbar {
+  width: 0.04rem;
+}
+.suggestions-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0.02rem;
+}
+.suggestions-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 0.02rem;
+}
+.suggestions-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 select {
