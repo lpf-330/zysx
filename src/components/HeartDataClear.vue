@@ -3,7 +3,7 @@
     <div class="nowData">
       <span class="title">当前心率</span>
       <div class="dataBox">
-        <span class="data">{{ nowData }}</span>
+        <span class="data">{{ nowData }}</span> 
         <span class="unit">bmp</span>
       </div>
     </div>
@@ -38,12 +38,13 @@ import { CanvasRenderer } from 'echarts/renderers';
 import  useUserInfoStore  from '../stores/user';
 import { useCalendarSelectionStore } from '../stores/calendarSelection';
 import { storeToRefs } from 'pinia';
-// 导入新的聚合API
+// 导入新的聚合API和实时数据API
 import { 
     getHeartDataByDate, 
     getHeartDataByWeek, 
     getHeartDataByMonth, 
-    getHeartDataByYear 
+    getHeartDataByYear,
+    getHeartData //导入实时数据API
 } from '../api/healthData';
 // 导入健康分析工具
 import healthAnalyzer from '../utils/healthAnalyzer';
@@ -65,7 +66,9 @@ echarts.use([
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
 const calendarSelectionStore = useCalendarSelectionStore();
-const nowData = ref(0);
+// nowData 用于显示实时心率
+const nowData = ref(0); 
+// 用于图表的历史数据
 const data = ref([]);
 const formattedTime = ref([]);
 const rawTimeData = ref([]); // 存储原始时间数据，用于tooltip显示
@@ -127,21 +130,43 @@ const formatDate = (dateObj) => {
     return `${year}-${month}-${day}`;
 };
 
-// --- 数据获取函数 ---
+// --- 获取实时心率数据 (WebSocket) ---
+const fetchRealTimeData = async () => {
+    if (!isMounted || !user_id) return;
+
+    console.log("=== HeartDataClear 开始订阅实时心率数据 ===");
+    try {
+        const realTimeData = await getHeartData(user_id);
+        console.log("收到实时心率数据:", realTimeData);
+
+        // 假设 realTimeData 是一个数组，包含最新记录
+        if (realTimeData && Array.isArray(realTimeData) && realTimeData.length > 0) {
+            const latestRecord = realTimeData[0]; // 获取最新的一条记录
+            // 根据您的API返回格式调整字段名，例如 heartData
+            nowData.value = latestRecord.heartData || 0; 
+            
+            console.log(`更新实时心率值: ${nowData.value}`);
+        }
+    } catch (error) {
+        console.error("获取实时心率数据失败:", error);
+        // 可以考虑设置一个默认值或显示错误状态
+        // nowData.value = 0;
+    }
+};
+
+// --- 数据获取函数 (用于历史图表) ---
 const fetchAggregatedData = async () => {
     if (!isMounted) {
         console.warn("HeartDataClear 组件已卸载，停止数据获取");
         return;
     }
-    console.log("=== HeartDataClear 开始获取数据 ===");
-    // 设置获取标志
+    console.log("=== HeartDataClear 开始获取历史聚合数据 ===");
     isFetching = true;
     if (!user_id) {
         console.warn("用户ID无效，无法获取数据");
         data.value = [];
         formattedTime.value = [];
         rawTimeData.value = [];
-        nowData.value = 0;
         updateChart();
         isFetching = false;
         return;
@@ -172,7 +197,6 @@ const fetchAggregatedData = async () => {
             isFetching = false;
             return;
         }
-        // 检查组件是否已卸载
         if (!isMounted) {
             console.warn("HeartDataClear 组件在数据获取期间已卸载");
             isFetching = false;
@@ -213,13 +237,11 @@ const fetchAggregatedData = async () => {
                     values: processedData
                 });
             }
-            // 更新响应式变量
+            // 更新响应式变量 (用于图表)
             data.value = processedData;
             formattedTime.value = processedTimes;
             rawTimeData.value = rawTimes;
-            // 更新 nowData 为最后一个数据点的值
-            nowData.value = processedData[processedData.length - 1] || 0;
-            console.log('处理后的数据详情:', {
+            console.log('处理后的数据详情 (用于图表):', {
                 viewType,
                 dataLength: data.value.length,
                 timeLength: formattedTime.value.length,
@@ -245,14 +267,13 @@ const fetchAggregatedData = async () => {
         loading.value = false;
         isFetching = false;
     }
-    console.log("=== HeartDataClear 数据获取完成 ===");
+    console.log("=== HeartDataClear 历史聚合数据获取完成 ===");
 };
 
 const resetData = () => {
     data.value = [];
     formattedTime.value = [];
     rawTimeData.value = [];
-    nowData.value = 0;
     analysisResult.value = null;
     updateChart();
 };
@@ -271,11 +292,9 @@ const updateChart = () => {
     }
     if (!myChart || !chart.value) {
         console.warn("图表实例不存在或DOM未挂载，尝试重新初始化");
-        // 尝试重新初始化
         setTimeout(() => {
             if (isMounted && chart.value) {
                 initChart();
-                // 延迟更新数据
                 setTimeout(() => {
                     if (myChart) {
                         doUpdateChart();
@@ -291,7 +310,6 @@ const updateChart = () => {
 // 实际的图表更新逻辑
 const doUpdateChart = () => {
     try {
-        // 检查数据是否有效
         if (data.value.length === 0 || formattedTime.value.length === 0) {
             console.log("无数据可显示，显示空图表");
             myChart.setOption({
@@ -317,19 +335,15 @@ const doUpdateChart = () => {
             });
             return;
         }
-        // 确保数据一致性
         const displayData = data.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
         const displayTimes = formattedTime.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
         
-        // 计算动态Y轴范围
         const maxDataValue = Math.max(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
         const minDataValue = Math.min(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
         
-        // 添加安全余量（10%）
         const yMax = Math.max(120, Math.ceil(maxDataValue * 1.1));
         const yMin = Math.min(40, Math.floor(minDataValue * 0.9));
         
-        // 获取当前选项并更新
         const currentOption = myChart.getOption() || {};
         myChart.setOption({
             animation: true,
@@ -349,10 +363,9 @@ const doUpdateChart = () => {
                 data: displayData
             }]
         }, {
-            notMerge: false, // 使用 merge 模式，只更新数据部分
+            notMerge: false,
             lazyUpdate: true
         });
-        // 延迟重绘，确保DOM更新完成
         setTimeout(() => {
             if (myChart && isMounted) {
                 try {
@@ -365,7 +378,6 @@ const doUpdateChart = () => {
         console.log("=== HeartDataClear 图表更新完成 ===");
     } catch (error) {
         console.error("更新图表时发生错误:", error);
-        // 如果更新失败，尝试重新初始化图表
         if (isMounted) {
             setTimeout(() => {
                 initChart();
@@ -422,7 +434,6 @@ const getTooltipFormatter = () => {
         }
         const value = params[0].value;
         
-        // 添加健康分析信息
         let analysisInfo = '';
         if (analysisResult.value) {
             const analysis = analysisResult.value.analyses?.[index];
@@ -445,7 +456,6 @@ const initChart = () => {
         console.warn("HeartDataClear 组件未挂载或DOM不存在，无法初始化图表");
         return;
     }
-    // 如果图表已经初始化且实例存在，则先清理
     if (myChart && chartInitialized) {
         try {
             myChart.dispose();
@@ -492,7 +502,6 @@ const initChart = () => {
                     fontSize: 12,
                     rotate: calendarSelectionStore.currentViewType === 'day' ? 45 : 0,
                     formatter: function(value, index) {
-                        // 防止标签重叠，对于日视图可以适当间隔显示
                         const viewType = calendarSelectionStore.currentViewType;
                         if (viewType === 'day' && formattedTime.value.length > 10) {
                             return index % 2 === 0 ? value : '';
@@ -548,7 +557,7 @@ const initChart = () => {
                 smooth: true,
                 symbol: 'circle',
                 symbolSize: 6,
-                showSymbol: data.value.length <= 30, // 数据点过多时不显示所有符号
+                showSymbol: data.value.length <= 30,
                 itemStyle: {
                     color: color[0],
                     borderColor: '#fff',
@@ -579,7 +588,6 @@ const initChart = () => {
             }]
         };
         myChart.setOption(option);
-        // 监听图表点击事件，可用于调试
         myChart.on('click', (params) => {
             console.log('图表点击事件:', params);
             console.log('点击位置数据索引:', params.dataIndex);
@@ -600,11 +608,9 @@ const analyzeHealthData = (dataPoints, timePoints) => {
     }
     
     try {
-        // 使用 HeartRateRules 分析心率数据
         analysisResult.value = healthAnalyzer.HeartRateRules.analyzeHeartRate(dataPoints, timePoints);
         console.log('心率分析结果:', analysisResult.value);
         
-        // 如果图表已初始化，添加异常点标记
         if (myChart && chartInitialized) {
             updateChartWithAnalysis();
         }
@@ -621,7 +627,6 @@ const updateChartWithAnalysis = () => {
     const singleAnalyses = analysisResult.value.analyses;
     const markPoints = [];
     
-    // 添加单点异常标记
     if (singleAnalyses) {
         singleAnalyses.forEach((analysis, index) => {
             if (analysis.level >= 2) {
@@ -644,7 +649,6 @@ const updateChartWithAnalysis = () => {
         });
     }
     
-    // 添加尖峰标记
     const suddenSpikes = analysisResult.value.suddenSpikes || [];
     suddenSpikes.forEach(spike => {
         const startIndex = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(spike.startTime).getTime());
@@ -669,7 +673,6 @@ const updateChartWithAnalysis = () => {
         }
     });
     
-    // 添加心律不齐标记
     const arrhythmiaPatterns = analysisResult.value.arrhythmiaPatterns || [];
     arrhythmiaPatterns.forEach(pattern => {
         const index = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(pattern.timestamp).getTime());
@@ -692,7 +695,6 @@ const updateChartWithAnalysis = () => {
         }
     });
     
-    // 更新图表选项
     myChart.setOption({
         series: [{
             markPoint: {
@@ -707,7 +709,6 @@ const updateChartWithAnalysis = () => {
 const handleExportData = () => {
   if (!analysisResult.value) return;
   
-  // 创建CSV内容
   const headers = ['时间', '心率值(bpm)', '状态', '建议'];
   const rows = analysisResult.value.analyses.map(analysis => [
     new Date(analysis.timestamp).toLocaleString('zh-CN'),
@@ -721,7 +722,6 @@ const handleExportData = () => {
     ...rows.map(row => row.map(field => `"${field}"`).join(','))
   ].join('\n');
   
-  // 创建并下载文件
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -735,14 +735,13 @@ const debouncedFetchData = () => {
     if (fetchTimeout) {
         clearTimeout(fetchTimeout);
     }
-    // 如果已经在获取中，则跳过
     if (isFetching) {
         console.log("数据获取中，跳过重复请求");
         return;
     }
     fetchTimeout = setTimeout(() => {
         fetchAggregatedData();
-    }, 150); // 适当增加延迟
+    }, 150);
 };
 
 // --- 监听日历选择变化 ---
@@ -755,7 +754,6 @@ watch(
         calendarSelectionStore.currentViewType
     ],
     (newVal, oldVal) => {
-        // 如果值没有实际变化，则不触发获取
         if (JSON.stringify(newVal) === JSON.stringify(oldVal)) {
             return;
         }
@@ -773,21 +771,22 @@ watch(
 onMounted(() => {
     console.log("=== HeartDataClear.vue 组件开始挂载 ===");
     isMounted = true;
-    // 等待DOM完全渲染
     setTimeout(() => {
         if (isMounted && chart.value) {
             console.log("开始初始化图表...");
             initChart();
-            // 稍等片刻再获取数据，确保图表初始化完成
             setTimeout(() => {
                 if (isMounted) {
-                    console.log("开始获取数据...");
-                    fetchAggregatedData();
+                    console.log("开始获取历史聚合数据...");
+                    fetchAggregatedData(); // 获取用于图表的历史数据
                 }
             }, 300);
         }
     }, 100);
-    // 添加resize监听
+    
+    // 获取实时数据用于顶部显示 (关键：在挂载时调用一次)
+    fetchRealTimeData(); 
+
     const handleResize = () => {
         if (myChart && isMounted) {
             try {
@@ -798,7 +797,6 @@ onMounted(() => {
         }
     };
     window.addEventListener('resize', handleResize);
-    // 保存清理函数
     window.__heartChartResizeHandler = handleResize;
 });
 
@@ -811,12 +809,10 @@ onUnmounted(() => {
         clearTimeout(fetchTimeout);
         fetchTimeout = null;
     }
-    // 清理resize监听
     if (window.__heartChartResizeHandler) {
         window.removeEventListener('resize', window.__heartChartResizeHandler);
         delete window.__heartChartResizeHandler;
     }
-    // 清理图表实例
     if (myChart) {
         try {
             myChart.dispose();

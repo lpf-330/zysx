@@ -10,7 +10,6 @@
     >
       <span class="icon-text">{{ iconText }}</span>
       <span v-if="alertCount > 0" class="badge">{{ alertCount }}</span>
-      
       <!-- 悬停提示 -->
       <transition name="fade">
         <div v-if="showTooltip && !isModalOpen" class="tooltip">
@@ -22,7 +21,6 @@
         </div>
       </transition>
     </div>
-    
     <!-- 悬浮模态框 -->
     <transition name="modal-slide">
       <div v-if="isModalOpen" class="alert-modal-overlay" @click.self="closeModal">
@@ -43,7 +41,6 @@
               </svg>
             </button>
           </div>
-          
           <div class="modal-content">
             <!-- 风险等级卡片 -->
             <div class="risk-card" :style="{ borderColor: alertColor }">
@@ -54,36 +51,34 @@
                 <span class="risk-description">{{ riskDescription }}</span>
               </div>
             </div>
-            
             <!-- 统计数据 -->
             <div class="stats-grid">
               <div class="stat-item">
                 <div class="stat-label">数据点数</div>
-                <div class="stat-value">{{ analysisResult?.summary?.totalPoints || 0 }}</div>
+                <div class="stat-value">{{ totalPoints }}</div>
               </div>
               <div class="stat-item">
                 <div class="stat-label">异常点数</div>
                 <div class="stat-value" :style="{ color: alertColor }">
-                  {{ analysisResult?.summary?.severeCount || 0 }}
+                  {{ severeCount }}
                 </div>
               </div>
               <div class="stat-item">
                 <div class="stat-label">异常比例</div>
                 <div class="stat-value">
-                  {{ (analysisResult?.summary?.abnormalPercentage || 0).toFixed(1) }}%
+                  {{ abnormalPercentage }}%
                 </div>
               </div>
             </div>
             
             <!-- 趋势分析 -->
-            <div v-if="analysisResult?.trendAnalysis" class="trend-section">
+            <div v-if="hasTrendAnalysis" class="trend-section">
               <h4>📈 趋势分析</h4>
               <div class="trend-info">
                 <span class="trend-label">当前趋势:</span>
-                <span class="trend-value">{{ analysisResult.trendAnalysis.trend }}</span>
+                <span class="trend-value">{{ trendText }}</span>
               </div>
             </div>
-            
             <!-- 异常数据点 -->
             <div v-if="severePoints.length > 0" class="severe-points">
               <h4>⚠️ 异常数据点</h4>
@@ -91,15 +86,14 @@
                 <div v-for="(point, index) in severePoints" :key="index" class="point-item">
                   <div class="point-time">{{ formatTime(point.timestamp) }}</div>
                   <div class="point-value" :style="{ color: point.color }">
-                    {{ point.value.toFixed(1) }}{{ dataType === 'blood' ? 'mmol/L' : 'bpm' }}
+                    {{ getPointValue(point) }}
                   </div>
                   <div class="point-status" :style="{ color: point.color }">
-                    {{ point.message }}
+                    {{ point.message || '未知异常' }}
                   </div>
                 </div>
               </div>
             </div>
-            
             <!-- 建议 -->
             <div class="suggestions">
               <h4>💡 建议</h4>
@@ -111,7 +105,6 @@
               </div>
             </div>
           </div>
-          
           <div class="modal-footer">
             <button class="action-btn secondary" @click="closeModal">
               关闭
@@ -127,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   analysisResult: Object,
@@ -138,179 +131,240 @@ const props = defineProps({
     validator: value => ['top-right', 'top-left'].includes(value)
   }
 });
-
 const emit = defineEmits(['export-data']);
 
 // 状态
 const isModalOpen = ref(false);
 const showTooltip = ref(false);
 
+// 安全访问分析结果
+const getSafeValue = (obj, path, defaultValue) => {
+  if (!obj) return defaultValue;
+  const keys = path.split('.');
+  let value = obj;
+  for (const key of keys) {
+    if (value && typeof value === 'object' && key in value) {
+      value = value[key];
+    } else {
+      return defaultValue;
+    }
+  }
+  return value !== undefined ? value : defaultValue;
+};
+
 // 计算属性
 const showAlertIcon = computed(() => {
   return props.analysisResult && props.analysisResult.summary?.maxLevel > 0;
 });
 
+const analysisSummary = computed(() => {
+  return props.analysisResult?.summary || {};
+});
+
+const totalPoints = computed(() => {
+  return analysisSummary.value.totalPoints || 0;
+});
+
+const severeCount = computed(() => {
+  return analysisSummary.value.severeCount || 0;
+});
+
+const abnormalPercentage = computed(() => {
+  const value = analysisSummary.value.abnormalPercentage || 0;
+  return value.toFixed(1);
+});
+
+const avgSystolic = computed(() => {
+  let value = getSafeValue(props.analysisResult, 'summary.average', null);
+  if (value === null && props.dataType === 'pressure') {
+    value = getSafeValue(props.analysisResult, 'summary.avgSystolic', 0);
+  }
+  return value.toFixed(1);
+});
+
+const avgDiastolic = computed(() => {
+  if (props.dataType === 'pressure') {
+    const value = getSafeValue(props.analysisResult, 'summary.avgDiastolic', 0);
+    return value.toFixed(1);
+  }
+  return 'N/A';
+});
+
+const averageValue = computed(() => {
+  if (props.dataType === 'pressure') {
+    const sys = parseFloat(avgSystolic.value);
+    const dia = parseFloat(avgDiastolic.value);
+    return ((sys + dia) / 2).toFixed(1);
+  }
+  const value = getSafeValue(props.analysisResult, 'summary.average', 0);
+  return value.toFixed(1);
+});
+
+const unit = computed(() => {
+  const units = {
+    blood: 'mmol/L',
+    heart: 'bpm',
+    pressure: 'mmHg'
+  };
+  return units[props.dataType] || '';
+});
+
+const hasTrendAnalysis = computed(() => {
+  return props.analysisResult && (props.analysisResult.trendAnalysis || props.analysisResult.analyses);
+});
+
+const trendText = computed(() => {
+  if (!props.analysisResult) return '暂无数据';
+  
+  if (props.analysisResult.trendAnalysis) {
+    return props.analysisResult.trendAnalysis.trend || '暂无趋势数据';
+  }
+  
+  if (props.analysisResult.analyses && props.analysisResult.analyses.length > 0) {
+    return props.analysisResult.summary?.overallRisk === 'high' ? '波动剧烈' : '相对稳定';
+  }
+  
+  return '暂无趋势数据';
+});
+
+const severePoints = computed(() => {
+  if (!props.analysisResult) return [];
+  
+  let analyses = [];
+  
+  if (props.analysisResult.singleAnalyses) {
+    analyses = props.analysisResult.singleAnalyses;
+  } 
+  else if (props.analysisResult.analyses) {
+    analyses = props.analysisResult.analyses;
+  }
+  else if (Array.isArray(props.analysisResult)) {
+    analyses = props.analysisResult;
+  }
+  
+  return analyses
+    .filter(a => a && a.level >= 2)
+    .slice(0, 3);
+});
+
+const suggestions = computed(() => {
+  if (!props.analysisResult) return ['暂无建议'];
+  
+  if (props.analysisResult.recommendations && Array.isArray(props.analysisResult.recommendations)) {
+    return props.analysisResult.recommendations
+      .map(rec => rec.message || rec)
+      .slice(0, 3);
+  }
+  
+  const maxLevel = analysisSummary.value.maxLevel || 0;
+  const suggestionsMap = {
+    0: ['数据正常，继续保持'],
+    1: ['注意监测变化趋势', '保持健康生活方式'],
+    2: ['建议调整生活习惯', '增加监测频率', '关注身体反应'],
+    3: ['请尽快就医咨询', '避免剧烈运动', '保持充分休息']
+  };
+  
+  return suggestionsMap[maxLevel] || suggestionsMap[0];
+});
+
+// 警告级别和样式
+const alertLevel = computed(() => {
+  return analysisSummary.value.maxLevel || 0;
+});
+
 const alertLevelClass = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
-  return `level-${level}`;
+  return `level-${alertLevel.value}`;
 });
 
 const shouldPulse = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
-  return level >= 2;
+  return alertLevel.value >= 2;
 });
 
 const iconText = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const icons = {
     0: '✓',
     1: 'ℹ',
     2: '⚠',
     3: '⚡'
   };
-  return icons[level] || icons[0];
+  return icons[alertLevel.value] || icons[0];
 });
 
 const alertCount = computed(() => {
-  return props.analysisResult?.summary?.severeCount || 0;
+  return severeCount.value;
 });
 
 const tooltipTitle = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const titles = {
     0: '状态正常',
     1: '需要注意',
     2: '发现警告',
     3: '严重警告'
   };
-  return titles[level] || titles[0];
+  return titles[alertLevel.value] || titles[0];
 });
 
 const tooltipMessage = computed(() => {
-  const severeCount = props.analysisResult?.summary?.severeCount || 0;
-  if (severeCount > 0) {
-    return `发现 ${severeCount} 个异常数据点`;
+  if (alertCount.value > 0) {
+    return `发现 ${alertCount.value} 个异常数据点`;
   }
   return '点击查看详细分析';
 });
 
 const alertColor = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const colors = {
     0: '#52c41a',
     1: '#faad14',
     2: '#fa8c16',
     3: '#f5222d'
   };
-  return colors[level] || colors[0];
+  return colors[alertLevel.value] || colors[0];
 });
 
 const modalIcon = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const icons = {
     0: '✅',
     1: '📋',
     2: '⚠️',
     3: '🚨'
   };
-  return icons[level] || icons[0];
+  return icons[alertLevel.value] || icons[0];
 });
 
 const modalTitle = computed(() => {
   const titles = {
     blood: '血糖分析报告',
-    heart: '心率分析报告'
+    heart: '心率分析报告',
+    pressure: '血压分析报告'
   };
   return titles[props.dataType] || '健康分析报告';
 });
 
 const modalSubtitle = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const subtitles = {
     0: '所有数据均在正常范围内',
     1: '有轻微异常数据需要关注',
     2: '发现异常数据，请注意',
     3: '存在严重异常数据，建议处理'
   };
-  return subtitles[level] || subtitles[0];
+  return subtitles[alertLevel.value] || subtitles[0];
 });
 
 const riskLevelText = computed(() => {
-  const level = props.analysisResult?.summary?.maxLevel || 0;
   const texts = {
     0: '低风险',
     1: '注意',
     2: '警告',
     3: '高风险'
   };
-  return texts[level] || texts[0];
+  return texts[alertLevel.value] || texts[0];
 });
 
 const riskDescription = computed(() => {
-  const severeCount = props.analysisResult?.summary?.severeCount || 0;
-  const total = props.analysisResult?.summary?.totalPoints || 0;
-  
-  if (severeCount === 0) {
+  if (severeCount.value === 0) {
     return '所有数据正常';
   }
-  
-  return `在 ${total} 个数据点中发现 ${severeCount} 个异常`;
-});
-
-const severePoints = computed(() => {
-  const result = props.analysisResult;
-  if (!result) return [];
-  
-  if (result.singleAnalyses) {
-    return result.singleAnalyses
-      .filter(a => a.level >= 2)
-      .slice(0, 3);
-  }
-  
-  if (result.analyses) {
-    return result.analyses
-      .filter(a => a.level >= 2)
-      .slice(0, 3);
-  }
-  
-  return [];
-});
-
-const suggestions = computed(() => {
-  const result = props.analysisResult;
-  const suggestions = [];
-  
-  if (!result) {
-    suggestions.push('暂无建议');
-    return suggestions;
-  }
-  
-  const level = result.summary?.maxLevel || 0;
-  
-  // 通用建议
-  if (level >= 3) {
-    suggestions.push('请及时就医检查');
-    suggestions.push('保持休息，避免剧烈运动');
-    suggestions.push('加强监测频率');
-  } else if (level >= 2) {
-    suggestions.push('建议调整生活习惯');
-    suggestions.push('保持规律作息');
-    suggestions.push('适当增加监测');
-  } else if (level >= 1) {
-    suggestions.push('注意观察变化趋势');
-    suggestions.push('保持健康生活方式');
-  } else {
-    suggestions.push('继续保持良好习惯');
-  }
-  
-  // 数据类型特定建议
-  if (props.dataType === 'blood' && result.summary?.average > 8) {
-    suggestions.push('注意控制碳水摄入');
-  } else if (props.dataType === 'heart' && result.summary?.average > 90) {
-    suggestions.push('避免咖啡因和刺激性饮料');
-  }
-  
-  return suggestions.slice(0, 3);
+  return `在 ${totalPoints.value} 个数据点中发现 ${severeCount.value} 个异常`;
 });
 
 // 方法
@@ -327,6 +381,9 @@ const formatTime = (timestamp) => {
   if (!timestamp) return '--:--';
   try {
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return '--:--';
+    }
     return date.toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit'
@@ -336,8 +393,24 @@ const formatTime = (timestamp) => {
   }
 };
 
+const getPointValue = (point) => {
+  if (!point) return 'N/A';
+  
+  if (props.dataType === 'pressure' && point.systolic !== undefined && point.diastolic !== undefined) {
+    return `${point.systolic}/${point.diastolic} mmHg`;
+  }
+  
+  if (point.value !== undefined) {
+    return `${point.value.toFixed(1)}${unit.value}`;
+  }
+  
+  return 'N/A';
+};
+
 const exportData = () => {
-  emit('export-data');
+  if (props.analysisResult && emit) {
+    emit('export-data', props.analysisResult);
+  }
   closeModal();
 };
 
@@ -349,8 +422,6 @@ const handleClickOutside = (event) => {
 };
 
 // 初始化事件监听
-import { onMounted, onUnmounted } from 'vue';
-
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
@@ -361,394 +432,374 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 警告图标容器 */
 .alert-icon-container {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 1000;
+  transition: all 0.3s ease;
 }
 
-/* 警告图标样式 */
 .alert-icon {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
-  user-select: none;
-}
-
-.alert-icon:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  font-weight: bold;
 }
 
 .alert-icon.level-0 {
-  background: linear-gradient(135deg, #52c41a, #73d13d);
+  background: #52c41a;
+  color: white;
 }
 
 .alert-icon.level-1 {
-  background: linear-gradient(135deg, #faad14, #ffc53d);
+  background: #faad14;
+  color: white;
 }
 
 .alert-icon.level-2 {
-  background: linear-gradient(135deg, #fa8c16, #ffa940);
+  background: #fa8c16;
+  color: white;
 }
 
 .alert-icon.level-3 {
-  background: linear-gradient(135deg, #f5222d, #ff4d4f);
+  background: #f5222d;
+  color: white;
 }
 
 .alert-icon.pulse {
-  animation: pulse 2s infinite;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(245, 34, 45, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(245, 34, 45, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 34, 45, 0); }
 }
 
 .badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: white;
-  color: #f5222d;
-  font-size: 11px;
-  font-weight: bold;
-  width: 18px;
+  top: -6px;
+  right: -6px;
+  background-color: #ff4d4f;
+  color: white;
+  font-size: 10px;
+  min-width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  border: 2px solid currentColor;
+  font-weight: bold;
+  box-shadow: 0 0 0 2px white;
 }
 
-/* 悬停提示 */
 .tooltip {
   position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  min-width: 160px;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
   z-index: 1001;
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tooltip-content {
-  position: relative;
-  z-index: 2;
+  background: white;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #1e293b;
 }
 
 .tooltip-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
+  font-weight: bold;
+  font-size: 14px;
   margin-bottom: 4px;
+  color: #1e293b;
 }
 
 .tooltip-message {
-  font-size: 11px;
-  color: #666;
-  line-height: 1.4;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .tooltip-arrow {
   position: absolute;
-  top: -6px;
-  right: 16px;
-  width: 12px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  transform: rotate(45deg);
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid white;
 }
 
-/* 模态框遮罩 */
 .alert-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background-color: rgba(255, 255, 255, 0.8);
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   z-index: 2000;
-  padding-top: 60px;
-  padding-right: 10px;
+  backdrop-filter: blur(2px);
 }
 
-/* 模态框主体 */
 .alert-modal {
-  width: 350px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  background: white;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: modal-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 95%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e7ff;
+  transform: translateY(0);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 自定义滚动条样式 */
+.alert-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alert-modal::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.alert-modal::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.alert-modal::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 
 .alert-modal.blood {
-  border-top: 4px solid #1890FF;
+  border-top: 4px solid #52c41a;
 }
 
 .alert-modal.heart {
-  border-top: 4px solid #FF6B6B;
+  border-top: 4px solid #f5222d;
 }
 
-/* 模态框头部 */
+.alert-modal.pressure {
+  border-top: 4px solid #1890ff;
+}
+
 .modal-header {
-  padding: 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  background: #f8fafc;
 }
 
 .modal-title {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex: 1;
+  align-items: center;
+  gap: 12px;
 }
 
 .title-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
   color: white;
-  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: bold;
+  background: #f5222d;
 }
 
 .modal-title h3 {
+  color: #1e293b;
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.3;
 }
 
 .subtitle {
-  margin: 4px 0 0;
+  color: #64748b;
+  margin: 2px 0 0 0;
   font-size: 13px;
-  color: #666;
-  line-height: 1.4;
 }
 
 .close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  border: none;
-  background: rgba(0, 0, 0, 0.05);
-  color: #666;
-  cursor: pointer;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+  transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #333;
+  background: #f1f5f9;
+  color: #475569;
 }
 
-/* 模态框内容 */
 .modal-content {
-  padding: 0 20px 20px;
-  max-height: 60vh;
-  overflow-y: auto;
+  padding: 20px;
+  color: #1e293b;
 }
 
-/* 风险卡片 */
 .risk-card {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 16px;
-  border-left: 4px solid;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-color: #e2e8f0;
 }
 
 .risk-level {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .level-badge {
-  padding: 5px 10px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
   color: white;
-  white-space: nowrap;
 }
 
 .risk-description {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.4;
-  flex: 1;
+  color: #64748b;
+  font-size: 14px;
 }
 
-/* 统计网格 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
 .stat-item {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 10px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px;
   text-align: center;
-  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .stat-label {
-  font-size: 11px;
-  color: #888;
-  margin-bottom: 6px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e293b;
 }
 
-/* 趋势分析 */
 .trend-section {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .trend-section h4 {
-  margin: 0 0 10px 0;
-  font-size: 13px;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .trend-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .trend-label {
-  font-size: 12px;
-  color: #666;
+  color: #64748b;
+  margin-right: 8px;
 }
 
 .trend-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: bold;
+  color: #1e293b;
 }
 
-/* 严重数据点 */
 .severe-points {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .severe-points h4 {
-  margin: 0 0 10px 0;
-  font-size: 13px;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .points-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .point-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.02);
+  background: #f8fafc;
   border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .point-time {
   font-size: 12px;
-  color: #666;
-  width: 55px;
+  color: #64748b;
+  margin-bottom: 4px;
 }
 
 .point-value {
-  font-size: 13px;
-  font-weight: 600;
-  flex: 1;
-  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 2px;
 }
 
 .point-status {
-  font-size: 12px;
-  font-weight: 500;
-  width: 70px;
-  text-align: right;
+  font-size: 13px;
+  font-style: italic;
+  color: #64748b;
 }
 
-/* 建议 */
 .suggestions {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .suggestions h4 {
-  margin: 0 0 10px 0;
-  font-size: 13px;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .suggestions-list {
@@ -760,153 +811,83 @@ onUnmounted(() => {
 .suggestion-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 6px;
 }
 
 .suggestion-bullet {
-  width: 6px;
-  height: 6px;
+  min-width: 8px;
+  height: 8px;
   border-radius: 50%;
   margin-top: 6px;
-  flex-shrink: 0;
+  background: #f5222d;
 }
 
 .suggestion-text {
-  font-size: 13px;
-  color: #333;
+  color: #1e293b;
+  font-size: 14px;
   line-height: 1.5;
-  flex: 1;
 }
 
-/* 模态框底部 */
 .modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 15px 20px;
+  border-top: 1px solid #e2e8f0;
   display: flex;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8fafc;
 }
 
 .action-btn {
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+  transition: all 0.2s;
+  border: none;
+  font-size: 14px;
 }
 
 .action-btn.secondary {
-  background: rgba(0, 0, 0, 0.05);
-  color: #666;
+  background: #e2e8f0;
+  color: #64748b;
 }
 
 .action-btn.secondary:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #333;
+  background: #cbd5e1;
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  background: #1890ff;
   color: white;
+  box-shadow: 0 4px 10px rgba(24, 144, 255, 0.3);
 }
 
 .action-btn.primary:hover {
-  background: linear-gradient(135deg, #40a9ff, #69c0ff);
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-}
-
-/* 动画 */
-@keyframes pulse {
-  0% {
-    box-shadow: 0 4px 12px rgba(245, 34, 45, 0.3);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(245, 34, 45, 0.5);
-  }
-  100% {
-    box-shadow: 0 4px 12px rgba(245, 34, 45, 0.3);
-  }
-}
-
-@keyframes modal-appear {
-  from {
-    opacity: 0;
-    transform: translateX(20px) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(24, 144, 255, 0.4);
 }
 
 .modal-slide-enter-active,
 .modal-slide-leave-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s ease;
 }
 
 .modal-slide-enter-from,
 .modal-slide-leave-to {
   opacity: 0;
-  transform: translateX(20px) translateY(-10px);
+  transform: translateY(-20px);
 }
 
-/* 滚动条美化 */
-.modal-content::-webkit-scrollbar {
-  width: 5px;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.modal-content::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .alert-modal {
-    width: 320px;
-    margin-right: 8px;
-  }
-  
-  .alert-modal-overlay {
-    padding-right: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .alert-modal {
-    width: calc(100vw - 40px);
-    margin: 0 20px;
-  }
-  
-  .alert-modal-overlay {
-    padding-right: 0;
-    padding-top: 80px;
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

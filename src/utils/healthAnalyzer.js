@@ -1,6 +1,5 @@
 /**
- * 增强版健康数据分析工具
- * 保留原始规则并添加动态检测功能
+ * 健康数据分析库
  */
 export const BloodSugarRules = {
   NORMAL_RANGE: { min: 3.9, max: 10.0 },
@@ -582,7 +581,285 @@ export const HeartRateRules = {
   }
 };
 
+// 新增血压分析规则
+export const BloodPressureRules = {
+  // 血压正常范围 (mmHg)
+  NORMAL_SYSTOLIC: { min: 90, max: 120 },
+  NORMAL_DIASTOLIC: { min: 60, max: 80 },
+  
+  analyzeSinglePoint(systolic, diastolic, timestamp = null) {
+    const result = {
+      systolic,
+      diastolic,
+      timestamp,
+      level: 0,
+      message: '',
+      suggestion: '',
+      color: '#52c41a'
+    };
+    
+    // 检查收缩压
+    let systolicLevel = 0;
+    let systolicMessage = '';
+    let systolicSuggestion = '';
+    
+    if (systolic < this.NORMAL_SYSTOLIC.min) {
+      systolicLevel = 1; // 低血压
+      systolicMessage = '低血压';
+      systolicSuggestion = '适当补充盐分和水分';
+    } else if (systolic > 140) {
+      systolicLevel = 3; // 严重高血压
+      systolicMessage = '严重高血压';
+      systolicSuggestion = '立即休息，必要时就医';
+    } else if (systolic > 130) {
+      systolicLevel = 2; // 高血压
+      systolicMessage = '高血压';
+      systolicSuggestion = '减少盐分摄入，适当休息';
+    } else if (systolic > 120) {
+      systolicLevel = 1; // 高血压前期
+      systolicMessage = '血压偏高';
+      systolicSuggestion = '监测血压变化';
+    }
+    
+    // 检查舒张压
+    let diastolicLevel = 0;
+    let diastolicMessage = '';
+    let diastolicSuggestion = '';
+    
+    if (diastolic < this.NORMAL_DIASTOLIC.min) {
+      diastolicLevel = 1; // 低血压
+      diastolicMessage = '低舒张压';
+      diastolicSuggestion = '适当补充盐分和水分';
+    } else if (diastolic > 90) {
+      diastolicLevel = 3; // 严重高血压
+      diastolicMessage = '严重高舒张压';
+      diastolicSuggestion = '立即休息，必要时就医';
+    } else if (diastolic > 80) {
+      diastolicLevel = 2; // 高血压
+      diastolicMessage = '高舒张压';
+      diastolicSuggestion = '减少盐分摄入，适当休息';
+    }
+    
+    // 确定总体级别
+    result.level = Math.max(systolicLevel, diastolicLevel, 0);
+    
+    // 生成消息
+    let messages = [];
+    if (systolicLevel > 0) messages.push(systolicMessage);
+    if (diastolicLevel > 0) messages.push(diastolicMessage);
+    
+    // 生成建议
+    let suggestions = [];
+    if (systolicLevel > 0) suggestions.push(systolicSuggestion);
+    if (diastolicLevel > 0) suggestions.push(diastolicSuggestion);
+    
+    // 添加脉压差检查
+    const pulsePressure = systolic - diastolic;
+    if (pulsePressure > 60) {
+      result.level = Math.max(result.level, 2);
+      messages.push('脉压差过大');
+      suggestions.push('注意心血管健康');
+    } else if (pulsePressure < 25) {
+      result.level = Math.max(result.level, 1);
+      messages.push('脉压差过小');
+      suggestions.push('关注循环系统状况');
+    }
+    
+    result.message = messages.join('，') || '血压正常';
+    result.suggestion = suggestions.join('；') || '保持健康生活方式';
+    
+    // 设置颜色
+    const colors = ['#52c41a', '#faad14', '#fa8c16', '#f5222d'];
+    result.color = colors[result.level];
+    
+    return result;
+  },
+  
+  // 趋势分析
+  analyzeTrend(systolicPoints, diastolicPoints) {
+    if (systolicPoints.length < 3) return { trend: '数据不足' };
+    
+    const avgSystolicFirst = systolicPoints.slice(0, Math.floor(systolicPoints.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(systolicPoints.length / 2);
+    const avgSystolicSecond = systolicPoints.slice(Math.floor(systolicPoints.length / 2)).reduce((a, b) => a + b, 0) / Math.ceil(systolicPoints.length / 2);
+    
+    const avgDiastolicFirst = diastolicPoints.slice(0, Math.floor(diastolicPoints.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(diastolicPoints.length / 2);
+    const avgDiastolicSecond = diastolicPoints.slice(Math.floor(diastolicPoints.length / 2)).reduce((a, b) => a + b, 0) / Math.ceil(diastolicPoints.length / 2);
+    
+    const systolicDiff = avgSystolicSecond - avgSystolicFirst;
+    const diastolicDiff = avgDiastolicSecond - avgDiastolicFirst;
+    
+    if (Math.abs(systolicDiff) > 10 || Math.abs(diastolicDiff) > 5) {
+      return {
+        trend: systolicDiff > 0 || diastolicDiff > 0 ? '上升趋势' : '下降趋势',
+        magnitude: '显著'
+      };
+    }
+    
+    return { trend: '稳定趋势', magnitude: '轻微' };
+  },
+  
+  // 检测短时间内血压骤变
+  detectSuddenChanges(systolicPoints, diastolicPoints, timePoints, threshold = 20) {
+    const suddenChanges = [];
+    
+    for (let i = 1; i < systolicPoints.length; i++) {
+      const systolicChange = Math.abs(systolicPoints[i] - systolicPoints[i-1]);
+      const diastolicChange = Math.abs(diastolicPoints[i] - diastolicPoints[i-1]);
+      
+      const timeDiff = (new Date(timePoints[i]) - new Date(timePoints[i-1])) / (1000 * 60); // 转换为分钟
+      
+      if (timeDiff > 0 && (systolicChange / timeDiff > threshold || diastolicChange / timeDiff > threshold)) {
+        const severity = systolicChange > 30 || diastolicChange > 20 ? 3 : (systolicChange > 20 || diastolicChange > 15 ? 2 : 1);
+        suddenChanges.push({
+          index: i,
+          systolicChange,
+          diastolicChange,
+          rate: Math.max(systolicChange / timeDiff, diastolicChange / timeDiff),
+          timestamp: timePoints[i],
+          severity,
+          message: severity === 3 ? '血压急剧变化' : severity === 2 ? '血压快速变化' : '血压变化较快',
+          color: severity === 3 ? '#f5222d' : (severity === 2 ? '#fa8c16' : '#faad14')
+        });
+      }
+    }
+    
+    return suddenChanges;
+  },
+  
+  // 持续高血压/低血压检测
+  detectSustainedAbnormal(systolicPoints, diastolicPoints, timePoints, durationMinutes = 30) {
+    const abnormalPeriods = [];
+    let currentPeriod = null;
+    
+    for (let i = 0; i < systolicPoints.length; i++) {
+      const isAbnormal = systolicPoints[i] > 130 || diastolicPoints[i] > 80 || 
+                         systolicPoints[i] < 90 || diastolicPoints[i] < 60;
+      
+      const abnormalType = systolicPoints[i] > 130 || diastolicPoints[i] > 80 ? 'high' : 'low';
+      
+      if (isAbnormal && !currentPeriod) {
+        currentPeriod = {
+          startIdx: i,
+          startTime: timePoints[i],
+          type: abnormalType,
+          systolicValues: [systolicPoints[i]],
+          diastolicValues: [diastolicPoints[i]]
+        };
+      } else if (!isAbnormal && currentPeriod) {
+        const endTime = timePoints[i-1];
+        const duration = (new Date(endTime) - new Date(currentPeriod.startTime)) / (1000 * 60);
+        
+        if (duration >= durationMinutes) {
+          currentPeriod.endIdx = i-1;
+          currentPeriod.endTime = endTime;
+          currentPeriod.duration = duration;
+          currentPeriod.avgSystolic = currentPeriod.systolicValues.reduce((a, b) => a + b, 0) / currentPeriod.systolicValues.length;
+          currentPeriod.avgDiastolic = currentPeriod.diastolicValues.reduce((a, b) => a + b, 0) / currentPeriod.diastolicValues.length;
+          abnormalPeriods.push(currentPeriod);
+        }
+        currentPeriod = null;
+      } else if (isAbnormal && currentPeriod) {
+        currentPeriod.systolicValues.push(systolicPoints[i]);
+        currentPeriod.diastolicValues.push(diastolicPoints[i]);
+      }
+    }
+    
+    // 检查是否在数据末尾结束
+    if (currentPeriod) {
+      const endTime = timePoints[systolicPoints.length - 1];
+      const duration = (new Date(endTime) - new Date(currentPeriod.startTime)) / (1000 * 60);
+      
+      if (duration >= durationMinutes) {
+        currentPeriod.endIdx = systolicPoints.length - 1;
+        currentPeriod.endTime = endTime;
+        currentPeriod.duration = duration;
+        currentPeriod.avgSystolic = currentPeriod.systolicValues.reduce((a, b) => a + b, 0) / currentPeriod.systolicValues.length;
+        currentPeriod.avgDiastolic = currentPeriod.diastolicValues.reduce((a, b) => a + b, 0) / currentPeriod.diastolicValues.length;
+        abnormalPeriods.push(currentPeriod);
+      }
+    }
+    
+    return abnormalPeriods;
+  },
+  
+  // 综合分析
+  analyzeComprehensive(systolicPoints, diastolicPoints, timePoints) {
+    const singleAnalyses = systolicPoints.map((systolic, index) => 
+      this.analyzeSinglePoint(systolic, diastolicPoints[index], timePoints[index])
+    );
+    
+    const trendAnalysis = this.analyzeTrend(systolicPoints, diastolicPoints);
+    const suddenChanges = this.detectSuddenChanges(systolicPoints, diastolicPoints, timePoints, 15);
+    const sustainedAbnormal = this.detectSustainedAbnormal(systolicPoints, diastolicPoints, timePoints, 30);
+    
+    const maxLevel = Math.max(...singleAnalyses.map(a => a.level));
+    const severePoints = singleAnalyses.filter(a => a.level >= 2);
+    const totalPoints = singleAnalyses.length;
+    
+    // 计算平均值
+    const avgSystolic = systolicPoints.reduce((a, b) => a + b, 0) / systolicPoints.length;
+    const avgDiastolic = diastolicPoints.reduce((a, b) => a + b, 0) / diastolicPoints.length;
+    
+    // 确定整体风险级别
+    let overallRisk = 'low';
+    if (maxLevel >= 3 || suddenChanges.some(c => c.severity >= 2) || sustainedAbnormal.length > 0) {
+      overallRisk = 'high';
+    } else if (maxLevel >= 2 || suddenChanges.length > 0) {
+      overallRisk = 'medium';
+    }
+    
+    // 生成建议
+    const recommendations = [];
+    if (maxLevel >= 3) {
+      recommendations.push({
+        type: 'immediate',
+        message: '血压严重异常，建议立即就医'
+      });
+    } else if (maxLevel >= 2) {
+      recommendations.push({
+        type: 'check',
+        message: '发现血压异常，请密切关注'
+      });
+    }
+    
+    if (suddenChanges.length > 0) {
+      recommendations.push({
+        type: 'trend',
+        message: `检测到${suddenChanges.length}次血压快速变化，注意监测`
+      });
+    }
+    
+    if (sustainedAbnormal.length > 0) {
+      recommendations.push({
+        type: 'maintenance',
+        message: '长时间血压异常，建议咨询医生'
+      });
+    }
+    
+    return {
+      singleAnalyses,
+      trendAnalysis,
+      suddenChanges,
+      sustainedAbnormal,
+      summary: {
+        maxLevel,
+        severeCount: severePoints.length,
+        totalPoints,
+        abnormalPercentage: severePoints.length / totalPoints * 100,
+        avgSystolic,
+        avgDiastolic,
+        overallRisk
+      },
+      recommendations: recommendations.length > 0 ? recommendations : [{
+        type: 'maintain',
+        message: '血压水平正常，继续保持良好习惯'
+      }]
+    };
+  }
+};
+
 export default {
   BloodSugarRules,
-  HeartRateRules
+  HeartRateRules,
+  BloodPressureRules
 };

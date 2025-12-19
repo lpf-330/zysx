@@ -45,13 +45,8 @@ const fetchTodosByDate = async (date) => {
   try {
     // 使用本地日期格式化，避免时区问题
     const start_date = formatDate(date);
-    console.log('选中的日期:', date);
-    console.log('格式化后的日期:', start_date);
     
     const response = await getTodosByDate(start_date, user_id);
-
-    console.log('待办事项', response);
-    
     // 转换API响应数据为页面所需格式
     items.value = response.data.map(todo => ({
       id: todo.id,
@@ -63,7 +58,6 @@ const fetchTodosByDate = async (date) => {
       completed: todo.completed === 1 || todo.completed === true 
     }));
     
-    console.log(`获取 ${start_date} 的待办事项成功`, items.value);
   } catch (error) {
     console.error('获取待办事项失败:', error);
     // 如果API调用失败，可以设置默认值或显示错误信息
@@ -94,7 +88,7 @@ const refreshInterval = setInterval(() => {
   } else {
     fetchTodosByDate(new Date()); // 如果没有选中日期，就获取当天数据
   }
-}, 60000); // 每分钟刷新一次
+}, 2000); // 每分钟刷新一次
 
 onUnmounted(() => {
   clearInterval(refreshInterval);

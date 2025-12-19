@@ -201,10 +201,10 @@ const getSlpDataByMonth = (userId, year, month) => httpService.post('/api/api/he
 const getSlpDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/slp-data-by-year', { userId, year });
 
 // 血压
-const getPreDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/pre-data-by-date', { userId, date });
-const getPreDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/pre-data-by-week', { userId, dateInWeek });
-const getPreDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/pre-data-by-month', { userId, year, month });
-const getPreDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/pre-data-by-year', { userId, year });
+const getPreDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/pressure-data-by-date', { userId, date });
+const getPreDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/health-data-aggregated/pressure-data-by-week', { userId, dateInWeek });
+const getPreDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/pressure-data-by-month', { userId, year, month });
+const getPreDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/pressure-data-by-year', { userId, year });
 
 // 灌注指数
 const getPiDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/pi-data-by-date', { userId, date });
