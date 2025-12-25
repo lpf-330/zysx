@@ -180,6 +180,7 @@ import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
 import medicalTerms from '@/utils/medicalTerms'; // 导入医学术语库
 import { saveUserHealthProfile } from '@/api/user';
+import { ElMessage } from 'element-plus';
 
 // 导入 getCurrentInstance
 import { getCurrentInstance } from 'vue';
@@ -287,37 +288,6 @@ function cancelClick() {
     hideSuggestions(field);
   });
   drawer.value = false;
-}
-
-async function confirmClick() {
-  // 隐藏所有建议面板
-  Object.keys(showSuggestions).forEach(field => {
-    hideSuggestions(field);
-  });
-  
-  try {
-    // 调用保存API
-    await fetchUserpagecenterdata();
-    
-    // 保存成功后更新store
-    userInfoStore.Username = tempUserData.value.Username;
-    userInfoStore.gender = tempUserData.value.gender;
-    userInfoStore.Age = tempUserData.value.Age;
-    userInfoStore.phone_number = tempUserData.value.phone_number;
-    userInfoStore.Height = tempUserData.value.Height;
-    userInfoStore.Weight = tempUserData.value.Weight;
-    
-    medicalHistoryStore.family_history = tempMedicalData.value.family_history;
-    medicalHistoryStore.allergy_history = tempMedicalData.value.allergy_history;
-    medicalHistoryStore.past_medical_history = tempMedicalData.value.past_medical_history;
-    medicalHistoryStore.surgical_history = tempMedicalData.value.surgical_history;
-    medicalHistoryStore.medication_compliance = tempMedicalData.value.medication_compliance;
-    
-    drawer.value = false;
-  } catch (error) {
-    console.error("保存失败", error);
-    alert("保存失败，请稍后再试。");
-  }
 }
 
 //保存用户的健康档案
@@ -521,6 +491,56 @@ function handleKeydown(e) {
     instance.proxy.selectSuggestion(activeField, instance.proxy.filteredSuggestions[activeField][instance.proxy.activeIndex[activeField]]);
   }
 };
+
+async function confirmClick() {
+  // 隐藏所有建议面板
+  Object.keys(showSuggestions).forEach(field => {
+    hideSuggestions(field);
+  });
+  
+  try {
+    // 调用保存API
+    await fetchUserpagecenterdata();
+    
+    // 保存成功后更新store
+    userInfoStore.Username = tempUserData.value.Username;
+    userInfoStore.gender = tempUserData.value.gender;
+    userInfoStore.Age = tempUserData.value.Age;
+    userInfoStore.phone_number = tempUserData.value.phone_number;
+    userInfoStore.Height = tempUserData.value.Height;
+    userInfoStore.Weight = tempUserData.value.Weight;
+    
+    medicalHistoryStore.family_history = tempMedicalData.value.family_history;
+    medicalHistoryStore.allergy_history = tempMedicalData.value.allergy_history;
+    medicalHistoryStore.past_medical_history = tempMedicalData.value.past_medical_history;
+    medicalHistoryStore.surgical_history = tempMedicalData.value.surgical_history;
+    medicalHistoryStore.medication_compliance = tempMedicalData.value.medication_compliance;
+    
+    // 显示成功消息提示
+    ElMessage({
+      message: '健康档案保存成功！',
+      type: 'success',
+      customClass: 'custom-message',
+      duration: 3000,
+      showClose: true,
+      offset: 80 // 距离顶部的偏移量
+    });
+    
+    drawer.value = false;
+  } catch (error) {
+    console.error("保存失败", error);
+    
+    // 显示错误消息提示
+    ElMessage({
+      message: '保存失败，请稍后再试。',
+      type: 'error',
+      customClass: 'custom-message',
+      duration: 4000,
+      showClose: true,
+      offset: 80
+    });
+  }
+}
 
 // 使用安全的方式来管理事件监听
 onMounted(() => {
@@ -742,5 +762,55 @@ select {
   font-weight: 600;
   font-size: 0.1rem;
   font-family: 'FanYuanTi';
+}
+
+:deep(.custom-message) {
+  font-family: 'FanYuanTi', sans-serif;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(23, 113, 187, 0.15) !important;
+  padding: 0.12rem 0.16rem !important;
+  font-size: 0.1rem !important;
+  font-weight: 530;
+}
+
+/* 成功消息样式 */
+:deep(.custom-message.el-message--success) {
+  background: linear-gradient(135deg, #f0f9ff, #e6f7ff) !important;
+  border: 1px solid #7ab8ff !important;
+  color: #0f5aa8 !important;
+}
+
+:deep(.custom-message.el-message--success .el-message__content) {
+  color: #0f5aa8 !important;
+}
+
+:deep(.custom-message.el-message--success .el-message__closeBtn) {
+  color: #3d97e1 !important;
+}
+
+/* 错误消息样式 */
+:deep(.custom-message.el-message--error) {
+  background: linear-gradient(135deg, #fff0f0, #ffe6e6) !important;
+  border: 1px solid #ff7a7a !important;
+  color: #a80f0f !important;
+}
+
+:deep(.custom-message.el-message--error .el-message__content) {
+  color: #a80f0f !important;
+}
+
+:deep(.custom-message.el-message--error .el-message__closeBtn) {
+  color: #e13d3d !important;
+}
+
+/* 图标样式 */
+:deep(.custom-message .el-message__icon) {
+  font-size: 0.14rem !important;
+  margin-right: 0.06rem !important;
+}
+
+/* 确保消息提示在最上层 */
+:deep(.el-message) {
+  z-index: 10000 !important;
 }
 </style>
