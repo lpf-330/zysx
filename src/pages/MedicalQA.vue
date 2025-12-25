@@ -17,17 +17,10 @@ const scrollToBottom = async () => {
     // nextTick 确保 DOM 更新完成后再执行滚动逻辑
     await nextTick();
     if (chatScrollRef.value) {
-        // Element.scrollIntoView() 是一个简单有效的方法
-        // behavior: 'smooth' 可以实现平滑滚动，如果不需要可以去掉
         chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollTo({
             top: chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollHeight,
-            behavior: 'smooth' // 可选：平滑滚动
+            behavior: 'smooth' 
         });
-        // 或者，如果你想滚动到最后一个消息元素：
-        // const messagesContainer = chatScrollRef.value.$el.querySelector('.el-scrollbar__view');
-        // if (messagesContainer.lastElementChild) {
-        //     messagesContainer.lastElementChild.scrollIntoView({ behavior: 'smooth' });
-        // }
     }
 };
 
@@ -280,7 +273,7 @@ onBeforeUnmount(() => {
 /* 头部区域 */
 .header {
     width: 100%;
-    max-width: 1100px;
+    max-width: 7.5rem;
     height: 72px;
     padding: 0 24px;
     margin-top: 12px;
@@ -347,8 +340,8 @@ onBeforeUnmount(() => {
 
 /* 主体对话区域 */
 .main {
-    width: 100%;
-    max-width: 1100px;
+    width: 92.5%;
+    max-width: 7.5rem;
     flex: 1;
     margin-top: 12px;
     margin-bottom: 100px; /* 为底部输入区留出空间 */
@@ -360,7 +353,6 @@ onBeforeUnmount(() => {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 18px;
     padding: 16px 8px 24px 8px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 /* 空状态提示 */
@@ -396,10 +388,10 @@ onBeforeUnmount(() => {
 /* 底部输入区域 */
 .footer {
     width: 100%;
-    max-width: 7.35rem;
+    max-width: 7.7rem;
     position: fixed;
     bottom: 0.22rem;
-    left: 56.2%;
+    margin-left: 7.7rem;
     transform: translateX(-50%);
     padding: 0 16px;
     box-sizing: border-box;

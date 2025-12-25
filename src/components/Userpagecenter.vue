@@ -179,6 +179,7 @@ import useUserInfoStore from '../stores/user';
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
 import medicalTerms from '@/utils/medicalTerms'; // 导入医学术语库
+import { saveUserHealthProfile } from '@/api/user';
 
 // 导入 getCurrentInstance
 import { getCurrentInstance } from 'vue';
@@ -319,54 +320,29 @@ async function confirmClick() {
   }
 }
 
-/*
- * 保存用户的基本信息
- * 请求参数：
- * user_id:string
- * Username:string
- * gender:string
- * Age:int
- * phone_number:string
- * Height:Int
- * Weight:Int
- * family_history:string
- * allergy_history:string
- * past_medical_history:string
- * surgical_history:string
- * medical_compliance:string
- * 响应参数：
- * 返回成功或者失败
- */
-// const fetchUserpagecenterdata = async () => {
-//   try {
-//     const url = '/api/fetchUserPageCenterData'; // 后端API地址
-
-//     const response = await axios.post(url, {
-//       user_id: user_id.value,
-//       Username: tempUserData.value.Username,
-//       gender: tempUserData.value.gender,
-//       Age: tempUserData.value.Age,
-//       phone_number: tempUserData.value.phone_number,
-//       Height: tempUserData.value.Height,
-//       Weight: tempUserData.value.Weight,
-//       family_history: tempMedicalData.value.family_history,
-//       allergy_history: tempMedicalData.value.allergy_history,
-//       past_medical_history: tempMedicalData.value.past_medical_history,
-//       surgical_history: tempMedicalData.value.surgical_history,
-//       medical_compliance: tempMedicalData.value.medication_compliance
-//     }, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     console.log('fetchUserpagecenterdata', response.data);
-//     return response.data;
-//   } catch (error) {
-//     console.error("出错", error);
-//     throw error; // 重新抛出错误以便在confirmClick中捕获
-//   }
-// };
+//保存用户的健康档案
+const fetchUserpagecenterdata = async () => {
+try {
+    const userData = {
+      id: user_id.value,
+      username: tempUserData.value.Username,
+      gender: tempUserData.value.gender,
+      phone: tempUserData.value.phone_number,
+      height: tempUserData.value.Height,
+      weight: tempUserData.value.Weight,
+      family_history: tempMedicalData.value.family_history,
+      allergy_history: tempMedicalData.value.allergy_history,
+      past_medical_history: tempMedicalData.value.past_medical_history,
+      surgical_history: tempMedicalData.value.surgical_history,
+      medical_compliance: tempMedicalData.value.medication_compliance
+    };
+    
+    const result = await saveUserHealthProfile(userData);
+    console.log('保存成功', result);
+  } catch (error) {
+    console.error("保存出错", error);
+  }
+};
 
 // =============== 修正：医学术语自动补全功能 ===============
 // 自动补全状态

@@ -3,6 +3,10 @@ import { httpService } from "../utils/apiService"
 const getUserTabPageData = async (user_id) => {
   return (await httpService.post('/api/personal_history', { "user_id":user_id })).data;
 }
+
+const saveUserHealthProfile = async (userData) => {
+  return (await httpService.post('/api/fetchUserCenterData', userData)).data;
+}
 const getTodosByDate = async (start_date, user_id) => {
   return (await httpService.post('/api/api/todos/query', { 
     start_date: start_date, 
@@ -26,6 +30,7 @@ const updateTodoStatusMS = async (id, completed) => {
 }
 
 export {getUserTabPageData,
+  saveUserHealthProfile,
   getTodosByDate,
   createTodo,
   updateTodoMS,
