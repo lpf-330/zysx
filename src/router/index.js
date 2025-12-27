@@ -75,7 +75,13 @@ const routes = [
                 component: () => import("../pages/Person.vue")
             }
         ]
+    },
+    {
+        path: "/childHome",
+        name: "childHome",
+        component: () => import("../pages/ChildHome.vue"),
     }
+
 ]
 
 

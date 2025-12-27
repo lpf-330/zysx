@@ -30,18 +30,14 @@ httpService.interceptors.response.use(
 )
 
 class WebSocketService {
-    /**
-     * 构造函数
-     * @param {string} baseUrl - WebSocket服务器基础地址 (例如: localhost:8081)
-     * @param {Object} options - 配置选项
-     */
     constructor(baseUrl, options = {}) {
         if (!baseUrl) {
             throw new Error('WebSocket 基础URL 不能为空');
         }
 
         this.baseUrl = baseUrl;
-        this.wsMap = new Map(); // 储不同类型的WebSocket连接
+        // 使用 Map 存储 dataType + userId 的组合
+        this.wsMap = new Map(); 
         this.isConnectedMap = new Map();
         this.manuallyClosedMap = new Map();
 
@@ -49,7 +45,6 @@ class WebSocketService {
         this.reconnectInterval = options.reconnectInterval || 3000;
         this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
 
-        // 事件回调存储
         this.events = {
             open: [],
             message: [],
@@ -57,17 +52,18 @@ class WebSocketService {
             close: []
         };
 
-        // 请求-响应相关
         this.requestId = 0;
         this.pendingRequests = new Map();
     }
 
-    /**
-     * 接特定类型的WebSocket服务器
-     * @param {string} dataType - 数据类型 (blood, heart, oxygen, pi, pre, slp)
-     * @param {string} userId - 用户ID
-     */
+    // 添加一个辅助函数来生成唯一的连接键
+    _getConnectionKey(dataType, userId) {
+        return `${dataType}_${userId}`;
+    }
+
     connect(dataType, userId) {
+        const connectionKey = this._getConnectionKey(dataType, userId);
+
         // 据数据类型构建URL
         let endpoint;
         switch (dataType) {
@@ -93,97 +89,94 @@ class WebSocketService {
                 throw new Error(`不支持的数据类型: ${dataType}`);
         }
 
-        const wsUrl = this.baseUrl.startsWith('http') 
+        const wsUrl = this.baseUrl.startsWith('http')
             ? this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://') + endpoint
             : `ws://${this.baseUrl}${endpoint}`;
 
-        // console.log(`尝试连接到 WebSocket: ${wsUrl}`); // 注释掉调试信息
+        // console.log(`尝试连接到 WebSocket: ${wsUrl}`); 
 
         // 标记为非手动关闭
-        this.manuallyClosedMap.set(dataType, false);
+        this.manuallyClosedMap.set(connectionKey, false);
 
         try {
             const ws = new WebSocket(wsUrl);
-            this.wsMap.set(dataType, ws);
-            this.isConnectedMap.set(dataType, false);
+            this.wsMap.set(connectionKey, ws);
+            this.isConnectedMap.set(connectionKey, false);
 
             ws.onopen = (event) => {
-                // console.log(`${dataType} WebSocket 接成功`);
-                this.isConnectedMap.set(dataType, true);
-                this.trigger('open', { dataType, event });
+                // console.log(`${dataType} WebSocket 连接成功 for userId ${userId}`);
+                this.isConnectedMap.set(connectionKey, true);
+                this.trigger('open', { dataType, userId, event });
             };
 
             ws.onmessage = (event) => {
-                // console.log(`${dataType} 收到消息:`, event.data); // 注释掉调试信息
+                // console.log(`${dataType} 收到消息:`, event.data); 
                 let data;
                 try {
                     data = JSON.parse(event.data);
-                    // console.log(`${dataType} 解析消息:`, data); // 注释掉调试信息
-                    
-                    // 处理后端返回的HealthDataMessage格式
+                    // console.log(`${dataType} 解析消息:`, data); 
+
                     if (data && data.data && Array.isArray(data.data)) {
-                        // 触发消息事件，传递解析后的数据
-                        this.trigger('message', { dataType, data: data.data });
+                        // 传递 userId 信息，方便调用方区分数据来源
+                        this.trigger('message', { dataType, userId, data: data.data });
                     } else {
-                        // console.warn(`${dataType} 息格式不符合HealthDataMessage格式:`, data); // 注释掉调试信息
+                        // console.warn(`${dataType} 消息格式不符合HealthDataMessage格式:`, data); 
                     }
                 } catch (e) {
                     console.error(`${dataType} 解析消息失败:`, e);
-                    this.trigger('error', { dataType, error: e });
+                    this.trigger('error', { dataType, userId, error: e });
                 }
             };
 
             ws.onerror = (error) => {
-                console.error(`${dataType} WebSocket 错误:`, error);
-                this.trigger('error', { dataType, error });
+                console.error(`${dataType} WebSocket 错误 for userId ${userId}:`, error);
+                this.trigger('error', { dataType, userId, error });
             };
 
             ws.onclose = (event) => {
-                // console.log(`${dataType} WebSocket 接关闭:`, event.code, event.reason); // 注释掉调试信息
-                this.isConnectedMap.set(dataType, false);
-                this.wsMap.delete(dataType);
-                this.trigger('close', { dataType, event });
+                // console.log(`${dataType} WebSocket 连接关闭 for userId ${userId}:`, event.code, event.reason); 
+                this.isConnectedMap.set(connectionKey, false);
+                this.wsMap.delete(connectionKey);
+                this.trigger('close', { dataType, userId, event });
             };
 
         } catch (error) {
-            console.error(`创建 ${dataType} WebSocket 连接失败:`, error);
-            this.trigger('error', { dataType, error });
+            console.error(`创建 ${dataType} WebSocket 连接 for userId ${userId} 失败:`, error);
+            this.trigger('error', { dataType, userId, error });
         }
     }
 
-    /**
-     * 断开特定类型的WebSocket连接
-     * @param {string} dataType - 数据类型
-     */
-    disconnect(dataType) {
-        this.manuallyClosedMap.set(dataType, true);
-        
-        const ws = this.wsMap.get(dataType);
+    // disconnect 也需要使用连接键
+    disconnect(dataType, userId) {
+        const connectionKey = this._getConnectionKey(dataType, userId);
+        this.manuallyClosedMap.set(connectionKey, true);
+
+        const ws = this.wsMap.get(connectionKey);
         if (ws) {
             if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
                 ws.close();
             }
-            this.wsMap.delete(dataType);
-            this.isConnectedMap.set(dataType, false);
+            this.wsMap.delete(connectionKey);
+            this.isConnectedMap.set(connectionKey, false);
         }
     }
 
-    /**
-     * 断开所有WebSocket连接
-     */
+    // disconnectAll 需要遍历所有连接键
     disconnectAll() {
-        for (const dataType of this.wsMap.keys()) {
-            this.disconnect(dataType);
+        for (const [key, ws] of this.wsMap.entries()) {
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                ws.close();
+            }
         }
+        this.wsMap.clear();
+        this.isConnectedMap.clear();
+        this.manuallyClosedMap.clear();
     }
 
-    /**
-     * 获取连接状态
-     * @param {string} dataType - 数据类型
-     * @returns {boolean}
-     */
-    getStatus(dataType) {
-        return this.isConnectedMap.get(dataType) || false;
+    // getStatus 也需要使用连接键
+    getStatus(dataType, userId) {
+        const connectionKey = this._getConnectionKey(dataType, userId);
+        return this.isConnectedMap.get(connectionKey) || false;
     }
 
     /**

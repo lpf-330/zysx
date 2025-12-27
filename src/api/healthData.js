@@ -1,20 +1,32 @@
 import { wsService } from "../utils/apiService"
 import { httpService } from "../utils/apiService"
 
+// 存储当前活动连接的用户ID
+let currentConnections = new Map(); // key: dataType, value: userId
+
 const ensureWsConnected = (dataType, userId, timeout = 5000) => {
     return new Promise((resolve, reject) => {
-        if (wsService.getStatus(dataType)) {
+        // 如果已经为该数据类型连接了不同的用户，先断开旧连接
+        if (currentConnections.get(dataType) && currentConnections.get(dataType) !== userId) {
+            wsService.disconnect(dataType, currentConnections.get(dataType));
+            currentConnections.delete(dataType);
+        }
+
+        // 检查是否已连接相同用户
+        if (wsService.getStatus(dataType, userId)) {
+            currentConnections.set(dataType, userId);
             resolve();
             return;
         }
 
         const timer = setTimeout(() => {
-            reject(new Error(`${dataType} WebSocket连接超时`));
+            reject(new Error(`${dataType} WebSocket连接 for userId ${userId} 超时`));
         }, timeout);
 
         const onOpen = (data) => {
-            if (data.dataType === dataType) {
+            if (data.dataType === dataType && data.userId === userId) {
                 clearTimeout(timer);
+                currentConnections.set(dataType, userId);
                 resolve();
                 wsService.off('open', onOpen);
                 wsService.off('error', onError);
@@ -22,8 +34,9 @@ const ensureWsConnected = (dataType, userId, timeout = 5000) => {
         };
 
         const onError = (data) => {
-            if (data.dataType === dataType) {
+            if (data.dataType === dataType && data.userId === userId) {
                 clearTimeout(timer);
+                currentConnections.delete(dataType);
                 reject(data.error);
                 wsService.off('open', onOpen);
                 wsService.off('error', onError);
@@ -36,143 +49,77 @@ const ensureWsConnected = (dataType, userId, timeout = 5000) => {
     });
 };
 
-const getBloodData = async (user_id) => {
-    await ensureWsConnected('blood', user_id);
+// 新增：断开指定用户的所有连接
+export const disconnectUserConnections = (userId) => {
+    if (!userId) return;
     
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'blood') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
-        
-        const onError = (errorData) => {
-            if (errorData.dataType === 'blood') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
-
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
+    const dataTypes = ['blood', 'heart', 'oxygen', 'pi', 'pre', 'slp'];
+    dataTypes.forEach(dataType => {
+        if (currentConnections.get(dataType) === userId) {
+            wsService.disconnect(dataType, userId);
+            currentConnections.delete(dataType);
+        }
     });
-}
-
-const getHeartData = async (user_id) => {
-    await ensureWsConnected('heart', user_id);
     
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'heart') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
+    // 清理所有与该用户相关的事件监听器
+    wsService.off('message');
+    wsService.off('error');
+    wsService.off('open');
+    wsService.off('close');
+};
+
+// 为每个数据获取函数添加清理机制
+const createDataFetcher = (dataType) => {
+    return async (userId) => {
+        // 清理可能存在的旧消息监听器
+        wsService.off('message');
+        wsService.off('error');
         
-        const onError = (errorData) => {
-            if (errorData.dataType === 'heart') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
-
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
-    });
-}
-
-const getOxygenData = async (user_id) => {
-    await ensureWsConnected('oxygen', user_id);
-    
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'oxygen') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
+        await ensureWsConnected(dataType, userId);
         
-        const onError = (errorData) => {
-            if (errorData.dataType === 'oxygen') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
+        return new Promise((resolve, reject) => {
+            let messageHandler;
+            let errorHandler;
+            let timeoutId;
+            
+            const cleanup = () => {
+                if (messageHandler) wsService.off('message', messageHandler);
+                if (errorHandler) wsService.off('error', errorHandler);
+                if (timeoutId) clearTimeout(timeoutId);
+            };
+            
+            timeoutId = setTimeout(() => {
+                cleanup();
+                reject(new Error(`${dataType} 数据获取超时`));
+            }, 10000);
+            
+            messageHandler = (data) => {
+                if (data.dataType === dataType && data.userId === userId) {
+                    cleanup();
+                    resolve(data.data);
+                }
+            };
+            
+            errorHandler = (errorData) => {
+                if (errorData.dataType === dataType && errorData.userId === userId) {
+                    cleanup();
+                    reject(errorData.error);
+                }
+            };
+            
+            wsService.on('message', messageHandler);
+            wsService.on('error', errorHandler);
+        });
+    };
+};
 
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
-    });
-}
-
-const getPiData = async (user_id) => {
-    await ensureWsConnected('pi', user_id);
-    
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'pi') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
-        
-        const onError = (errorData) => {
-            if (errorData.dataType === 'pi') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
-
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
-    });
-}
-
-const getPreData = async (user_id) => {
-    await ensureWsConnected('pre', user_id);
-    
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'pre') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
-        
-        const onError = (errorData) => {
-            if (errorData.dataType === 'pre') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
-
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
-    });
-}
-
-const getSlpData = async (user_id) => {
-    await ensureWsConnected('slp', user_id);
-    
-    return new Promise((resolve, reject) => {
-        const handleMessage = (data) => {
-            if (data.dataType === 'slp') {
-                wsService.off('message', handleMessage);
-                resolve(data.data);
-            }
-        };
-        
-        const onError = (errorData) => {
-            if (errorData.dataType === 'slp') {
-                wsService.off('error', onError);
-                reject(errorData.error);
-            }
-        };
-
-        wsService.on('message', handleMessage);
-        wsService.on('error', onError);
-    });
-}
+// 使用工厂函数创建数据获取函数
+const getBloodData = createDataFetcher('blood');
+const getHeartData = createDataFetcher('heart');
+const getOxygenData = createDataFetcher('oxygen');
+const getPiData = createDataFetcher('pi');
+const getPreData = createDataFetcher('pre');
+const getSlpData = createDataFetcher('slp');
 
 // --- 新增：用于图表展示的聚合数据获取 (通过 HTTP POST) ---
 
