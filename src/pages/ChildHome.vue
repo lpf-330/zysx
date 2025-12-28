@@ -7,10 +7,10 @@
         </div>
         <div class="datadashboard">
         <DataDashboard :selected-parent-id="selectedParentId"></DataDashboard>
-        </div>
-      </div>
-      <div class="health-report-section">
+        <div class="health-report-section">
         <HealthReportManager :selected-parent-id="selectedParentId" />
+        </div>
+        </div>
       </div>
     </div>
   </el-scrollbar>
@@ -66,12 +66,20 @@ onMounted(async () => {
 }
 .parentcard {
   width: 20%;
-  height: 7rem;
+  height: 11.05rem;
 }
 .datadashboard {
   position: relative;
   margin-left: 0.3rem;
   width: 74%;
   height: 7rem;
+}
+
+.health-report-section {
+  position: relative;
+  top: 0.07rem;
+  left: 0;
+  width: 103.5%;
+  height: 100%;
 }
 </style>

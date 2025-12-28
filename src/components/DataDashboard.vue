@@ -1020,7 +1020,7 @@ onMounted(() => {
 .data-dashboard {
   width: 100%;
   height: 7rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: rgb(243, 248, 253);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);

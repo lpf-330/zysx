@@ -58,58 +58,54 @@
             @mouseenter="hoveredReport = index"
             @mouseleave="hoveredReport = -1"
           >
-            <div class="report-header">
-              <div class="report-icon-wrapper">
-                <svg class="report-icon" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,11L14,13L12,15L10,13L12,11Z" />
-                </svg>
-              </div>
-              <div class="report-info">
-                <div class="report-title">
-                  <span class="report-id">报告 #{{ report.id }}</span>
-                  <span class="report-status" :class="getReportStatusClass(report)">
-                    {{ getReportStatusText(report) }}
-                  </span>
+            <div class="report-main-content">
+              <div class="report-header">
+                <div class="report-icon-wrapper">
+                  <svg class="report-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,11L14,13L12,15L10,13L12,11Z" />
+                  </svg>
                 </div>
-                <div class="report-meta">
-                  <span class="report-date">
-                    <svg class="meta-icon" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
-                    </svg>
-                    {{ formatDate(report.createTime) }}
-                  </span>
-                  <span class="report-length">
-                    <svg class="meta-icon" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25M21.41,6.34L17.66,2.59L15.13,5.13L18.88,8.88L21.41,6.34Z" />
-                    </svg>
-                    {{ calculateReportLength(report.report) }}
-                  </span>
+                <div class="report-info">
+                  <div class="report-title">
+                    <span class="report-id">报告 #{{ report.id }}</span>
+                    <span class="report-status" :class="getReportStatusClass(report)">
+                      {{ getReportStatusText(report) }}
+                    </span>
+                  </div>
+                  <div class="report-meta">
+                    <span class="report-date">
+                      <svg class="meta-icon" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
+                      </svg>
+                      {{ formatDate(report.createTime) }}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="report-actions" v-show="hoveredReport === index">
-              <button class="action-btn view-btn" @click.stop="viewReport(report.id)">
-                <svg class="action-icon" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                </svg>
-                查看
-              </button>
-              <button class="action-btn download-btn" @click.stop="downloadReport(report)">
-                <svg class="action-icon" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
-                </svg>
-                下载
-              </button>
-              <button class="action-btn delete-btn" @click.stop="deleteReport(report.id)" :disabled="isDeleting">
-                <svg v-if="isDeleting" class="action-icon loading" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
-                </svg>
-                <svg v-else class="action-icon" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
-                </svg>
-                删除
-              </button>
+              
+              <div class="report-actions" :class="{ 'visible': hoveredReport === index }">
+                <button class="action-btn view-btn" @click.stop="viewReport(report.id)">
+                  <svg class="action-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                  </svg>
+                  <span class="action-text">查看</span>
+                </button>
+                <button class="action-btn download-btn" @click.stop="downloadReport(report)">
+                  <svg class="action-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                  </svg>
+                  <span class="action-text">下载</span>
+                </button>
+                <button class="action-btn delete-btn" @click.stop="deleteReport(report.id)" :disabled="isDeleting">
+                  <svg v-if="isDeleting" class="action-icon loading" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+                  </svg>
+                  <svg v-else class="action-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                  </svg>
+                  <span class="action-text">删除</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -161,25 +157,41 @@
               </div>
               <div class="info-item">
                 <span class="info-label">生成时间:</span>
-                <span class="info-value">{{ currentReportDate }}</span>
+                <span class="info-value">{{ formatDetailedDate(currentReportDate) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">字数统计:</span>
+                <span class="info-value">{{ currentReportContent ? currentReportContent.length : 0 }}字</span>
               </div>
             </div>
             
             <div class="report-content-container">
               <div class="content-header">
                 <h5>报告内容</h5>
-                <button class="copy-btn" @click="copyReportContent" :disabled="isCopying">
-                  <svg v-if="isCopying" class="copy-icon" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
-                  </svg>
-                  <svg v-else class="copy-icon" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" />
-                  </svg>
-                  {{ copyButtonText }}
-                </button>
+                <div class="content-actions">
+                  <button class="copy-btn" @click="copyReportContent" :disabled="isCopying">
+                    <svg v-if="isCopying" class="copy-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                    </svg>
+                    <svg v-else class="copy-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" />
+                    </svg>
+                    {{ copyButtonText }}
+                  </button>
+                  <button class="format-btn" @click="toggleFormat">
+                    <svg v-if="showFormatted" class="format-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M14,17H7V15H14M21,17H17V15H21M21,13H7V11H21M21,9H7V7H21M3,5H21V3H3A2,2 0 0,0 1,5V19A2,2 0 0,0 3,21H3V19H3V5Z" />
+                    </svg>
+                    <svg v-else class="format-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M14,17H7V15H14M21,17H17V15H21M21,13H7V11H21M21,9H7V7H21M3,5H21V3H3A2,2 0 0,0 1,5V19A2,2 0 0,0 3,21H3V19H3V5Z" />
+                    </svg>
+                    {{ showFormatted ? '源码' : '格式' }}
+                  </button>
+                </div>
               </div>
               <div class="report-content-wrapper">
-                <pre class="report-content">{{ currentReportContent }}</pre>
+                <pre v-if="!showFormatted" class="report-content raw-content">{{ currentReportContent }}</pre>
+                <div v-else class="report-content formatted-content" v-html="formatReportContent(currentReportContent)"></div>
               </div>
             </div>
           </div>
@@ -208,7 +220,7 @@
         <div class="message-modal" :class="messageModalType">
           <div class="message-header">
             <svg class="message-icon" viewBox="0 0 24 24">
-              <path v-if="messageModalType === 'success'" fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
+              <path v-if="messageModalType === 'success'" fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
               <path v-else fill="currentColor" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z" />
             </svg>
             <h3>{{ messageModalType === 'success' ? '操作成功' : '操作失败' }}</h3>
@@ -245,6 +257,10 @@
           </div>
           <div class="progress-text">
             {{ progressText }}
+            <div class="progress-stats">
+              <span class="stat-item">已接收: {{ receivedChars }}字</span>
+              <span class="stat-item">状态: {{ progressStatus }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -281,6 +297,7 @@ const showMessageModal = ref(false);
 const showProgress = ref(false);
 const hoveredReport = ref(-1);
 const newlyGeneratedReports = ref(new Set());
+const showFormatted = ref(true); // 控制是否显示格式化内容
 
 // 当前报告相关
 const currentReportId = ref(null);
@@ -292,36 +309,70 @@ const messageModalType = ref('');
 // 进度相关
 const progressPercentage = ref(0);
 const progressText = ref('正在初始化...');
-const copyButtonText = computed(() => isCopying.value ? '已复制' : '复制内容');
+const progressStatus = ref('等待中');
+const receivedChars = ref(0);
 
 // 计算属性
 const selectedParentId = computed(() => props.selectedParentId);
+const copyButtonText = computed(() => isCopying.value ? '已复制' : '复制内容');
 
 // 方法
 const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  
-  if (diffHours < 24) {
-    return `${diffHours}小时前`;
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // 1分钟内显示"刚刚"
+    if (diffMinutes < 1) {
+      return '刚刚';
+    }
+    // 1小时内显示分钟
+    if (diffMinutes < 60) {
+      return `${diffMinutes}分钟前`;
+    }
+    // 24小时内显示小时
+    if (diffHours < 24) {
+      return `${diffHours}小时前`;
+    }
+    // 超过24小时显示具体日期和时间
+    const options = {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    // 如果是今年，不显示年份
+    if (date.getFullYear() === now.getFullYear()) {
+      return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    
+    // 不同年份显示完整日期
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  } catch (e) {
+    console.error('日期格式化错误:', e);
+    return dateString || '未知时间';
   }
-  
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 };
 
-const calculateReportLength = (report) => {
-  if (!report) return '0字';
-  const length = report.length;
-  if (length < 1000) return `${length}字`;
-  return `${(length / 1000).toFixed(1)}千字`;
+const formatDetailedDate = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return dateString || '未知时间';
+  }
 };
 
 const isNewReport = (reportId) => {
@@ -329,25 +380,82 @@ const isNewReport = (reportId) => {
 };
 
 const getReportStatusClass = (report) => {
-  const createTime = new Date(report.createTime);
-  const now = new Date();
-  const diffMs = now - createTime;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 1) return 'status-new';
-  if (diffDays < 7) return 'status-recent';
-  return 'status-old';
+  try {
+    const createTime = new Date(report.createTime);
+    const now = new Date();
+    const diffMs = now - createTime;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 1) return 'status-new';
+    if (diffDays < 7) return 'status-recent';
+    return 'status-old';
+  } catch (e) {
+    return 'status-old';
+  }
 };
 
 const getReportStatusText = (report) => {
-  const createTime = new Date(report.createTime);
-  const now = new Date();
-  const diffMs = now - createTime;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  try {
+    const createTime = new Date(report.createTime);
+    const now = new Date();
+    const diffMs = now - createTime;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMinutes < 1) return '刚刚';
+    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+    if (diffHours < 24) return `${diffHours}小时前`;
+    return `${diffDays}天前`;
+  } catch (e) {
+    return '未知时间';
+  }
+};
+
+const formatReportContent = (content) => {
+  if (!content) return '';
   
-  if (diffHours < 1) return '刚刚';
-  if (diffHours < 24) return `${diffHours}小时前`;
-  return `${Math.floor(diffHours / 24)}天前`;
+  // 1. 安全地转义 HTML
+  const escapeHtml = (text) => {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+  };
+  
+  // 2. 处理内容
+  let formatted = escapeHtml(content);
+  
+  // 3. 处理标题
+  formatted = formatted.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  formatted = formatted.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  formatted = formatted.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+  
+  // 4. 处理加粗
+  formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  
+  // 5. 处理无序列表
+  formatted = formatted.replace(/^\s*[-*•]\s+(.+)$/gm, '<li>$1</li>');
+  const liMatches = formatted.match(/<li>.*?<\/li>/g);
+  if (liMatches) {
+    formatted = formatted.replace(/(<li>.*?<\/li>\n?)+/g, '<ul>$&</ul>');
+  }
+  
+  // 6. 处理换行
+  formatted = formatted.replace(/\n/g, '<br>');
+  
+  // 7. 处理空行
+  formatted = formatted.replace(/<br><br>/g, '<br><br>');
+  
+  return formatted;
+};
+
+const toggleFormat = () => {
+  showFormatted.value = !showFormatted.value;
 };
 
 // 显示消息
@@ -367,6 +475,8 @@ const fetchReports = async () => {
     if (response.code === 200) {
       reports.value = response.data || [];
       reports.value.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+      
+      console.log(`获取到 ${reports.value.length} 个报告`);
     } else {
       throw new Error(response.message || '获取报告列表失败');
     }
@@ -378,7 +488,7 @@ const fetchReports = async () => {
   }
 };
 
-// 生成报告（修复后的版本）
+// 生成报告
 const generateReport = async () => {
   if (!selectedParentId.value || isGenerating.value) return;
 
@@ -386,85 +496,161 @@ const generateReport = async () => {
   showProgress.value = true;
   progressPercentage.value = 0;
   progressText.value = '正在连接服务器...';
+  progressStatus.value = '连接中';
+  receivedChars.value = 0;
 
   try {
+    console.log('开始生成报告，用户ID:', selectedParentId.value);
+    
     // 步骤1: 生成报告流
     const { reader } = await generateHealthReport(selectedParentId.value);
     const decoder = new TextDecoder('utf-8');
+    let buffer = '';
     let accumulatedReport = '';
+    let streamClosed = false;
 
     // 更新进度
     progressPercentage.value = 10;
     progressText.value = '正在生成报告内容...';
+    progressStatus.value = '生成中';
 
-    // 读取流数据
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    // 改进的流读取逻辑
+    const readStream = async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            console.log('流读取完成，总共接收字符数:', accumulatedReport.length);
+            streamClosed = true;
+            break;
+          }
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataContentStr = line.substring(6).trim();
-          if (dataContentStr && dataContentStr !== '[DONE]') {
-            try {
-              const sseData = JSON.parse(dataContentStr);
-              if (sseData.answer) {
-                accumulatedReport += sseData.answer;
-                // 更新进度（模拟进度）
-                progressPercentage.value = Math.min(90, progressPercentage.value + 5);
-                progressText.value = `正在生成报告内容... (${accumulatedReport.length}字)`;
-              }
-              if (sseData.done === true || sseData.done === "true") {
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          receivedChars.value = accumulatedReport.length + buffer.length;
+
+          // 尝试多种方式解析数据
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+            
+            // 处理 SSE 格式数据
+            if (trimmedLine.startsWith('data:')) {
+              const dataContent = trimmedLine.substring(5).trim();
+              
+              if (dataContent === '[DONE]') {
+                console.log('收到完成信号 [DONE]');
                 progressPercentage.value = 95;
                 progressText.value = '正在保存报告...';
+                progressStatus.value = '完成中';
+                continue;
               }
-            } catch (e) {
-              console.error('解析SSE数据错误:', e);
+
+              if (dataContent) {
+                try {
+                  // 尝试解析为 JSON
+                  const parsedData = JSON.parse(dataContent);
+                  
+                  if (parsedData.answer) {
+                    accumulatedReport += parsedData.answer;
+                  }
+                  
+                  if (parsedData.done === true || parsedData.done === "true") {
+                    console.log('JSON完成信号');
+                    progressPercentage.value = 95;
+                    progressText.value = '正在保存报告...';
+                    progressStatus.value = '完成中';
+                  }
+                  
+                  if (parsedData.error) {
+                    throw new Error(parsedData.error);
+                  }
+                } catch (e) {
+                  // 如果不是JSON，可能是直接的文本内容
+                  accumulatedReport += dataContent;
+                }
+              }
+            } else {
+              // 如果不是 SSE 格式，直接作为内容处理
+              accumulatedReport += trimmedLine + '\n';
             }
           }
-        }
-      }
-    }
 
-    // 步骤2: 保存报告（修复API调用）
-    if (accumulatedReport) {
-      progressText.value = '正在保存报告到数据库...';
-      
-      // 调用保存API
-      const saveResponse = await saveHealthReport(selectedParentId.value, accumulatedReport);
-      
-      if (saveResponse.code === 200) {
-        progressPercentage.value = 100;
-        progressText.value = '报告生成完成！';
-        
-        // 标记为新报告
-        if (saveResponse.data && saveResponse.data.id) {
-          newlyGeneratedReports.value.add(saveResponse.data.id);
+          // 更新进度（基于已接收内容）
+          const progress = Math.min(90, 10 + (accumulatedReport.length / 5000) * 80);
+          progressPercentage.value = Math.floor(progress);
+          progressText.value = `正在生成报告内容... (${accumulatedReport.length}字)`;
         }
+
+        // 处理剩余的 buffer
+        if (buffer.trim()) {
+          accumulatedReport += buffer;
+          buffer = '';
+        }
+
+        console.log('最终生成内容长度:', accumulatedReport.length);
+
+        // 检查内容是否有效
+        if (!accumulatedReport.trim()) {
+          throw new Error('生成的报告内容为空');
+        }
+
+        // 步骤2: 保存报告
+        progressText.value = '正在保存报告到数据库...';
+        progressStatus.value = '保存中';
         
-        // 延迟显示成功消息
-        setTimeout(() => {
-          showProgress.value = false;
-          isGenerating.value = false;
-          showMessage('健康报告生成并保存成功！', 'success');
-          fetchReports(); // 刷新列表
-        }, 1000);
+        const saveResponse = await saveHealthReport(selectedParentId.value, accumulatedReport.trim());
         
-      } else {
-        throw new Error(saveResponse.message || '保存报告失败');
+        if (saveResponse.code === 200) {
+          progressPercentage.value = 100;
+          progressText.value = '报告生成完成！';
+          progressStatus.value = '完成';
+          
+          // 标记为新报告
+          if (saveResponse.data && saveResponse.data.id) {
+            newlyGeneratedReports.value.add(saveResponse.data.id);
+          }
+          
+          // 延迟显示成功消息
+          setTimeout(() => {
+            showProgress.value = false;
+            isGenerating.value = false;
+            showMessage('健康报告生成并保存成功！', 'success');
+            fetchReports(); // 刷新列表
+          }, 1000);
+          
+        } else {
+          throw new Error(saveResponse.message || '保存报告失败');
+        }
+
+      } catch (error) {
+        console.error('流读取错误:', error);
+        throw error;
       }
-    } else {
-      throw new Error('生成的内容为空');
-    }
+    };
+
+    // 设置超时保护
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        if (!streamClosed) {
+          reject(new Error('报告生成超时（120秒）'));
+        }
+      }, 120000); // 120秒超时
+    });
+
+    await Promise.race([readStream(), timeoutPromise]);
 
   } catch (error) {
-    console.error('生成报告错误:', error);
+    console.error('生成报告错误详情:', error);
+    
+    let errorMessage = error.message || '未知错误';
     showProgress.value = false;
     isGenerating.value = false;
-    showMessage(`生成报告失败: ${error.message || '未知错误'}`, 'error');
+    showMessage(`生成报告失败: ${errorMessage}`, 'error');
   }
 };
 
@@ -474,9 +660,15 @@ const viewReport = async (reportId) => {
     const response = await getHealthReport(reportId);
     if (response.code === 200) {
       currentReportId.value = reportId;
-      currentReportContent.value = response.data.report;
-      currentReportDate.value = formatDate(response.data.createTime);
+      currentReportContent.value = response.data.report || '';
+      currentReportDate.value = response.data.createTime;
       showReportModal.value = true;
+      showFormatted.value = true; // 默认显示格式化内容
+      
+      console.log('查看报告:', {
+        id: reportId,
+        length: currentReportContent.value.length,
+      });
     } else {
       throw new Error(response.message || '获取报告失败');
     }
@@ -489,7 +681,8 @@ const viewReport = async (reportId) => {
 // 下载报告
 const downloadReport = (report) => {
   try {
-    const blob = new Blob([report.report], { type: 'text/plain;charset=utf-8' });
+    const reportContent = report.report || '';
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -579,6 +772,7 @@ const closeReportModal = () => {
     currentReportContent.value = '';
     currentReportDate.value = '';
     isCopying.value = false;
+    showFormatted.value = true;
   }, 300);
 };
 
@@ -623,6 +817,7 @@ onMounted(() => {
   position: relative;
   border: 1px solid rgba(0, 122, 255, 0.1);
   backdrop-filter: blur(10px);
+  height: 3.665rem;
 }
 
 /* 头部区域 */
@@ -660,7 +855,7 @@ onMounted(() => {
 }
 
 .generate-btn {
-  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  background: rgb(49, 139, 255);
   color: white;
   border: none;
   border-radius: 50px;
@@ -831,7 +1026,7 @@ onMounted(() => {
   border-radius: 10px;
 }
 
-/* 报告项 */
+/* 报告项 - 修复堆叠问题 */
 .report-item {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 12px;
@@ -840,6 +1035,10 @@ onMounted(() => {
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .report-item::before {
@@ -875,11 +1074,20 @@ onMounted(() => {
   background: linear-gradient(180deg, #4cd964, #2ecc71);
 }
 
+.report-main-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
 .report-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  flex: 1;
+  min-width: 0; /* 防止内容溢出 */
 }
 
 .report-icon-wrapper {
@@ -891,6 +1099,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(0, 122, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .report-icon {
@@ -901,6 +1110,8 @@ onMounted(() => {
 
 .report-info {
   flex: 1;
+  min-width: 0; /* 防止内容溢出 */
+  overflow: hidden;
 }
 
 .report-title {
@@ -908,12 +1119,17 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .report-id {
   font-weight: 700;
   color: #2c3e50;
   font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .report-status {
@@ -923,6 +1139,7 @@ onMounted(() => {
   border-radius: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .status-new {
@@ -945,25 +1162,36 @@ onMounted(() => {
   gap: 16px;
   font-size: 12px;
   color: #7f8c8d;
+  flex-wrap: wrap;
 }
 
 .report-meta span {
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .meta-icon {
   width: 12px;
   height: 12px;
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
-/* 报告操作按钮 */
+/* 报告操作按钮 - 修复堆叠问题 */
 .report-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.report-actions.visible {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .action-btn {
@@ -979,6 +1207,7 @@ onMounted(() => {
   gap: 6px;
   min-width: 70px;
   justify-content: center;
+  height: 36px;
 }
 
 .view-btn {
@@ -1022,10 +1251,15 @@ onMounted(() => {
 .action-icon {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 }
 
 .action-icon.loading {
   animation: spin 1s linear infinite;
+}
+
+.action-text {
+  white-space: nowrap;
 }
 
 /* 空状态 */
@@ -1035,6 +1269,7 @@ onMounted(() => {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 247, 255, 0.9));
   border-radius: 16px;
   border: 2px dashed rgba(0, 122, 255, 0.2);
+  height: 2.7rem;
 }
 
 .empty-icon {
@@ -1103,7 +1338,7 @@ onMounted(() => {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 24px;
   width: 90%;
-  max-width: 800px;
+  max-width: 900px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -1125,7 +1360,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 28px;
-  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  background: rgb(49, 139, 255);
   color: white;
 }
 
@@ -1175,6 +1410,7 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 28px;
+  max-height: calc(90vh - 160px);
 }
 
 .report-header-info {
@@ -1232,7 +1468,13 @@ onMounted(() => {
   color: #2c3e50;
 }
 
-.copy-btn {
+.content-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.copy-btn, .format-btn {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
   border: none;
@@ -1247,9 +1489,15 @@ onMounted(() => {
   gap: 6px;
 }
 
-.copy-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+.format-btn {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #388e3c;
+}
+
+.copy-btn:hover:not(:disabled),
+.format-btn:hover {
   transform: translateY(-1px);
+  opacity: 0.9;
 }
 
 .copy-btn:disabled {
@@ -1257,18 +1505,19 @@ onMounted(() => {
   cursor: default;
 }
 
-.copy-icon {
+.copy-icon, .format-icon {
   width: 14px;
   height: 14px;
 }
 
 .report-content-wrapper {
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
   padding: 20px;
+  min-height: 200px;
 }
 
-.report-content {
+.raw-content {
   white-space: pre-wrap;
   word-wrap: break-word;
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
@@ -1280,6 +1529,69 @@ onMounted(() => {
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
+}
+
+.formatted-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.formatted-content h1,
+.formatted-content h2,
+.formatted-content h3 {
+  margin: 16px 0 8px 0;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.formatted-content h1 { font-size: 18px; }
+.formatted-content h2 { font-size: 16px; }
+.formatted-content h3 { font-size: 15px; }
+
+.formatted-content ul,
+.formatted-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.formatted-content li {
+  margin: 4px 0;
+}
+
+.formatted-content strong {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.formatted-content br {
+  margin-bottom: 4px;
+}
+
+.no-content {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+}
+
+.no-content .empty-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  opacity: 0.5;
+}
+
+.no-content p {
+  margin: 0;
+  font-size: 14px;
 }
 
 .modal-footer {
@@ -1382,6 +1694,7 @@ onMounted(() => {
   text-align: center;
   padding: 24px;
   margin: 0;
+  white-space: pre-line;
 }
 
 /* 进度条覆盖层 */
@@ -1445,9 +1758,9 @@ onMounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #007AFF, #0056cc);
+  background: linear-gradient(90deg, #007AFF, #0056cc, #003d99);
   border-radius: 6px;
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1459,12 +1772,17 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
   animation: shimmer 2s infinite;
+  transform: translateX(-100%);
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
 
@@ -1473,6 +1791,22 @@ onMounted(() => {
   color: #7f8c8d;
   font-size: 14px;
   font-weight: 500;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.stat-item {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 4px;
+  color: #007AFF;
 }
 
 /* 动画 */
@@ -1516,12 +1850,30 @@ onMounted(() => {
     justify-content: center;
   }
   
-  .report-actions {
+  .report-main-content {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .report-actions {
+    width: 100%;
+    justify-content: flex-end;
+    opacity: 1;
+    transform: none;
   }
   
   .action-btn {
-    width: 100%;
+    min-width: 60px;
+    padding: 8px 12px;
+  }
+  
+  .action-text {
+    display: none;
+  }
+  
+  .action-btn .action-icon {
+    margin-right: 0;
   }
   
   .modal-content {
@@ -1532,6 +1884,11 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   
+  .content-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
   .modal-footer {
     flex-direction: column;
   }
@@ -1539,6 +1896,32 @@ onMounted(() => {
   .footer-btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  .report-content-wrapper {
+    max-height: 400px;
+  }
+}
+
+/* 小屏幕手机优化 */
+@media (max-width: 480px) {
+  .report-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .report-status {
+    align-self: flex-start;
+  }
+  
+  .report-actions {
+    justify-content: space-between;
+  }
+  
+  .action-btn {
+    flex: 1;
+    min-width: auto;
   }
 }
 </style>
