@@ -1,7 +1,7 @@
-<!-- src/components/HealthReportItem.vue -->
 <script setup>
 import { defineProps, ref, watch } from 'vue';
 import { marked } from 'marked';
+import { ElMessage } from 'element-plus'; // 引入 ElMessage 用于提示
 
 const props = defineProps({
     report: String
@@ -20,6 +20,26 @@ watch(
     },
     { immediate: true }
 );
+
+// 1. 添加下载功能
+const downloadReport = () => {
+    if (!props.report || !props.report.trim()) {
+        ElMessage.warning('当前没有可下载的报告内容');
+        return;
+    }
+    const blob = new Blob([props.report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    a.download = `健康报告_${dateStr}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    ElMessage.success('报告下载成功');
+};
 </script>
 
 <template>
@@ -32,7 +52,9 @@ watch(
             <div class="report-content" v-html="renderedReport"></div>
         </div>
         <div class="report-footer">
-            <el-button type="primary" size="small" plain>
+            <!-- 2. 修改按钮为蓝色风格，符合整体设计 -->
+            <el-button type="primary" size="small" plain @click="downloadReport">
+                <!-- 3. 添加下载图标 -->
                 <el-icon><Download /></el-icon>
                 下载报告
             </el-button>
@@ -42,7 +64,8 @@ watch(
 
 <style scoped>
 .report-contain {
-    width: 80%;
+    width: 70%; /* 与聊天区域宽度一致 */
+    max-width: 7.5rem; /* 与聊天区域最大宽度一致 */
     margin-bottom: 16px;
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe); /* 蓝白色渐变背景 */
     border-radius: 18px;
