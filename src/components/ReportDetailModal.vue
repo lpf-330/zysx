@@ -186,7 +186,7 @@ function downloadReport() {
     const a = document.createElement('a');
     a.href = url;
     const reportDate = props.report?.createTime ? new Date(props.report.createTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    a.download = `健康报告_${props.report?.id || 'unknown'}_${reportDate}.txt`;
+    a.download = `健康报告_${props.report?.id || 'unknown'}_${reportDate}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

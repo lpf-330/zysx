@@ -1,6 +1,9 @@
 <template>
 <el-scrollbar max-height="5rem">
 <div class="child-home">
+  <div>
+    <Header></Header>
+  </div>
   <div class="box">
     <div class="parentcard">
       <ParentCard ref="parentCardRef" @parent-selected="onParentSelected"></ParentCard>
@@ -34,7 +37,7 @@
             <path v-if="messageModalType === 'success'" fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
             <path v-else fill="currentColor" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z" />
           </svg>
-          <h3>{{ messageModalType === 'success' ? '操作成功' : '操作失败' }}</h3>
+          <h3>{{ messageModalType === 'success' ? '操作失败' : '操作成功' }}</h3>
           <button class="close-modal-btn" @click="closeMessageModal">
             <svg viewBox="0 0 24 24">
               <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
@@ -46,7 +49,7 @@
         </div>
         <div class="modal-footer">
           <button class="footer-btn confirm-btn" @click="closeMessageModal">
-            {{ messageModalType === 'success' ? '好的' : '重试' }}
+            {{ messageModalType === 'success' ? '重试' : '好的' }}
           </button>
         </div>
       </div>
@@ -63,6 +66,7 @@ import DataDashboard from '../components/DataDashboard.vue';
 import ParentCard from '../components/ParentCard.vue';
 import HealthReportManager from '../components/HealthReportManager.vue';
 import ReportDetailModal from '../components/ReportDetailModal.vue';
+import Header from '../components/layout/Header.vue';
 
 const parentCardRef = ref(null);
 const selectedParentId = ref(null);

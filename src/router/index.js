@@ -80,6 +80,15 @@ const routes = [
         path: "/childHome",
         name: "childHome",
         component: () => import("../pages/ChildHome.vue"),
+    },
+    {
+        path: '/alerts',
+        name: 'Alerts',
+        component: () => import('../views/Alerts.vue'),
+        meta: {
+            title: '提醒通知',
+            keepAlive: false
+        }
     }
 
 ]
