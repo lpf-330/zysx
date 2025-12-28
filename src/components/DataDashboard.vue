@@ -27,13 +27,13 @@
         <div class="card-value">
           <div class="value-display">
             {{ heartData[heartData.length - 1] || '--' }}
-            <span class="trend-icon" v-if="heartTrend">{{ heartTrend }}</span>
+            <span class="trend-icon" v-if="heartTrend && heartData.length > 0">{{ heartTrend }}</span>
           </div>
           <div class="value-status" :style="{ color: heartWarning.color }">
             <svg class="status-icon" :style="{ fill: heartWarning.color }" viewBox="0 0 24 24">
               <path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z" />
             </svg>
-            <span class="status-text">{{ heartWarning.level > 0 ? '异常' : '正常' }}</span>
+            <span class="status-text">{{ heartWarning.level > 0 ? '异常' : heartData.length > 0 ? '正常' : '无数据' }}</span>
           </div>
         </div>
         <div class="card-chart">
@@ -41,13 +41,13 @@
             <span class="chart-title">24小时趋势</span>
             <span class="chart-range">40-180 bpm</span>
           </div>
-          <HeartData :data="heartData" :warning="heartWarning" />
+          <HeartData :data="heartData" :warning="heartWarning" :key="`heart-${chartKey}`" />
         </div>
         <div class="card-footer" :style="{ color: heartWarning.color }">
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
           </svg>
-          {{ heartWarning.message || '心率在正常范围内' }}
+          {{ heartData.length > 0 ? (heartWarning.message || '心率在正常范围内') : '暂无心率数据' }}
         </div>
       </div>
 
@@ -64,13 +64,13 @@
         <div class="card-value">
           <div class="value-display">
             {{ bloodData[bloodData.length - 1] || '--' }}
-            <span class="trend-icon" v-if="bloodTrend">{{ bloodTrend }}</span>
+            <span class="trend-icon" v-if="bloodTrend && bloodData.length > 0">{{ bloodTrend }}</span>
           </div>
           <div class="value-status" :style="{ color: bloodWarning.color }">
             <svg class="status-icon" :style="{ fill: bloodWarning.color }" viewBox="0 0 24 24">
               <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
             </svg>
-            <span class="status-text">{{ bloodWarning.level > 0 ? '异常' : '正常' }}</span>
+            <span class="status-text">{{ bloodWarning.level > 0 ? '异常' : bloodData.length > 0 ? '正常' : '无数据' }}</span>
           </div>
         </div>
         <div class="card-chart">
@@ -78,13 +78,13 @@
             <span class="chart-title">7天趋势</span>
             <span class="chart-range">3.9-10.0 mmol/L</span>
           </div>
-          <BloodData :data="bloodData" :warning="bloodWarning" />
+          <BloodData :data="bloodData" :warning="bloodWarning" :key="`blood-${chartKey}`" />
         </div>
         <div class="card-footer" :style="{ color: bloodWarning.color }">
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
           </svg>
-          {{ bloodWarning.message || '血糖在正常范围内' }}
+          {{ bloodData.length > 0 ? (bloodWarning.message || '血糖在正常范围内') : '暂无血糖数据' }}
         </div>
       </div>
 
@@ -118,17 +118,17 @@
         <div class="card-chart">
           <div class="chart-header">
             <span class="chart-title">最新测量</span>
-            <span class="chart-time">{{ formatTime(new Date()) }}</span>
+            <span class="chart-time">{{ pressureData[0] ? formatTime(new Date()) : '--' }}</span>
           </div>
           <div class="pre">
-          <PressureData :data="pressureData" :warning="pressureWarning" />
+            <PressureData :data="pressureData" :warning="pressureWarning" :key="`pressure-${chartKey}`" />
           </div>
         </div>
         <div class="card-footer" :style="{ color: pressureWarning.color }">
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M7,10.5A1.5,1.5 0 0,1 8.5,12A1.5,1.5 0 0,1 7,13.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 7,10.5M17,10.5A1.5,1.5 0 0,1 18.5,12A1.5,1.5 0 0,1 17,13.5A1.5,1.5 0 0,1 15.5,12A1.5,1.5 0 0,1 17,10.5M12,17.23C10.25,17.23 8.71,16.5 7.81,15.42L9.23,14C9.68,14.72 10.75,15.23 12,15.23C13.25,15.23 14.32,14.72 14.77,14L16.19,15.42C15.29,16.5 13.75,17.23 12,17.23Z" />
           </svg>
-          {{ pressureWarning.message || '血压在正常范围内' }}
+          {{ pressureData[0] ? (pressureWarning.message || '血压在正常范围内') : '暂无血压数据' }}
         </div>
       </div>
 
@@ -144,16 +144,16 @@
         </div>
         <div class="oxygen-display">
           <div class="oxygen-value">
-            {{ (oxygenData * 100).toFixed(1) }}
+            {{ oxygenData > 0 ? (oxygenData * 100).toFixed(1) : '--' }}
             <span class="oxygen-unit">%</span>
           </div>
           <div class="oxygen-circle-container">
             <div class="oxygen-circle" :style="{
-              '--progress': oxygenData * 100,
+              '--progress': oxygenData > 0 ? oxygenData * 100 : 0,
               '--color': oxygenWarning.color
             }">
               <div class="oxygen-circle-inner">
-                <span class="oxygen-circle-value">{{ (oxygenData * 100).toFixed(0) }}</span>
+                <span class="oxygen-circle-value">{{ oxygenData > 0 ? (oxygenData * 100).toFixed(0) : '--' }}</span>
                 <span class="oxygen-circle-unit">%</span>
               </div>
             </div>
@@ -161,7 +161,7 @@
               <svg class="status-icon" :style="{ fill: oxygenWarning.color }" viewBox="0 0 24 24">
                 <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
               </svg>
-              <span class="status-text">{{ oxygenWarning.level > 0 ? '异常' : '正常' }}</span>
+              <span class="status-text">{{ oxygenWarning.level > 0 ? '异常' : oxygenData > 0 ? '正常' : '无数据' }}</span>
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@
           <div class="oxygen-mini-chart">
             <div class="oxygen-bar" v-for="i in 12" :key="i">
               <div class="oxygen-bar-fill" :style="{
-                height: Math.min(100, (oxygenData * 100) + (Math.random() * 10 - 5)) + '%',
+                height: oxygenData > 0 ? Math.min(100, (oxygenData * 100) + (Math.random() * 10 - 5)) + '%' : '0%',
                 backgroundColor: oxygenWarning.color
               }"></div>
             </div>
@@ -183,7 +183,7 @@
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
           </svg>
-          {{ oxygenWarning.message || '血氧在正常范围内' }}
+          {{ oxygenData > 0 ? (oxygenWarning.message || '血氧在正常范围内') : '暂无血氧数据' }}
         </div>
       </div>
 
@@ -210,7 +210,7 @@
             <svg class="status-icon" :style="{ fill: piWarning.color }" viewBox="0 0 24 24">
               <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
             </svg>
-            <span class="status-text">{{ piWarning.level > 0 ? '异常' : '正常' }}</span>
+            <span class="status-text">{{ piWarning.level > 0 ? '异常' : piData.length > 0 ? '正常' : '无数据' }}</span>
           </div>
         </div>
         <div class="card-chart">
@@ -218,13 +218,13 @@
             <span class="chart-title">4小时趋势</span>
             <span class="chart-range">正常: 0.5-10 PI</span>
           </div>
-          <PiData :data="piData" :warning="piWarning" />
+          <PiData :data="piData" :warning="piWarning" :key="`pi-${chartKey}`" />
         </div>
         <div class="card-footer" :style="{ color: piWarning.color }">
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
           </svg>
-          {{ piWarning.message || '灌注指数在正常范围内' }}
+          {{ piData.length > 0 ? (piWarning.message || '灌注指数在正常范围内') : '暂无灌注指数数据' }}
         </div>
       </div>
 
@@ -251,7 +251,7 @@
             <svg class="status-icon" :style="{ fill: sleepWarning.color }" viewBox="0 0 24 24">
               <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
             </svg>
-            <span class="status-text">{{ sleepWarning.level > 0 ? '异常' : '正常' }}</span>
+            <span class="status-text">{{ sleepWarning.level > 0 ? '异常' : sleepData.length > 0 ? '正常' : '无数据' }}</span>
           </div>
         </div>
         <div class="card-chart">
@@ -259,13 +259,13 @@
             <span class="chart-title">睡眠趋势</span>
             <span class="chart-range">建议: 7-9小时</span>
           </div>
-          <SleepData :data="sleepData" />
+          <SleepData :data="sleepData" :key="`sleep-${chartKey}`" />
         </div>
         <div class="card-footer" :style="{ color: sleepWarning.color }">
           <svg class="footer-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M19,13H5V11H19V13M12,5A2,2 0 0,1 14,7A2,2 0 0,1 12,9A2,2 0 0,1 10,7A2,2 0 0,1 12,5M12,15A2,2 0 0,1 14,17A2,2 0 0,1 12,19A2,2 0 0,1 10,17A2,2 0 0,1 12,15Z" />
           </svg>
-          {{ sleepWarning.message || '睡眠时长在正常范围内' }}
+          {{ sleepData.length > 0 ? (sleepWarning.message || '睡眠时长在正常范围内') : '暂无睡眠数据' }}
         </div>
       </div>
     </div>
@@ -299,7 +299,7 @@
           
           <div class="alert-list">
             <!-- 血压警告 -->
-            <div v-if="pressureWarning.level > 0" class="alert-item">
+            <div v-if="pressureWarning.level > 0 && pressureData[0]" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -340,7 +340,7 @@
             </div>
 
             <!-- 灌注指数警告 -->
-            <div v-if="piWarning.level > 0" class="alert-item">
+            <div v-if="piWarning.level > 0 && piData.length > 0" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -381,7 +381,7 @@
             </div>
 
             <!-- 睡眠警告 -->
-            <div v-if="sleepWarning.level > 0" class="alert-item">
+            <div v-if="sleepWarning.level > 0 && sleepData.length > 0" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -422,7 +422,7 @@
             </div>
 
             <!-- 心率警告 -->
-            <div v-if="heartWarning.level > 0" class="alert-item">
+            <div v-if="heartWarning.level > 0 && heartData.length > 0" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -463,7 +463,7 @@
             </div>
 
             <!-- 血糖警告 -->
-            <div v-if="bloodWarning.level > 0" class="alert-item">
+            <div v-if="bloodWarning.level > 0 && bloodData.length > 0" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -504,7 +504,7 @@
             </div>
 
             <!-- 血氧警告 -->
-            <div v-if="oxygenWarning.level > 0" class="alert-item">
+            <div v-if="oxygenWarning.level > 0 && oxygenData > 0" class="alert-item">
               <div class="alert-item-header">
                 <div class="alert-item-title">
                   <svg class="alert-item-icon" viewBox="0 0 24 24">
@@ -574,11 +574,14 @@ import PressureData from './PressureData.vue';
 // 添加响应式变量
 const currentUserId = ref(null);
 
+// 添加图表刷新key
+const chartKey = ref(0);
+
 // 定义 props
 const props = defineProps({
   selectedParentId: {
-    type: [Number, String], // ID 可能是数字或字符串，根据后端定义选择
-    required: true,         // 确保必须传入
+    type: [Number, String],
+    required: true,
     default: null
   }
 });
@@ -663,54 +666,78 @@ const closeAlertModal = () => {
 // 获取异常总数
 const getAlertCount = () => {
   let count = 0;
-  if (heartWarning.value.level > 0) count++;
-  if (bloodWarning.value.level > 0) count++;
-  if (pressureWarning.value.level > 0) count++;
-  if (oxygenWarning.value.level > 0) count++;
-  if (piWarning.value.level > 0) count++;
-  if (sleepWarning.value.level > 0) count++;
+  if (heartWarning.value.level > 0 && heartData.value.length > 0) count++;
+  if (bloodWarning.value.level > 0 && bloodData.value.length > 0) count++;
+  if (pressureWarning.value.level > 0 && pressureData.value[0]) count++;
+  if (oxygenWarning.value.level > 0 && oxygenData.value > 0) count++;
+  if (piWarning.value.level > 0 && piData.value.length > 0) count++;
+  if (sleepWarning.value.level > 0 && sleepData.value.length > 0) count++;
   return count;
 };
 
 // 获取严重异常数量
 const getSevereCount = () => {
   let count = 0;
-  if (heartWarning.value.level >= 3) count++;
-  if (bloodWarning.value.level >= 3) count++;
-  if (pressureWarning.value.level >= 3) count++;
-  if (oxygenWarning.value.level >= 3) count++;
-  if (piWarning.value.level >= 3) count++;
-  if (sleepWarning.value.level >= 3) count++;
+  if (heartWarning.value.level >= 3 && heartData.value.length > 0) count++;
+  if (bloodWarning.value.level >= 3 && bloodData.value.length > 0) count++;
+  if (pressureWarning.value.level >= 3 && pressureData.value[0]) count++;
+  if (oxygenWarning.value.level >= 3 && oxygenData.value > 0) count++;
+  if (piWarning.value.level >= 3 && piData.value.length > 0) count++;
+  if (sleepWarning.value.level >= 3 && sleepData.value.length > 0) count++;
   return count;
 };
 
 // 分析心率数据
 const analyzeHeartRate = () => {
-  if (heartData.value.length === 0) return;
+  if (heartData.value.length === 0) {
+    heartTrend.value = '';
+    heartWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
   const latestHeartRate = heartData.value[heartData.value.length - 1];
   const analysis = HeartRateRules.analyzeSingleHeartRate(latestHeartRate);
+  
+  // 只有有足够数据时才分析趋势
   if (heartData.value.length >= 3) {
     const trend = HeartRateRules.analyzeHeartRateTrend(heartData.value);
     heartTrend.value = getTrendIcon(trend.trend);
+  } else {
+    heartTrend.value = '';
   }
+  
   heartWarning.value = analysis;
 };
 
 // 分析血糖数据
 const analyzeBloodSugar = () => {
-  if (bloodData.value.length === 0) return;
+  if (bloodData.value.length === 0) {
+    bloodTrend.value = '';
+    bloodWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
   const latestBloodSugar = bloodData.value[bloodData.value.length - 1];
   const analysis = BloodSugarRules.analyzeSinglePoint(latestBloodSugar);
+  
+  // 只有有足够数据时才分析趋势
   if (bloodData.value.length >= 3) {
     const trend = BloodSugarRules.analyzeTrend(bloodData.value);
     bloodTrend.value = getTrendIcon(trend.trend);
+  } else {
+    bloodTrend.value = '';
   }
+  
   bloodWarning.value = analysis;
 };
 
 // 分析血压数据
 const analyzeBloodPressure = () => {
-  if (pressureData.value.length < 2) return;
+  if (pressureData.value.length < 2) {
+    pressureWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
   const systolic = pressureData.value[0];
   const diastolic = pressureData.value[1];
   const analysis = BloodPressureRules.analyzeSinglePoint(systolic, diastolic);
@@ -719,6 +746,11 @@ const analyzeBloodPressure = () => {
 
 // 分析血氧数据
 const analyzeOxygen = () => {
+  if (!oxygenData.value || oxygenData.value <= 0) {
+    oxygenWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
   const oxygenValue = oxygenData.value * 100;
   const analysis = BloodOxygenRules.analyzeSinglePoint(oxygenValue);
   oxygenWarning.value = analysis;
@@ -726,7 +758,11 @@ const analyzeOxygen = () => {
 
 // 分析灌注指数
 const analyzePi = () => {
-  if (piData.value.length === 0) return;
+  if (piData.value.length === 0) {
+    piWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
   const latestPi = piData.value[piData.value.length - 1];
   const analysis = PerfusionIndexRules.analyzeSinglePoint(latestPi);
   piWarning.value = analysis;
@@ -734,8 +770,12 @@ const analyzePi = () => {
 
 // 分析睡眠数据
 const analyzeSleep = () => {
-  if (sleepData.value.length === 0) return;
-  const latestSleep = sleepData.value[sleepData.length - 1];
+  if (sleepData.value.length === 0) {
+    sleepWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+    return;
+  }
+  
+  const latestSleep = sleepData.value[sleepData.value.length - 1];
   const sleepHours = latestSleep / 60;
   const analysis = SleepRules.analyzeSinglePoint(sleepHours);
   sleepWarning.value = analysis;
@@ -754,34 +794,32 @@ const getTrendIcon = (trend) => {
   return icons[trend] || '';
 };
 
-// 模拟数据获取 - 用于测试
-const mockData = () => {
-  // 模拟血压数据 - 严重高血压
-  pressureData.value = [157, 96];
-  pressureWarning.value = {
-    level: 3,
-    message: '严重高血压，严重高舒张压，脉压差过大',
-    suggestion: '立即休息，必要时就医；立即休息，必要时就医；注意心血管健康',
-    color: '#f5222d'
-  };
+// 重置所有数据
+const resetAllData = () => {
+  console.log('重置所有数据');
   
-  // 模拟灌注指数数据 - 严重不足
-  piData.value = [0.15];
-  piWarning.value = {
-    level: 3,
-    message: '灌注严重不足',
-    suggestion: '立即检查血液循环，可能存在循环障碍',
-    color: '#f5222d'
-  };
+  // 重置数据
+  heartData.value = [];
+  bloodData.value = [];
+  piData.value = [];
+  oxygenData.value = 0;
+  sleepData.value = [];
+  pressureData.value = [];
   
-  // 模拟睡眠数据 - 严重不足
-  sleepData.value = [7]; // 7分钟
-  sleepWarning.value = {
-    level: 3,
-    message: '睡眠严重不足',
-    suggestion: '立即安排休息，必要时就医',
-    color: '#f5222d'
-  };
+  // 重置警告状态
+  heartWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  bloodWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  pressureWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  oxygenWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  piWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  sleepWarning.value = { level: 0, message: '', suggestion: '', color: '#52c41a' };
+  
+  // 重置趋势
+  heartTrend.value = '';
+  bloodTrend.value = '';
+  
+  // 增加图表key以强制重新渲染
+  chartKey.value++;
 };
 
 // 获取数据
@@ -791,18 +829,11 @@ const fetchData = async () => {
     return;
   }
 
-  // 如果用户切换，先断开旧连接
+  // 如果用户切换，先断开旧连接并重置所有数据
   if (currentUserId.value && currentUserId.value !== props.selectedParentId) {
     console.log(`切换用户: ${currentUserId.value} -> ${props.selectedParentId}`);
     disconnectUserConnections(currentUserId.value);
-    
-    // 清空旧数据
-    heartData.value = [];
-    bloodData.value = [];
-    piData.value = [];
-    oxygenData.value = 0;
-    sleepData.value = [];
-    pressureData.value = [];
+    resetAllData();
   }
 
   currentUserId.value = props.selectedParentId;
@@ -825,29 +856,47 @@ const fetchData = async () => {
       getOxygenData(props.selectedParentId)
     ]);
 
+    console.log('数据获取结果:', {
+      heart: heartResponse.status,
+      pi: piResponse.status,
+      sleep: sleepResponse.status,
+      blood: bloodResponse.status,
+      pressure: pressureResponse.status,
+      oxygen: oxygenResponse.status
+    });
 
     // 处理心率数据
     if (heartResponse.status === 'fulfilled') {
       const response = heartResponse.value;
-      if (Array.isArray(response)) {
+      if (Array.isArray(response) && response.length > 0) {
         const heartCount = Math.min(4, response.length);
         const latestHeartUnprocessed = response.slice(0, heartCount);
         const latestHeartProcessed = latestHeartUnprocessed.reverse();
         heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
-        analyzeHeartRate();
+      } else {
+        heartData.value = [];
       }
+      analyzeHeartRate();
+    } else {
+      heartData.value = [];
+      analyzeHeartRate();
     }
 
     // 处理血糖数据
     if (bloodResponse.status === 'fulfilled') {
       const response = bloodResponse.value;
-      if (Array.isArray(response)) {
+      if (Array.isArray(response) && response.length > 0) {
         const bloodCount = Math.min(7, response.length);
         const latestBloodUnprocessed = response.slice(0, bloodCount);
         const latestBloodProcessed = latestBloodUnprocessed.reverse();
         bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
-        analyzeBloodSugar();
+      } else {
+        bloodData.value = [];
       }
+      analyzeBloodSugar();
+    } else {
+      bloodData.value = [];
+      analyzeBloodSugar();
     }
 
     // 处理血压数据
@@ -859,8 +908,13 @@ const fetchData = async () => {
           Number(latestBP.systolicBp),
           Number(latestBP.diastolicBp)
         ];
-        analyzeBloodPressure();
+      } else {
+        pressureData.value = [];
       }
+      analyzeBloodPressure();
+    } else {
+      pressureData.value = [];
+      analyzeBloodPressure();
     }
 
     // 处理血氧数据
@@ -869,35 +923,56 @@ const fetchData = async () => {
       if (response && response.length > 0) {
         const latestOxygen = response[0];
         oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
-        analyzeOxygen();
+      } else {
+        oxygenData.value = 0;
       }
+      analyzeOxygen();
+    } else {
+      oxygenData.value = 0;
+      analyzeOxygen();
     }
 
     // 处理灌注指数
     if (piResponse.status === 'fulfilled') {
       const response = piResponse.value;
-      if (Array.isArray(response)) {
+      if (Array.isArray(response) && response.length > 0) {
         const piCount = Math.min(4, response.length);
         const latestPiUnprocessed = response.slice(0, piCount);
         const latestPiProcessed = latestPiUnprocessed.reverse();
         piData.value = latestPiProcessed.map(item => Number(item.piData));
-        analyzePi();
+      } else {
+        piData.value = [];
       }
+      analyzePi();
+    } else {
+      piData.value = [];
+      analyzePi();
     }
 
     // 处理睡眠数据
     if (sleepResponse.status === 'fulfilled') {
       const response = sleepResponse.value;
-      if (Array.isArray(response)) {
+      if (Array.isArray(response) && response.length > 0) {
         const sleepCount = Math.min(4, response.length);
         const latestSleepUnprocessed = response.slice(0, sleepCount);
         const latestSleepProcessed = latestSleepUnprocessed.reverse();
         sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
-        analyzeSleep();
+      } else {
+        sleepData.value = [];
       }
+      analyzeSleep();
+    } else {
+      sleepData.value = [];
+      analyzeSleep();
     }
+    
+    // 数据获取完成后，强制更新图表
+    chartKey.value++;
+    
   } catch (error) {
     console.error("获取数据过程中发生错误", error);
+    // 发生错误时重置所有数据
+    resetAllData();
   }
 };
 
@@ -911,11 +986,18 @@ watch([heartData, bloodData, pressureData, oxygenData, piData, sleepData], () =>
   analyzeSleep();
 }, { deep: true });
 
-// 添加一个监听器，当 selectedParentId 发生变化时，重新获取数据
+// 监听 selectedParentId 变化
 watch(() => props.selectedParentId, (newId, oldId) => {
   console.log(`选中的父母ID从 ${oldId} 变为 ${newId}`);
-  if (newId !== oldId) { // 确保ID确实发生了变化
-    fetchData(); // ID变化时重新获取数据
+  if (newId !== oldId) {
+    // 立即重置数据，防止显示旧数据
+    if (oldId) {
+      resetAllData();
+    }
+    // 延迟获取数据，确保DOM已更新
+    setTimeout(() => {
+      fetchData();
+    }, 50);
   }
 }, { immediate: true });
 
@@ -927,6 +1009,10 @@ onUnmounted(() => {
 });
 
 onMounted(() => {
+  // 组件挂载时初始化数据
+  if (props.selectedParentId) {
+    fetchData();
+  }
 });
 </script>
 

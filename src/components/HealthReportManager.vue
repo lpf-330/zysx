@@ -1,0 +1,1544 @@
+<template>
+  <div class="health-report-manager">
+    <!-- 顶部标题和生成按钮 -->
+    <div class="header-section">
+      <div class="title-container">
+        <svg class="title-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M7,7H17V9H7V7M7,11H17V13H7V11M7,15H13V17H7V15Z" />
+        </svg>
+        <h3 class="section-title">健康报告管理</h3>
+      </div>
+      <button 
+        class="generate-btn" 
+        @click="generateReport" 
+        :disabled="isGenerating || !selectedParentId"
+      >
+        <svg v-if="isGenerating" class="loading-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+        </svg>
+        <svg v-else class="generate-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M14,12L10,8V11H2V13H10V16M20,18H4V8H16V10H18V6A2,2 0 0,0 16,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V12H20V18Z" />
+        </svg>
+        {{ isGenerating ? '生成中...' : '生成健康报告' }}
+      </button>
+    </div>
+
+    <!-- 状态提示 -->
+    <div v-if="!selectedParentId" class="no-selection-prompt">
+      <svg class="prompt-icon" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
+      </svg>
+      <p>请先选择一位父母以查看和生成健康报告</p>
+    </div>
+
+    <!-- 报告列表区域 -->
+    <div v-else-if="reports.length > 0" class="report-list-section">
+      <div class="section-header">
+        <h4 class="list-title">
+          <svg class="list-icon" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M3,13H15V11H3M3,6H21V8H3M3,18H21V20H3M19,13.67L20.5,15.17L17,18.67L13.5,15.17L15,13.67L17,15.67L19,13.67Z" />
+          </svg>
+          历史报告 ({{ reports.length }})
+        </h4>
+        <button class="refresh-btn" @click="fetchReports" :disabled="isLoading">
+          <svg class="refresh-icon" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+          </svg>
+          刷新
+        </button>
+      </div>
+      
+      <div class="report-list-container">
+        <div class="report-list">
+          <div
+            v-for="(report, index) in reports"
+            :key="report.id"
+            class="report-item"
+            :class="{ 'new': isNewReport(report.id) }"
+            @mouseenter="hoveredReport = index"
+            @mouseleave="hoveredReport = -1"
+          >
+            <div class="report-header">
+              <div class="report-icon-wrapper">
+                <svg class="report-icon" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,11L14,13L12,15L10,13L12,11Z" />
+                </svg>
+              </div>
+              <div class="report-info">
+                <div class="report-title">
+                  <span class="report-id">报告 #{{ report.id }}</span>
+                  <span class="report-status" :class="getReportStatusClass(report)">
+                    {{ getReportStatusText(report) }}
+                  </span>
+                </div>
+                <div class="report-meta">
+                  <span class="report-date">
+                    <svg class="meta-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
+                    </svg>
+                    {{ formatDate(report.createTime) }}
+                  </span>
+                  <span class="report-length">
+                    <svg class="meta-icon" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25M21.41,6.34L17.66,2.59L15.13,5.13L18.88,8.88L21.41,6.34Z" />
+                    </svg>
+                    {{ calculateReportLength(report.report) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="report-actions" v-show="hoveredReport === index">
+              <button class="action-btn view-btn" @click.stop="viewReport(report.id)">
+                <svg class="action-icon" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                </svg>
+                查看
+              </button>
+              <button class="action-btn download-btn" @click.stop="downloadReport(report)">
+                <svg class="action-icon" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                </svg>
+                下载
+              </button>
+              <button class="action-btn delete-btn" @click.stop="deleteReport(report.id)" :disabled="isDeleting">
+                <svg v-if="isDeleting" class="action-icon loading" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+                </svg>
+                <svg v-else class="action-icon" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                </svg>
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="selectedParentId && reports.length === 0 && !isLoading" class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19,5V19H5V5H19M19,3H5C3.9,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M17,12H12V17H10V12H7V10H10V5H12V10H17V12Z" />
+        </svg>
+      </div>
+      <h4>暂无健康报告</h4>
+      <p>点击上方按钮生成第一份健康报告</p>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="isLoading" class="loading-state">
+      <div class="loading-spinner">
+        <div class="spinner-circle"></div>
+      </div>
+      <p>加载报告中...</p>
+    </div>
+
+    <!-- 查看报告模态框 -->
+    <Transition name="modal">
+      <div v-if="showReportModal" class="modal-overlay" @click.self="closeReportModal">
+        <div class="report-modal">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg class="modal-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M15.5,12C18,12 20,14 20,16.5C20,17.38 19.75,18.21 19.31,18.9L22.39,22L21,23.39L17.88,20.32C17.19,20.75 16.37,21 15.5,21C13,21 11,19 11,16.5C11,14 13,12 15.5,12M15.5,14A2.5,2.5 0 0,0 13,16.5A2.5,2.5 0 0,0 15.5,19A2.5,2.5 0 0,0 18,16.5A2.5,2.5 0 0,0 15.5,14M7,15V17H9C9.14,18.55 9.8,19.94 10.81,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3H19A2,2 0 0,1 21,5V13.03C19.85,11.21 17.82,10 15.5,10C14.23,10 13.04,10.37 12,11V5H5V19H10.5C10.35,18.36 10.18,17.7 10.06,17H7Z" />
+              </svg>
+              <h4>健康报告详情</h4>
+            </div>
+            <button class="close-modal-btn" @click="closeReportModal">
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-content">
+            <div class="report-header-info">
+              <div class="info-item">
+                <span class="info-label">报告ID:</span>
+                <span class="info-value">{{ currentReportId }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">生成时间:</span>
+                <span class="info-value">{{ currentReportDate }}</span>
+              </div>
+            </div>
+            
+            <div class="report-content-container">
+              <div class="content-header">
+                <h5>报告内容</h5>
+                <button class="copy-btn" @click="copyReportContent" :disabled="isCopying">
+                  <svg v-if="isCopying" class="copy-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                  </svg>
+                  <svg v-else class="copy-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" />
+                  </svg>
+                  {{ copyButtonText }}
+                </button>
+              </div>
+              <div class="report-content-wrapper">
+                <pre class="report-content">{{ currentReportContent }}</pre>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="footer-btn download-modal-btn" @click="downloadCurrentReport">
+              <svg class="footer-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+              </svg>
+              下载报告
+            </button>
+            <button class="footer-btn close-btn" @click="closeReportModal">
+              <svg class="footer-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 消息提示模态框 -->
+    <Transition name="modal">
+      <div v-if="showMessageModal" class="modal-overlay" @click.self="closeMessageModal">
+        <div class="message-modal" :class="messageModalType">
+          <div class="message-header">
+            <svg class="message-icon" viewBox="0 0 24 24">
+              <path v-if="messageModalType === 'success'" fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
+              <path v-else fill="currentColor" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z" />
+            </svg>
+            <h3>{{ messageModalType === 'success' ? '操作成功' : '操作失败' }}</h3>
+            <button class="close-modal-btn" @click="closeMessageModal">
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-content">
+            <p class="message-text">{{ messageModalText }}</p>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="footer-btn confirm-btn" @click="closeMessageModal">
+              {{ messageModalType === 'success' ? '好的' : '重试' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 生成报告进度条 -->
+    <Transition name="slide">
+      <div v-if="showProgress && isGenerating" class="progress-overlay">
+        <div class="progress-container">
+          <div class="progress-header">
+            <h5>正在生成健康报告</h5>
+            <span class="progress-percentage">{{ progressPercentage }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
+          </div>
+          <div class="progress-text">
+            {{ progressText }}
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch, computed } from 'vue';
+import { 
+  getHealthReportList, 
+  generateHealthReport, 
+  saveHealthReport, 
+  getHealthReport, 
+  deleteHealthReport 
+} from '../api/healthReport';
+
+// 定义 props
+const props = defineProps({
+  selectedParentId: {
+    type: [Number, String],
+    required: true,
+  }
+});
+
+// 响应式数据
+const reports = ref([]);
+const isGenerating = ref(false);
+const isLoading = ref(false);
+const isDeleting = ref(false);
+const isCopying = ref(false);
+const showReportModal = ref(false);
+const showMessageModal = ref(false);
+const showProgress = ref(false);
+const hoveredReport = ref(-1);
+const newlyGeneratedReports = ref(new Set());
+
+// 当前报告相关
+const currentReportId = ref(null);
+const currentReportContent = ref('');
+const currentReportDate = ref('');
+const messageModalText = ref('');
+const messageModalType = ref('');
+
+// 进度相关
+const progressPercentage = ref(0);
+const progressText = ref('正在初始化...');
+const copyButtonText = computed(() => isCopying.value ? '已复制' : '复制内容');
+
+// 计算属性
+const selectedParentId = computed(() => props.selectedParentId);
+
+// 方法
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  
+  if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  }
+  
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const calculateReportLength = (report) => {
+  if (!report) return '0字';
+  const length = report.length;
+  if (length < 1000) return `${length}字`;
+  return `${(length / 1000).toFixed(1)}千字`;
+};
+
+const isNewReport = (reportId) => {
+  return newlyGeneratedReports.value.has(reportId);
+};
+
+const getReportStatusClass = (report) => {
+  const createTime = new Date(report.createTime);
+  const now = new Date();
+  const diffMs = now - createTime;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 1) return 'status-new';
+  if (diffDays < 7) return 'status-recent';
+  return 'status-old';
+};
+
+const getReportStatusText = (report) => {
+  const createTime = new Date(report.createTime);
+  const now = new Date();
+  const diffMs = now - createTime;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  
+  if (diffHours < 1) return '刚刚';
+  if (diffHours < 24) return `${diffHours}小时前`;
+  return `${Math.floor(diffHours / 24)}天前`;
+};
+
+// 显示消息
+const showMessage = (text, type = 'error') => {
+  messageModalText.value = text;
+  messageModalType.value = type;
+  showMessageModal.value = true;
+};
+
+// 获取报告列表
+const fetchReports = async () => {
+  if (!selectedParentId.value) return;
+
+  isLoading.value = true;
+  try {
+    const response = await getHealthReportList(selectedParentId.value);
+    if (response.code === 200) {
+      reports.value = response.data || [];
+      reports.value.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+    } else {
+      throw new Error(response.message || '获取报告列表失败');
+    }
+  } catch (error) {
+    console.error('获取报告列表错误:', error);
+    showMessage(`获取报告列表失败: ${error.message || '未知错误'}`, 'error');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 生成报告（修复后的版本）
+const generateReport = async () => {
+  if (!selectedParentId.value || isGenerating.value) return;
+
+  isGenerating.value = true;
+  showProgress.value = true;
+  progressPercentage.value = 0;
+  progressText.value = '正在连接服务器...';
+
+  try {
+    // 步骤1: 生成报告流
+    const { reader } = await generateHealthReport(selectedParentId.value);
+    const decoder = new TextDecoder('utf-8');
+    let accumulatedReport = '';
+
+    // 更新进度
+    progressPercentage.value = 10;
+    progressText.value = '正在生成报告内容...';
+
+    // 读取流数据
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataContentStr = line.substring(6).trim();
+          if (dataContentStr && dataContentStr !== '[DONE]') {
+            try {
+              const sseData = JSON.parse(dataContentStr);
+              if (sseData.answer) {
+                accumulatedReport += sseData.answer;
+                // 更新进度（模拟进度）
+                progressPercentage.value = Math.min(90, progressPercentage.value + 5);
+                progressText.value = `正在生成报告内容... (${accumulatedReport.length}字)`;
+              }
+              if (sseData.done === true || sseData.done === "true") {
+                progressPercentage.value = 95;
+                progressText.value = '正在保存报告...';
+              }
+            } catch (e) {
+              console.error('解析SSE数据错误:', e);
+            }
+          }
+        }
+      }
+    }
+
+    // 步骤2: 保存报告（修复API调用）
+    if (accumulatedReport) {
+      progressText.value = '正在保存报告到数据库...';
+      
+      // 调用保存API
+      const saveResponse = await saveHealthReport(selectedParentId.value, accumulatedReport);
+      
+      if (saveResponse.code === 200) {
+        progressPercentage.value = 100;
+        progressText.value = '报告生成完成！';
+        
+        // 标记为新报告
+        if (saveResponse.data && saveResponse.data.id) {
+          newlyGeneratedReports.value.add(saveResponse.data.id);
+        }
+        
+        // 延迟显示成功消息
+        setTimeout(() => {
+          showProgress.value = false;
+          isGenerating.value = false;
+          showMessage('健康报告生成并保存成功！', 'success');
+          fetchReports(); // 刷新列表
+        }, 1000);
+        
+      } else {
+        throw new Error(saveResponse.message || '保存报告失败');
+      }
+    } else {
+      throw new Error('生成的内容为空');
+    }
+
+  } catch (error) {
+    console.error('生成报告错误:', error);
+    showProgress.value = false;
+    isGenerating.value = false;
+    showMessage(`生成报告失败: ${error.message || '未知错误'}`, 'error');
+  }
+};
+
+// 查看报告
+const viewReport = async (reportId) => {
+  try {
+    const response = await getHealthReport(reportId);
+    if (response.code === 200) {
+      currentReportId.value = reportId;
+      currentReportContent.value = response.data.report;
+      currentReportDate.value = formatDate(response.data.createTime);
+      showReportModal.value = true;
+    } else {
+      throw new Error(response.message || '获取报告失败');
+    }
+  } catch (error) {
+    console.error('查看报告错误:', error);
+    showMessage(`获取报告失败: ${error.message || '未知错误'}`, 'error');
+  }
+};
+
+// 下载报告
+const downloadReport = (report) => {
+  try {
+    const blob = new Blob([report.report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date(report.createTime).toISOString().split('T')[0];
+    a.download = `健康报告_${report.id}_${date}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showMessage('报告下载开始', 'success');
+  } catch (error) {
+    console.error('下载报告错误:', error);
+    showMessage('下载报告失败', 'error');
+  }
+};
+
+// 下载当前查看的报告
+const downloadCurrentReport = () => {
+  if (!currentReportContent.value) return;
+  
+  const blob = new Blob([currentReportContent.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().split('T')[0];
+  a.download = `健康报告_${currentReportId.value}_${date}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showMessage('报告下载开始', 'success');
+};
+
+// 复制报告内容
+const copyReportContent = async () => {
+  if (!currentReportContent.value) return;
+  
+  try {
+    await navigator.clipboard.writeText(currentReportContent.value);
+    isCopying.value = true;
+    setTimeout(() => {
+      isCopying.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('复制失败:', err);
+    showMessage('复制失败，请手动复制', 'error');
+  }
+};
+
+// 删除报告
+const deleteReport = async (reportId) => {
+  if (isDeleting.value) return;
+  
+  if (!confirm(`确定要删除报告 #${reportId} 吗？此操作不可撤销。`)) return;
+
+  isDeleting.value = true;
+  try {
+    const response = await deleteHealthReport(reportId);
+    if (response.code === 200) {
+      // 从本地列表中移除
+      reports.value = reports.value.filter(r => r.id !== reportId);
+      newlyGeneratedReports.value.delete(reportId);
+      showMessage('报告删除成功', 'success');
+      
+      // 如果删除的是当前查看的报告，关闭模态框
+      if (currentReportId.value === reportId) {
+        closeReportModal();
+      }
+    } else {
+      throw new Error(response.message || '删除报告失败');
+    }
+  } catch (error) {
+    console.error('删除报告错误:', error);
+    showMessage(`删除报告失败: ${error.message || '未知错误'}`, 'error');
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+// 关闭报告模态框
+const closeReportModal = () => {
+  showReportModal.value = false;
+  setTimeout(() => {
+    currentReportId.value = null;
+    currentReportContent.value = '';
+    currentReportDate.value = '';
+    isCopying.value = false;
+  }, 300);
+};
+
+// 关闭消息提示模态框
+const closeMessageModal = () => {
+  showMessageModal.value = false;
+  setTimeout(() => {
+    messageModalText.value = '';
+    messageModalType.value = '';
+  }, 300);
+};
+
+// 监听 selectedParentId 变化
+watch(selectedParentId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    newlyGeneratedReports.value.clear();
+    fetchReports();
+  } else if (!newId) {
+    reports.value = [];
+  }
+}, { immediate: true });
+
+// 组件挂载时获取报告列表
+onMounted(() => {
+  if (selectedParentId.value) {
+    fetchReports();
+  }
+});
+</script>
+
+<style scoped>
+.health-report-manager {
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 
+    0 4px 20px rgba(0, 82, 204, 0.1),
+    0 8px 40px rgba(0, 82, 204, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* 头部区域 */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(0, 122, 255, 0.1);
+}
+
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-icon {
+  width: 28px;
+  height: 28px;
+  color: #007AFF;
+  filter: drop-shadow(0 2px 4px rgba(0, 122, 255, 0.3));
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.generate-btn {
+  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 
+    0 4px 15px rgba(0, 122, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 8px 25px rgba(0, 122, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.generate-btn:hover::before {
+  left: 100%;
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.generate-icon, .loading-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 未选择提示 */
+.no-selection-prompt {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 247, 255, 0.9));
+  border-radius: 16px;
+  border: 2px dashed rgba(0, 122, 255, 0.2);
+}
+
+.prompt-icon {
+  width: 60px;
+  height: 60px;
+  color: rgba(0, 122, 255, 0.4);
+  margin: 0 auto 16px;
+}
+
+.no-selection-prompt p {
+  color: #7f8c8d;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* 报告列表区域 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.list-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-icon {
+  width: 20px;
+  height: 20px;
+  color: #007AFF;
+}
+
+.refresh-btn {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007AFF;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(0, 122, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refresh-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* 报告列表容器 */
+.report-list-container {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 
+    0 2px 12px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 122, 255, 0.08);
+}
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.report-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.report-list::-webkit-scrollbar-track {
+  background: rgba(0, 122, 255, 0.05);
+  border-radius: 10px;
+}
+
+.report-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #007AFF, #0056cc);
+  border-radius: 10px;
+}
+
+/* 报告项 */
+.report-item {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.report-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #007AFF, #0056cc);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.report-item:hover {
+  transform: translateX(4px);
+  box-shadow: 
+    0 4px 20px rgba(0, 122, 255, 0.15),
+    0 8px 30px rgba(0, 122, 255, 0.1);
+  border-color: rgba(0, 122, 255, 0.3);
+}
+
+.report-item:hover::before {
+  opacity: 1;
+}
+
+.report-item.new {
+  border-color: rgba(76, 217, 100, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.report-item.new::before {
+  background: linear-gradient(180deg, #4cd964, #2ecc71);
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.report-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #e6f2ff 0%, #d1e7ff 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+}
+
+.report-icon {
+  width: 20px;
+  height: 20px;
+  color: #007AFF;
+}
+
+.report-info {
+  flex: 1;
+}
+
+.report-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.report-id {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.report-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-new {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2ecc71;
+}
+
+.status-recent {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
+  color: #f39c12;
+}
+
+.status-old {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  color: #95a5a6;
+}
+
+.report-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.report-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-icon {
+  width: 12px;
+  height: 12px;
+  opacity: 0.7;
+}
+
+/* 报告操作按钮 */
+.report-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 70px;
+  justify-content: center;
+}
+
+.view-btn {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+}
+
+.view-btn:hover {
+  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+.download-btn {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #388e3c;
+}
+
+.download-btn:hover {
+  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(56, 142, 60, 0.2);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #f44336;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
+}
+
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.action-icon.loading {
+  animation: spin 1s linear infinite;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 247, 255, 0.9));
+  border-radius: 16px;
+  border: 2px dashed rgba(0, 122, 255, 0.2);
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  color: rgba(0, 122, 255, 0.3);
+}
+
+.empty-state h4 {
+  font-size: 18px;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.spinner-circle {
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(0, 122, 255, 0.1);
+  border-top-color: #007AFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-state p {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.report-modal {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 24px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 
+    0 30px 100px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  animation: modal-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modal-pop {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  color: white;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.modal-header h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.close-modal-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.close-modal-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+.report-header-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.report-content-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
+  border-bottom: 1px solid rgba(0, 122, 255, 0.1);
+}
+
+.content-header h5 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.copy-btn {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+  transform: translateY(-1px);
+}
+
+.copy-btn:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.copy-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.report-content-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.report-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #2c3e50;
+  margin: 0;
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 1px solid rgba(0, 122, 255, 0.1);
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
+}
+
+.footer-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.download-modal-btn {
+  background: linear-gradient(135deg, #4cd964 0%, #2ecc71 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+}
+
+.download-modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+
+.close-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+}
+
+.close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+/* 消息提示模态框 */
+.message-modal {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.25),
+    0 8px 32px rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  animation: modal-pop 0.3s ease-out;
+}
+
+.message-modal.success {
+  border-top: 4px solid #4cd964;
+}
+
+.message-modal.error {
+  border-top: 4px solid #ff6b6b;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
+}
+
+.message-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.message-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  flex: 1;
+  text-align: center;
+}
+
+.message-text {
+  font-size: 15px;
+  color: #2c3e50;
+  line-height: 1.5;
+  text-align: center;
+  padding: 24px;
+  margin: 0;
+}
+
+/* 进度条覆盖层 */
+.progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+}
+
+.progress-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  padding: 32px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.progress-percentage {
+  font-size: 24px;
+  font-weight: 800;
+  color: #007AFF;
+  background: linear-gradient(135deg, #007AFF 0%, #0056cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.progress-bar {
+  height: 12px;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007AFF, #0056cc);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 动画 */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(20px);
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .health-report-manager {
+    padding: 16px;
+    border-radius: 20px;
+  }
+  
+  .header-section {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .generate-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .report-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+  }
+  
+  .modal-content {
+    padding: 20px;
+  }
+  
+  .report-header-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+  }
+  
+  .footer-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>

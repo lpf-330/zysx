@@ -228,6 +228,18 @@ const selectParent = (index) => {
   }
 };
 
+// 暴露给父组件的方法
+defineExpose({
+  selectFirstParent: () => {
+    if (parents.value && parents.value.length > 0) {
+      selectParent(0); // 选中第一个父母
+      return true;
+    }
+    return false;
+  },
+  hasParents: computed(() => parents.value && parents.value.length > 0)
+});
+
 const openModal = (index = null) => {
   if (typeof index === 'number' && index >= 0) {
     // 编辑模式

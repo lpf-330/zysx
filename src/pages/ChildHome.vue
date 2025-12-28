@@ -3,37 +3,59 @@
     <div class="child-home">
       <div class="box">
         <div class="parentcard">
-        <ParentCard @parent-selected="onParentSelected"></ParentCard>
+        <ParentCard ref="parentCardRef" @parent-selected="onParentSelected"></ParentCard>
         </div>
         <div class="datadashboard">
         <DataDashboard :selected-parent-id="selectedParentId"></DataDashboard>
         </div>
+      </div>
+      <div class="health-report-section">
+        <HealthReportManager :selected-parent-id="selectedParentId" />
       </div>
     </div>
   </el-scrollbar>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import router from '../router';
 import DataDashboard  from '../components/DataDashboard.vue';
 import ParentCard from '../components/ParentCard.vue';
+import HealthReportManager from '../components/HealthReportManager.vue';
 
-// 定义一个响应式变量来存储选中的父母ID
+const parentCardRef = ref(null);
 const selectedParentId = ref(null);
-// 接收 ParentCard 传递的选中父母信息
+
 const onParentSelected = (parentData, index) => {
   console.log('ChildHome.vue 收到选中的父母:', parentData);
   if (parentData && parentData.id) {
-    selectedParentId.value = parentData.id; // 更新本地响应式变量
+    selectedParentId.value = parentData.id;
   } else {
-    selectedParentId.value = null; // 或者处理没有有效ID的情况
+    selectedParentId.value = null;
   }
 };
 
-onMounted(() => {
-  console.log('子女端页面加载完成')
-})
+// 当页面加载完成后，尝试选择第一个父母
+onMounted(async () => {
+  console.log('子女端页面加载完成');
+  
+  // 等待子组件加载完成
+  await nextTick();
+  // 监听父母数据是否加载完成
+  const unwatch = watch(() => parentCardRef.value?.hasParents, (hasParents) => {
+    if (hasParents) {
+      console.log('Parents data loaded, selecting first parent');
+      parentCardRef.value.selectFirstParent();
+      unwatch(); 
+    }
+  });
+  
+  setTimeout(() => {
+    if (parentCardRef.value && parentCardRef.value.hasParents && !selectedParentId.value) {
+      parentCardRef.value.selectFirstParent();
+    }
+  }, 1000);
+});
 </script>
 
 <style scoped>
@@ -42,17 +64,14 @@ onMounted(() => {
   display: flex;
   height: 8rem;
 }
-
 .parentcard {
   width: 20%;
   height: 7rem;
 }
-
 .datadashboard {
   position: relative;
   margin-left: 0.3rem;
   width: 74%;
   height: 7rem;
 }
-
 </style>
