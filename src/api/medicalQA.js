@@ -9,7 +9,7 @@ const userQuery = async (question) => {
 
 // 流式问答接口
 const streamQuery = async (userId, sessionId, question) => {
-    const QUERY_STREAM_ENDPOINT = `${BASE_URL}/query/stream`;
+    const QUERY_STREAM_ENDPOINT = `${BASE_URL}/api/query/stream`;
     
     const requestBody = JSON.stringify({
         userId: userId || 12345,
@@ -41,7 +41,7 @@ const streamQuery = async (userId, sessionId, question) => {
 
 // 更新历史记录
 const updateHistory = async (sessionId, question, answer) => {
-    const UPDATE_HISTORY_ENDPOINT = `${BASE_URL}/query/history/update`;
+    const UPDATE_HISTORY_ENDPOINT = `${BASE_URL}/api/query/history/update`;
     
     const response = await fetch(UPDATE_HISTORY_ENDPOINT, {
         method: 'POST',
@@ -64,7 +64,7 @@ const updateHistory = async (sessionId, question, answer) => {
 
 // 清空历史记录
 const cleanHistory = async (sessionId) => {
-    const CLEAN_HISTORY_ENDPOINT = `${BASE_URL}/query/history/clean`;
+    const CLEAN_HISTORY_ENDPOINT = `${BASE_URL}/api/query/history/clean`;
     
     const response = await fetch(CLEAN_HISTORY_ENDPOINT, {
         method: 'DELETE',

@@ -3,7 +3,11 @@ import { ref, onBeforeUnmount, nextTick } from 'vue'; // 1. 引入 nextTick
 import { streamQuery, updateHistory, cleanHistory } from '../api/medicalQA';
 import QueryItem from '../components/QueryItem.vue';
 import AnswerItem from '../components/AnswerItem.vue';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
 const query = ref('');
 const QAList = ref([]);
 const sessionId = ref('');
@@ -57,7 +61,7 @@ const postQuery = async () => {
     scrollToBottom();
 
     try {
-        const { reader } = await streamQuery(12345, sessionId.value, question);
+        const { reader } = await streamQuery(user_id, sessionId.value, question);
         
         const decoder = new TextDecoder();
         let buffer = '';
