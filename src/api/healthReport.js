@@ -1,4 +1,3 @@
-// healthReport.js
 import { httpService } from "../utils/apiService"
 
 const BASE_URL = 'http://localhost:8081'; // 后端基础地址
@@ -31,7 +30,7 @@ const deleteHealthReport = async (healthReportId) => {
     return response.data;
 };
 
-// 5. 生成健康报告 (流式) - 修复版
+// 5. 生成健康报告
 const generateHealthReport = async (userId) => {
     const GENERATE_URL = `${BASE_URL}/api/healthReport/generate`;
     

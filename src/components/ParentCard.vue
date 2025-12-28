@@ -299,7 +299,6 @@ const saveParent = async () => {
   try {
     const payload = {
       ...currentParent.value,
-      gender: currentParent.value.gender === 'M' ? 'male' : 'female', // 关键修改
     };
 
     let response;
@@ -379,7 +378,7 @@ onMounted(() => {
   width: 100%;
   border-radius: 20px;
   padding: 20px;
-  background: rgb(243, 248, 253);
+  background: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
