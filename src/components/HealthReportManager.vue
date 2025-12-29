@@ -511,7 +511,7 @@ const downloadReport = (report) => {
     const a = document.createElement('a');
     a.href = url;
     const date = new Date(report.createTime).toISOString().split('T')[0];
-    a.download = `健康报告_${report.id}_${date}.txt`;
+    a.download = `健康报告_${report.id}_${date}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
