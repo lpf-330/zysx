@@ -49,7 +49,7 @@ const ensureWsConnected = (dataType, userId, timeout = 5000) => {
     });
 };
 
-// 新增：断开指定用户的所有连接
+// 断开指定用户的所有连接
 export const disconnectUserConnections = (userId) => {
     if (!userId) return;
     
@@ -121,7 +121,79 @@ const getPiData = createDataFetcher('pi');
 const getPreData = createDataFetcher('pre');
 const getSlpData = createDataFetcher('slp');
 
-// --- 新增：用于图表展示的聚合数据获取 (通过 HTTP POST) ---
+// 存储实时数据监听器
+const realTimeListeners = new Map();
+
+// 创建实时数据订阅函数
+const createRealTimeDataSubscriber = (dataType) => {
+  return (userId, callback) => {
+    const listenerKey = `${dataType}_${userId}`;
+    
+    // 清理旧监听器
+    const oldListener = realTimeListeners.get(listenerKey);
+    if (oldListener) {
+      wsService.off('message', oldListener.handler);
+      realTimeListeners.delete(listenerKey);
+    }
+    
+    // 确保连接已建立
+    ensureWsConnected(dataType, userId).then(() => {
+      // 创建新的消息处理器
+      const messageHandler = (data) => {
+        if (data.dataType === dataType && data.userId === userId) {
+          callback(data.data);
+        }
+      };
+      
+      // 保存监听器
+      realTimeListeners.set(listenerKey, {
+        userId,
+        dataType,
+        handler: messageHandler,
+        callback
+      });
+      
+      // 注册消息监听
+      wsService.on('message', messageHandler);
+      
+      console.log(`已订阅 ${dataType} 数据的实时更新 for userId ${userId}`);
+    }).catch(error => {
+      console.error(`订阅 ${dataType} 数据实时更新失败:`, error);
+    });
+  };
+};
+
+// 取消实时数据订阅
+const unsubscribeRealTimeData = (dataType, userId) => {
+  const listenerKey = `${dataType}_${userId}`;
+  const listener = realTimeListeners.get(listenerKey);
+  
+  if (listener) {
+    wsService.off('message', listener.handler);
+    realTimeListeners.delete(listenerKey);
+    console.log(`已取消订阅 ${dataType} 数据的实时更新 for userId ${userId}`);
+  }
+};
+
+// 取消用户所有实时数据订阅
+const unsubscribeUserAllRealTimeData = (userId) => {
+  for (const [key, listener] of realTimeListeners.entries()) {
+    if (listener.userId === userId) {
+      wsService.off('message', listener.handler);
+      realTimeListeners.delete(key);
+    }
+  }
+};
+
+// 创建各个数据类型的实时订阅函数
+const subscribeHeartData = createRealTimeDataSubscriber('heart');
+const subscribeBloodData = createRealTimeDataSubscriber('blood');
+const subscribeOxygenData = createRealTimeDataSubscriber('oxygen');
+const subscribePiData = createRealTimeDataSubscriber('pi');
+const subscribePreData = createRealTimeDataSubscriber('pre');
+const subscribeSlpData = createRealTimeDataSubscriber('slp');
+
+// --- 用于图表展示的历史聚合数据获取 (通过 HTTP POST) ---
 
 // 血糖
 const getBloodDataByDate = (userId, date) => httpService.post('/api/api/health-data-aggregated/blood-data-by-date', { userId, date });
@@ -168,7 +240,7 @@ export {
     getPreData,
     getSlpData,
     wsService,
-    // 新增导出 (用于图表的聚合数据)
+    // 用于图表的聚合数据
     getBloodDataByDate,
     getBloodDataByWeek,
     getBloodDataByMonth,
@@ -193,4 +265,13 @@ export {
     getPiDataByWeek,
     getPiDataByMonth,
     getPiDataByYear,
+    // 用于实时数据订阅
+    subscribeHeartData,
+    subscribeBloodData,
+    subscribeOxygenData,
+    subscribePiData,
+    subscribePreData,
+    subscribeSlpData,
+    // 用于取消用户所有实时数据订阅
+    unsubscribeUserAllRealTimeData
 }

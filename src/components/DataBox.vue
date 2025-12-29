@@ -72,7 +72,22 @@ import router from '../router';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { getBloodData, getHeartData, getOxygenData, getPiData, getPreData, getSlpData } from '../api/healthData';
+import { 
+    getBloodData, 
+    getHeartData, 
+    getOxygenData, 
+    getPiData, 
+    getPreData, 
+    getSlpData,
+    // 实时订阅函数
+    subscribeHeartData,
+    subscribeBloodData,
+    subscribeOxygenData,
+    subscribePiData,
+    subscribePreData,
+    subscribeSlpData,
+    unsubscribeUserAllRealTimeData
+} from '../api/healthData';
 
 
 const heartData = ref([])
@@ -86,10 +101,10 @@ const userInfoStore = storeToRefs(useUserInfoStore())
 const user_id = userInfoStore.user_id.value
 
 
+// 初始数据获取
 const fetchData = async () => {
   try {
-    // --- 并行发起所有 WebSocket 数据请求 ---
-    // 使用 Promise.allSettled 同时开始所有请求，即使某个失败也能继续处理其他请求
+    // 使用 Promise.allSettled 同时开始所有请求
     const [
       heartResponse,
       piResponse,
@@ -106,7 +121,6 @@ const fetchData = async () => {
       getOxygenData(user_id)
     ]);
 
-
     // 处理心率数据
     if (heartResponse.status === 'fulfilled') {
       const response = heartResponse.value;
@@ -116,9 +130,7 @@ const fetchData = async () => {
       const latestHeartUnprocessed = heartArray.slice(0, heartCount);
       const latestHeartProcessed = latestHeartUnprocessed.reverse();
 
-      for (const item of latestHeartProcessed) { 
-        heartData.value.push(Number(item.heartData));
-      }
+      heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
     } else {
       console.error("获取心率数据失败:", heartResponse.reason);
     }
@@ -131,9 +143,7 @@ const fetchData = async () => {
       const latestPiUnprocessed = (response || []).slice(0, piCount);
       const latestPiProcessed = latestPiUnprocessed.reverse();
 
-      for (let j = 0; j < latestPiProcessed.length; j++) { 
-        piData.value.push(Number(latestPiProcessed[j].piData));
-      }
+      piData.value = latestPiProcessed.map(item => Number(item.piData));
     } else {
       console.error("获取PI数据失败:", piResponse.reason);
     }
@@ -146,9 +156,7 @@ const fetchData = async () => {
       const latestSleepUnprocessed = (response || []).slice(0, sleepCount);
       const latestSleepProcessed = latestSleepUnprocessed.reverse(); 
 
-      for (let j = 0; j < latestSleepProcessed.length; j++) { 
-        sleepData.value.push(Number(latestSleepProcessed[j].sleepData));
-      }
+      sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
     } else {
       console.error("获取睡眠数据失败:", sleepResponse.reason);
     }
@@ -161,9 +169,7 @@ const fetchData = async () => {
       const latestBloodUnprocessed = (response || []).slice(0, bloodCount);
       const latestBloodProcessed = latestBloodUnprocessed.reverse();
 
-      for (let j = 0; j < latestBloodProcessed.length; j++) { 
-        bloodData.value.push(Number(latestBloodProcessed[j].bloodData));
-      }
+      bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
     } else {
       console.error("获取血糖数据失败:", bloodResponse.reason);
     }
@@ -174,8 +180,10 @@ const fetchData = async () => {
       console.log('血压数据展示', response);
       if (response && response.length > 0) {
         const latestBP = response[0];
-        pressureData.value.push(Number(latestBP.systolicBp));
-        pressureData.value.push(Number(latestBP.diastolicBp));
+        pressureData.value = [
+          Number(latestBP.systolicBp),
+          Number(latestBP.diastolicBp)
+        ];
       }
     } else {
       console.error("获取血压数据失败:", pressureResponse.reason);
@@ -210,9 +218,94 @@ const fetchData = async () => {
   }
 };
 
-onBeforeMount(fetchData)
+// 实时数据订阅
+const startRealTimeSubscriptions = () => {
+  // 清理旧的订阅
+  unsubscribeUserAllRealTimeData(user_id);
+  
+  // 订阅心率数据
+  subscribeHeartData(user_id, (data) => {
+    console.log('收到实时心率数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      // 保持最新4条数据
+      const heartCount = Math.min(4, data.length);
+      const latestHeartUnprocessed = data.slice(0, heartCount);
+      const latestHeartProcessed = latestHeartUnprocessed.reverse();
+      
+      // 更新心率数据
+      heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
+    }
+  });
+  
+  // 订阅血糖数据
+  subscribeBloodData(user_id, (data) => {
+    console.log('收到实时血糖数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const bloodCount = Math.min(7, data.length);
+      const latestBloodUnprocessed = data.slice(0, bloodCount);
+      const latestBloodProcessed = latestBloodUnprocessed.reverse();
+      
+      bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
+    }
+  });
+  
+  // 订阅灌注指数数据
+  subscribePiData(user_id, (data) => {
+    console.log('收到实时PI数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const piCount = Math.min(4, data.length);
+      const latestPiUnprocessed = data.slice(0, piCount);
+      const latestPiProcessed = latestPiUnprocessed.reverse();
+      
+      piData.value = latestPiProcessed.map(item => Number(item.piData));
+    }
+  });
+  
+  // 订阅血氧数据
+  subscribeOxygenData(user_id, (data) => {
+    console.log('收到实时血氧数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestOxygen = data[0];
+      oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
+    }
+  });
+  
+  // 订阅睡眠数据
+  subscribeSlpData(user_id, (data) => {
+    console.log('收到实时睡眠数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const sleepCount = Math.min(4, data.length);
+      const latestSleepUnprocessed = data.slice(0, sleepCount);
+      const latestSleepProcessed = latestSleepUnprocessed.reverse();
+      
+      sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
+    }
+  });
+  
+  // 订阅血压数据
+  subscribePreData(user_id, (data) => {
+    console.log('收到实时血压数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestBP = data[0];
+      pressureData.value = [
+        Number(latestBP.systolicBp),
+        Number(latestBP.diastolicBp)
+      ];
+    }
+  });
+};
 
+onBeforeMount(() => {
+  // 初始获取一次数据
+  fetchData();
+  // 开始实时订阅
+  startRealTimeSubscriptions();
+});
 
+// 组件卸载时清理
+onBeforeUnmount(() => {
+  unsubscribeUserAllRealTimeData(user_id);
+});
 
 // const props = defineProps({
 //     onClick: Function

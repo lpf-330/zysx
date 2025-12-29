@@ -563,6 +563,16 @@
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { getBloodData, getHeartData, getOxygenData, getPiData, getPreData, getSlpData, disconnectUserConnections } from '../api/healthData';
+// 新增导入实时订阅函数
+import {
+  subscribeHeartData,
+  subscribeBloodData,
+  subscribeOxygenData,
+  subscribePiData,
+  subscribePreData,
+  subscribeSlpData,
+  unsubscribeUserAllRealTimeData
+} from '../api/healthData';
 import { HeartRateRules, BloodSugarRules, BloodPressureRules, BloodOxygenRules, PerfusionIndexRules, SleepRules } from '../utils/healthAnalyzer';
 import HeartData from './HeartData.vue';
 import BloodData from './BloodData.vue';
@@ -822,6 +832,91 @@ const resetAllData = () => {
   chartKey.value++;
 };
 
+// 实时数据订阅
+const startRealTimeSubscriptions = () => {
+  if (!props.selectedParentId) return;
+  
+  // 清理旧订阅
+  unsubscribeUserAllRealTimeData(props.selectedParentId);
+  
+  // 订阅心率数据
+  subscribeHeartData(props.selectedParentId, (data) => {
+    console.log('收到实时心率数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const heartCount = Math.min(4, data.length);
+      const latestHeartUnprocessed = data.slice(0, heartCount);
+      const latestHeartProcessed = latestHeartUnprocessed.reverse();
+      heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
+      analyzeHeartRate();
+      chartKey.value++;
+    }
+  });
+  
+  // 订阅血糖数据
+  subscribeBloodData(props.selectedParentId, (data) => {
+    console.log('收到实时血糖数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const bloodCount = Math.min(7, data.length);
+      const latestBloodUnprocessed = data.slice(0, bloodCount);
+      const latestBloodProcessed = latestBloodUnprocessed.reverse();
+      bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
+      analyzeBloodSugar();
+      chartKey.value++;
+    }
+  });
+  
+  // 订阅血压数据
+  subscribePreData(props.selectedParentId, (data) => {
+    console.log('收到实时血压数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestBP = data[0];
+      pressureData.value = [
+        Number(latestBP.systolicBp),
+        Number(latestBP.diastolicBp)
+      ];
+      analyzeBloodPressure();
+      chartKey.value++;
+    }
+  });
+  
+  // 订阅血氧数据
+  subscribeOxygenData(props.selectedParentId, (data) => {
+    console.log('收到实时血氧数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestOxygen = data[0];
+      oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
+      analyzeOxygen();
+      chartKey.value++;
+    }
+  });
+  
+  // 订阅灌注指数数据
+  subscribePiData(props.selectedParentId, (data) => {
+    console.log('收到实时PI数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const piCount = Math.min(4, data.length);
+      const latestPiUnprocessed = data.slice(0, piCount);
+      const latestPiProcessed = latestPiUnprocessed.reverse();
+      piData.value = latestPiProcessed.map(item => Number(item.piData));
+      analyzePi();
+      chartKey.value++;
+    }
+  });
+  
+  // 订阅睡眠数据
+  subscribeSlpData(props.selectedParentId, (data) => {
+    console.log('收到实时睡眠数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const sleepCount = Math.min(4, data.length);
+      const latestSleepUnprocessed = data.slice(0, sleepCount);
+      const latestSleepProcessed = latestSleepUnprocessed.reverse();
+      sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
+      analyzeSleep();
+      chartKey.value++;
+    }
+  });
+};
+
 // 获取数据
 const fetchData = async () => {
   if (!props.selectedParentId) {
@@ -833,6 +928,7 @@ const fetchData = async () => {
   if (currentUserId.value && currentUserId.value !== props.selectedParentId) {
     console.log(`切换用户: ${currentUserId.value} -> ${props.selectedParentId}`);
     disconnectUserConnections(currentUserId.value);
+    unsubscribeUserAllRealTimeData(currentUserId.value);
     resetAllData();
   }
 
@@ -990,13 +1086,18 @@ watch([heartData, bloodData, pressureData, oxygenData, piData, sleepData], () =>
 watch(() => props.selectedParentId, (newId, oldId) => {
   console.log(`选中的父母ID从 ${oldId} 变为 ${newId}`);
   if (newId !== oldId) {
-    // 立即重置数据，防止显示旧数据
+    // 清理旧订阅和数据
     if (oldId) {
+      unsubscribeUserAllRealTimeData(oldId);
       resetAllData();
     }
-    // 延迟获取数据，确保DOM已更新
+    
+    // 延迟获取数据和开始订阅
     setTimeout(() => {
-      fetchData();
+      if (newId) {
+        fetchData();
+        startRealTimeSubscriptions();
+      }
     }, 50);
   }
 }, { immediate: true });
@@ -1005,6 +1106,7 @@ watch(() => props.selectedParentId, (newId, oldId) => {
 onUnmounted(() => {
   if (currentUserId.value) {
     disconnectUserConnections(currentUserId.value);
+    unsubscribeUserAllRealTimeData(currentUserId.value);
   }
 });
 
@@ -1012,6 +1114,7 @@ onMounted(() => {
   // 组件挂载时初始化数据
   if (props.selectedParentId) {
     fetchData();
+    startRealTimeSubscriptions();
   }
 });
 </script>
