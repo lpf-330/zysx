@@ -79,7 +79,7 @@ const postQuery = async () => {
             buffer = lines.pop() || '';
             for (const rawLine of lines) {
                 if (rawLine.startsWith('data:')) {
-                    const dataContentStr = rawLine.substring(''.length).trim();
+                    const dataContentStr = rawLine.substring(5).trim();
                     if (dataContentStr && dataContentStr !== '[DONE]') {
                         try {
                             const sseData = JSON.parse(dataContentStr);
