@@ -55,7 +55,7 @@ const handleDateSelected = (date) => {
             </div>
             <div class="user">
                 <div class="userImg"
-                    :style="{ backgroundImage: `url(${(userInfoStore.Avatar.value === '' || userInfoStore.Avatar.value === null) ? 'src/assets/img/userAvater.jpg' : userInfoStore.Avatar.value})` }">
+                    :style="{ backgroundImage: `url('src/assets/img/userAvater.jpg')` }">
                 </div>
                 <span class="userName">{{ userInfoStore.Username }}</span>
                 <div class="userMes">

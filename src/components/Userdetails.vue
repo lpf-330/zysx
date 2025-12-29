@@ -76,7 +76,7 @@ const getTestMessage = async () => {
     <div class="userDetails">
       <div class="userD">
         <div class="avatar"
-          :style="{ backgroundImage: `url(${(userInfoStore.Avatar.value === '' || userInfoStore.Avatar.value === null) ? 'src/assets/img/userAvater.jpg' : userInfoStore.Avatar.value})` }">
+          :style="{ backgroundImage: `url('src/assets/img/userAvater.jpg')` }">
         </div>
         <div class="userName">
           <span>{{ userInfoStore.Username.value }}</span>
