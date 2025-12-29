@@ -1,10 +1,15 @@
 <script setup>
 import { defineProps, ref, watch } from 'vue';
 import { marked } from 'marked';
-import { ElMessage } from 'element-plus'; // 引入 ElMessage 用于提示
+import { ElMessage, ElIcon } from 'element-plus';
+import { Download, Loading } from '@element-plus/icons-vue';
 
 const props = defineProps({
-    report: String
+    report: String,
+    loading: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const renderedReport = ref('');
@@ -12,7 +17,7 @@ const renderedReport = ref('');
 watch(
     () => props.report,
     (newReport) => {
-        if (newReport) {
+        if (newReport && newReport.trim()) {
             renderedReport.value = marked.parse(newReport);
         } else {
             renderedReport.value = '';
@@ -21,24 +26,42 @@ watch(
     { immediate: true }
 );
 
-// 1. 添加下载功能
+// 修改下载功能，下载 markdown 格式
 const downloadReport = () => {
     if (!props.report || !props.report.trim()) {
         ElMessage.warning('当前没有可下载的报告内容');
         return;
     }
-    const blob = new Blob([props.report], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    a.download = `健康报告_${dateStr}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    ElMessage.success('报告下载成功');
+    
+    try {
+        // 创建 markdown 格式的报告内容
+        const reportContent = props.report;
+        
+        // 创建 Blob 对象，使用 markdown 的 MIME 类型
+        const blob = new Blob([reportContent], { 
+            type: 'text/markdown;charset=utf-8' 
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // 使用当前日期作为文件名，扩展名为 .md
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+        a.download = `健康报告_${dateStr}_${timeStr}.md`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        ElMessage.success('Markdown 报告下载成功');
+    } catch (error) {
+        console.error('下载报告失败:', error);
+        ElMessage.error('下载失败，请重试');
+    }
 };
 </script>
 
@@ -48,15 +71,27 @@ const downloadReport = () => {
             <div class="header-title">📋 今日健康报告</div>
             <div class="header-subtitle">由 AI 生成的个性化健康评估</div>
         </div>
+        
         <div class="report-body">
-            <div class="report-content" v-html="renderedReport"></div>
+            <!-- 加载状态 -->
+            <div v-if="loading" class="loading-state">
+                <el-icon class="loading-icon"><Loading /></el-icon>
+                <div class="loading-text">正在为您生成健康报告，请稍候…</div>
+            </div>
+            
+            <!-- 报告内容 -->
+            <div v-else-if="renderedReport" class="report-content" v-html="renderedReport"></div>
+            
+            <!-- 空状态 -->
+            <div v-else class="empty-state">
+                暂无报告内容
+            </div>
         </div>
-        <div class="report-footer">
-            <!-- 2. 修改按钮为蓝色风格，符合整体设计 -->
+        
+        <div class="report-footer" v-if="!loading && renderedReport">
             <el-button type="primary" size="small" plain @click="downloadReport">
-                <!-- 3. 添加下载图标 -->
                 <el-icon><Download /></el-icon>
-                下载报告
+                下载报告 (.md)
             </el-button>
         </div>
     </div>
@@ -64,16 +99,16 @@ const downloadReport = () => {
 
 <style scoped>
 .report-contain {
-    width: 70%; /* 与聊天区域宽度一致 */
-    max-width: 7.5rem; /* 与聊天区域最大宽度一致 */
+    width: 79%;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, #f0f9ff, #e0f2fe); /* 蓝白色渐变背景 */
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     border-radius: 18px;
     padding: 16px;
     box-shadow: 0 6px 16px rgba(37, 99, 235, 0.15);
     border: 1px solid #bae6fd;
     display: flex;
     flex-direction: column;
+    margin-left: 0.355rem;
 }
 
 .report-header {
@@ -98,7 +133,44 @@ const downloadReport = () => {
 
 .report-body {
     flex: 1;
+    min-height: 120px;
     overflow-y: auto;
+}
+
+/* 加载状态样式 */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: #3b82f6;
+}
+
+.loading-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    font-size: 13px;
+    color: #64748b;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 空状态样式 */
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: #94a3b8;
+    font-size: 13px;
 }
 
 .report-content {
@@ -185,5 +257,27 @@ const downloadReport = () => {
     border-top: 1px dashed #93c5fd;
     display: flex;
     justify-content: flex-end;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .report-contain {
+        width: 90%;
+        padding: 12px;
+        border-radius: 14px;
+    }
+    
+    .header-title {
+        font-size: 14px;
+    }
+    
+    .header-subtitle {
+        font-size: 11px;
+    }
+    
+    .loading-text,
+    .report-content {
+        font-size: 12px;
+    }
 }
 </style>

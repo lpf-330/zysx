@@ -33,10 +33,10 @@ import { storeToRefs } from 'pinia';
 
 // 导入新的聚合API
 import { 
-    getSleepDataByDate, 
-    getSleepDataByWeek, 
-    getSleepDataByMonth, 
-    getSleepDataByYear 
+    getSlpDataByDate, 
+    getSlpDataByWeek, 
+    getSlpDataByMonth, 
+    getSlpDataByYear 
 } from '../api/healthData'; // 假设您已将这些函数添加到 healthData.js
 
 echarts.use([
@@ -98,17 +98,17 @@ const fetchAggregatedData = async () => {
     try {
         if (selection.selectedDate) {
             const dateStr = formatDate(selection.selectedDate);
-            response = await getSleepDataByDate(user_id, dateStr);
+            response = await getSlpDataByDate(user_id, dateStr);
             console.log(`获取单日睡眠数据: ${dateStr}`, response);
         } else if (selection.selectedWeek) {
             const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
-            response = await getSleepDataByWeek(user_id, dateInWeekStr);
+            response = await getSlpDataByWeek(user_id, dateInWeekStr);
             console.log(`获取周睡眠数据: ${dateInWeekStr}`, response);
         } else if (selection.selectedMonth) {
-            response = await getSleepDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
+            response = await getSlpDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
             console.log(`获取月睡眠数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
         } else if (selection.selectedYear) {
-            response = await getSleepDataByYear(user_id, selection.selectedYear);
+            response = await getSlpDataByYear(user_id, selection.selectedYear);
             console.log(`获取年睡眠数据: ${selection.selectedYear}`, response);
         } else {
             console.log("当前无选中日期/周期");

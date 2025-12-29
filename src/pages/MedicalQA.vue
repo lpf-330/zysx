@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onBeforeUnmount, nextTick } from 'vue';
+import { ref, onBeforeUnmount, nextTick, computed } from 'vue';
 import { streamQuery, updateHistory, cleanHistory } from '../api/medicalQA';
-import { generateHealthReport as apiGenerateHealthReport } from '../api/healthReport'; // 1. 引入健康报告API
+import { generateHealthReport as apiGenerateHealthReport, saveHealthReport } from '../api/healthReport';
 import QueryItem from '../components/QueryItem.vue';
 import AnswerItem from '../components/AnswerItem.vue';
-import HealthReportItem from '../components/HealthReportItem.vue'; // 2. 引入健康报告组件
+import HealthReportItem from '../components/HealthReportItem.vue';
+import HealthReportList from '../components/HealthReportList.vue'; // 导入新组件
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
+import { ElMessage } from 'element-plus';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
@@ -17,47 +19,46 @@ const sessionId = ref('');
 const isStreaming = ref(false);
 const chatScrollRef = ref();
 
-// 3. 新增：存储当前生成的报告和加载状态
-const currentReport = ref('');
 const isGeneratingReport = ref(false);
-const healthReportRef = ref(); // 用于滚动到健康报告区域
+const healthReportListRef = ref(); // 用于调用列表组件的方法
 
-const scrollToBottom = async (targetRef = null) => {
+const scrollToBottom = async () => {
     await nextTick();
-    const scrollTarget = targetRef || chatScrollRef.value;
-    if (scrollTarget) {
-        const scrollElement = scrollTarget.$el ? scrollTarget.$el.querySelector('.el-scrollbar__wrap') : scrollTarget.querySelector('.el-scrollbar__wrap');
-        if (scrollElement) {
-            scrollElement.scrollTo({
-                top: scrollElement.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
+    if (chatScrollRef.value) {
+        chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollTo({
+            top: chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollHeight,
+            behavior: 'smooth' 
+        });
     }
 };
+
+// 修改：只要有用户ID且不在生成过程中就可以生成报告
+const canGenerateReport = computed(() => {
+    return user_id && !isGeneratingReport.value && !isStreaming.value;
+});
 
 const postQuery = async () => {
     if (!query.value.trim() || isStreaming.value) {
         if (query.value.trim() === '') {
-            alert('请输入问题');
+            ElMessage.warning('请输入问题');
         }
         return;
     }
     const question = query.value.trim();
     query.value = '';
 
-    QAList.value.push({
-        role: 'user',
-        query: question,
+    QAList.value.push({ 
+        role: 'user', 
+        query: question, 
         answer: '',
-        isStreaming: false
+        isStreaming: false 
     });
 
-    QAList.value.push({
-        role: 'assistant',
-        query: '',
+    QAList.value.push({ 
+        role: 'assistant', 
+        query: '', 
         answer: '',
-        isStreaming: true
+        isStreaming: true 
     });
 
     isStreaming.value = true;
@@ -79,7 +80,7 @@ const postQuery = async () => {
             buffer = lines.pop() || '';
             for (const rawLine of lines) {
                 if (rawLine.startsWith('data:')) {
-                    const dataContentStr = rawLine.substring(5).trim();
+                    const dataContentStr = rawLine.substring('data:'.length).trim();
                     if (dataContentStr && dataContentStr !== '[DONE]') {
                         try {
                             const sseData = JSON.parse(dataContentStr);
@@ -132,38 +133,39 @@ const postQuery = async () => {
             QAList.value[errorIndex].answer = `出现错误，请稍后重试：${error.message}`;
             QAList.value[errorIndex].isStreaming = false;
         }
+        ElMessage.error(`请求失败: ${error.message}`);
     } finally {
         isStreaming.value = false;
         scrollToBottom();
     }
 };
 
-const handleCleanHistory = async () => {
-    try {
-        if (!sessionId.value && QAList.value.length === 0 && !currentReport.value) return;
-        await cleanHistory(sessionId.value);
-        QAList.value = [];
-        sessionId.value = '';
-        currentReport.value = ''; // 清空健康报告
-        console.log('History cleaned successfully');
-    } catch (error) {
-        console.error('Error cleaning history:', error);
-    }
-};
-
-// 4. 新增：生成健康报告的函数
 const generateReport = async () => {
-    if (isGeneratingReport.value || !user_id) return;
+    if (!canGenerateReport.value) {
+        if (!user_id) {
+            ElMessage.warning('请先登录后再生成健康报告');
+        }
+        return;
+    }
+    
     isGeneratingReport.value = true;
-    currentReport.value = '正在生成健康报告...'; // 5. 先显示加载提示
+    
+    // 在对话区域显示健康报告
+    QAList.value.push({ 
+        role: 'report', 
+        query: '', 
+        answer: '',
+        isGenerating: true 
+    });
+
+    scrollToBottom();
 
     try {
-        console.log('Sending request to generate health report for user:', user_id);
         const { reader } = await apiGenerateHealthReport(user_id);
-
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
-        let accumulatedReport = '正在生成健康报告...\n'; // 初始化内容包含加载提示
+        let accumulatedReport = '';
+        const reportIndex = QAList.value.length - 1;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -182,39 +184,85 @@ const generateReport = async () => {
                     if (dataContent && dataContent !== '[DONE]') {
                         try {
                             const parsedData = JSON.parse(dataContent);
-                            if (parsedData.answer) {
-                                accumulatedReport += parsedData.answer;
-                                currentReport.value = accumulatedReport; // 6. 实时更新显示
+                            if (parsedData.answer || parsedData.report) {
+                                const content = parsedData.answer || parsedData.report;
+                                accumulatedReport += content;
+                                if (QAList.value[reportIndex]) {
+                                    QAList.value[reportIndex].answer = accumulatedReport;
+                                }
                             }
                         } catch (e) {
-                            // 如果不是JSON，可能是直接内容
-                            accumulatedReport += dataContent + '\n';
-                            currentReport.value = accumulatedReport;
+                            if (dataContent !== '[DONE]') {
+                                accumulatedReport += dataContent + '\n';
+                                if (QAList.value[reportIndex]) {
+                                    QAList.value[reportIndex].answer = accumulatedReport;
+                                }
+                            }
+                        }
+                    } else if (dataContent === '[DONE]') {
+                        if (QAList.value[reportIndex]) {
+                            QAList.value[reportIndex].isGenerating = false;
                         }
                     }
                 }
             }
         }
 
-        // 处理剩余buffer
-        if (buffer.trim()) {
+        if (buffer.trim() && buffer.trim() !== '[DONE]') {
             accumulatedReport += buffer;
-            currentReport.value = accumulatedReport;
+            if (QAList.value[reportIndex]) {
+                QAList.value[reportIndex].answer = accumulatedReport;
+            }
         }
 
-        if (!accumulatedReport.trim() || accumulatedReport.trim() === '正在生成健康报告...') {
+        if (!accumulatedReport.trim()) {
             throw new Error('生成的报告内容为空');
         }
 
-        console.log('Health report generated successfully');
+        if (QAList.value[reportIndex]) {
+            QAList.value[reportIndex].isGenerating = false;
+        }
+
+        // 自动保存报告到数据库
+        try {
+            await saveHealthReport(user_id, accumulatedReport);
+            ElMessage.success('健康报告生成并保存成功');
+        } catch (saveError) {
+            console.error('保存健康报告失败:', saveError);
+            ElMessage.warning('健康报告生成成功，但保存到数据库失败');
+        }
+
+        // 生成报告后自动刷新右侧的报告列表
+        if (healthReportListRef.value && healthReportListRef.value.fetchReports) {
+            setTimeout(() => {
+                healthReportListRef.value.fetchReports();
+            }, 500);
+        }
 
     } catch (error) {
         console.error('Error generating health report:', error);
-        currentReport.value = `生成报告时发生错误: ${error.message || '未知错误'}\n\n请稍后重试。`;
+        const errorIndex = QAList.value.length - 1;
+        if (QAList.value[errorIndex]) {
+            QAList.value[errorIndex].answer = `生成报告时出现错误：${error.message || '未知错误'}`;
+            QAList.value[errorIndex].isGenerating = false;
+        }
+        ElMessage.error(`生成报告失败: ${error.message || '未知错误'}`);
     } finally {
         isGeneratingReport.value = false;
-        await nextTick(); // 确保DOM更新
-        scrollToBottom(healthReportRef.value); // 滚动到健康报告区域
+        scrollToBottom();
+    }
+};
+
+const handleCleanHistory = async () => {
+    try {
+        if (!sessionId.value && QAList.value.length === 0) return;
+        await cleanHistory(sessionId.value);
+        QAList.value = [];
+        sessionId.value = '';
+        ElMessage.success('对话已清空');
+    } catch (error) {
+        console.error('Error cleaning history:', error);
+        ElMessage.error('清空对话失败');
     }
 };
 
@@ -236,23 +284,23 @@ onBeforeUnmount(() => {
                 </div>
             </div>
             <div class="header-right">
-                <!-- 7. 添加生成健康报告按钮 -->
-                <el-button
-                    type="primary"
-                    plain
-                    size="small"
+                <el-button 
+                    type="primary" 
+                    plain 
+                    size="small" 
                     class="report-btn"
-                    :disabled="isGeneratingReport"
+                    :disabled="!canGenerateReport"
+                    :loading="isGeneratingReport"
                     @click="generateReport"
                 >
                     {{ isGeneratingReport ? '生成中...' : '生成健康报告' }}
                 </el-button>
-                <el-button
-                    type="danger"
-                    plain
-                    size="small"
+                <el-button 
+                    type="danger" 
+                    plain 
+                    size="small" 
                     class="clear-btn"
-                    :disabled="QAList.length === 0 && !currentReport"
+                    :disabled="QAList.length === 0"
                     @click="handleCleanHistory"
                 >
                     清空对话
@@ -260,32 +308,52 @@ onBeforeUnmount(() => {
             </div>
         </el-header>
 
-        <el-main class="main">
-            <el-scrollbar ref="chatScrollRef" height="100%" class="chat-scroll">
-                <div v-if="QAList.length === 0 && !currentReport" class="empty-tip">
-                    <div class="empty-icon">💬</div>
-                    <div class="empty-title">开始一次新的咨询</div>
-                    <div class="empty-desc">
-                        请简要描述您的症状、既往病史或当前用药情况，我将为您提供专业的健康科普建议。
-                    </div>
-                </div>
-                <div v-else>
-                    <!-- 8. 显示健康报告 -->
-                    <div v-if="currentReport" ref="healthReportRef" class="report-wrapper">
-                        <HealthReportItem :report="currentReport" />
-                    </div>
-                    <div v-for="(data, index) in QAList" :key="`qa-${index}`">
-                        <div v-if="data.role === 'user'">
-                            <QueryItem :query="data.query" />
-                        </div>
-                        <div v-if="data.role === 'assistant'">
-                            <AnswerItem
-                                :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')"
-                            />
+        <el-main class="main-container">
+            <!-- 左侧对话区域 -->
+            <div class="chat-container">
+                <el-scrollbar ref="chatScrollRef" height="100%" class="chat-scroll">
+                    <div v-if="QAList.length === 0" class="empty-tip">
+                        <div class="empty-icon">💬</div>
+                        <div class="empty-title">开始一次新的咨询</div>
+                        <div class="empty-desc">
+                            请简要描述您的症状、既往病史或当前用药情况，我将为您提供专业的健康科普建议。
+                            <div class="generate-report-hint">
+                                <el-icon><InfoFilled /></el-icon>
+                                您也可以直接点击上方的"生成健康报告"按钮，获取个性化的健康评估。
+                            </div>
                         </div>
                     </div>
-                </div>
-            </el-scrollbar>
+
+                    <div v-else>
+                        <div 
+                            v-for="(data, index) in QAList" 
+                            :key="`qa-${index}`"
+                        >
+                            <div v-if="data.role === 'user'">
+                                <query-item :query="data.query" />
+                            </div>
+                            
+                            <div v-if="data.role === 'assistant'">
+                                <answer-item 
+                                    :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')"
+                                />
+                            </div>
+                            
+                            <div v-if="data.role === 'report'">
+                                <health-report-item 
+                                    :report="data.answer"
+                                    :loading="data.isGenerating"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </el-scrollbar>
+            </div>
+
+            <!-- 右侧健康报告列表区域 -->
+            <div class="report-sidebar">
+                <health-report-list ref="healthReportListRef" :user-id="user_id" />
+            </div>
         </el-main>
 
         <el-footer class="footer">
@@ -326,19 +394,22 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* 整体容器：居中 + 渐变背景 */
 .container {
     height: 100vh;
-    width: 87%;
+    width: 80%;
     background: radial-gradient(circle at top left, #e0f2ff 0%, #f5f7fb 40%, #f9fbff 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     box-sizing: border-box;
+    padding: 0 1%;
 }
 
+/* 头部区域 */
 .header {
     width: 100%;
-    max-width: 7.5rem;
+    max-width: 1400px;
     height: 72px;
     padding: 0 24px;
     margin-top: 12px;
@@ -396,48 +467,56 @@ onBeforeUnmount(() => {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 8px; /* 添加按钮间距 */
+    gap: 8px;
 }
 
-.clear-btn, .report-btn { /* 统一按钮样式 */
+.report-btn,
+.clear-btn {
     border-radius: 16px;
     font-size: 12px;
+    min-width: 100px;
 }
 
-/* 保持 report-btn 为 primary 蓝色风格 */
-.report-btn {
-    --el-button-bg-color: var(--el-color-primary-light-9);
-    --el-button-border-color: var(--el-color-primary-light-5);
-    --el-button-text-color: var(--el-color-primary);
-    --el-button-hover-bg-color: var(--el-color-primary-light-8);
-    --el-button-hover-border-color: var(--el-color-primary);
-    --el-button-hover-text-color: var(--el-color-primary);
-    --el-button-active-bg-color: var(--el-color-primary-light-9);
-    --el-button-active-border-color: var(--el-color-primary);
-    --el-button-active-text-color: var(--el-color-primary);
-}
-
-.main {
-    width: 92.5%;
-    max-width: 7.5rem;
+/* 主体容器：左右布局 */
+.main-container {
+    width: 100%;
+    max-width: 1400px;
     flex: 1;
     margin-top: 12px;
     margin-bottom: 100px;
     padding: 0;
     box-sizing: border-box;
+    display: flex;
+    gap: 16px;
+}
+
+/* 左侧对话容器 */
+.chat-container {
+    flex: 3;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+/* 右侧报告列表容器 */
+.report-sidebar {
+    flex: 1;
+    min-width: 320px;
+    max-width: 380px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
 }
 
 .chat-scroll {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 18px;
     padding: 16px 8px 24px 8px;
+    height: 100%;
 }
 
-/* 9. 添加健康报告容器的样式 */
-.report-wrapper {
-    margin-bottom: 16px;
-}
-
+/* 空状态提示 */
 .empty-tip {
     width: 100%;
     min-height: 240px;
@@ -467,16 +546,36 @@ onBeforeUnmount(() => {
     line-height: 1.6;
 }
 
+.generate-report-hint {
+    margin-top: 16px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    font-size: 12px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 400px;
+}
+
+.generate-report-hint .el-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* 底部输入区域 */
 .footer {
-    width: 100%;
-    max-width: 7.7rem;
+    width: 87%;
+    max-width: 1400px;
     position: fixed;
-    bottom: 0.22rem;
-    margin-left: 7.7rem;
-    transform: translateX(-50%);
+    bottom: 22px;
     padding: 0 16px;
     box-sizing: border-box;
     background: transparent;
+    z-index: 10;
+    height: 10%;
 }
 
 .footer-top {
@@ -558,7 +657,34 @@ onBeforeUnmount(() => {
     border-radius: 3px !important;
 }
 
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .container {
+        width: 95%;
+    }
+    
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .report-sidebar {
+        min-width: 100%;
+        max-width: 100%;
+        order: 1;
+        margin-bottom: 16px;
+    }
+    
+    .chat-container {
+        order: 2;
+    }
+}
+
 @media (max-width: 768px) {
+    .container {
+        width: 100%;
+        padding: 0 8px;
+    }
+    
     .header {
         margin-top: 8px;
         padding: 0 14px;
@@ -574,14 +700,20 @@ onBeforeUnmount(() => {
         display: none;
     }
 
-    .clear-btn, .report-btn {
+    .header-right {
+        gap: 8px;
+    }
+    
+    .report-btn,
+    .clear-btn {
+        min-width: auto;
         font-size: 11px;
         padding: 5px 10px;
     }
 
-    .chat-scroll {
+    .chat-container,
+    .report-sidebar {
         border-radius: 14px;
-        padding: 10px 6px 20px 6px;
     }
 
     .footer {
