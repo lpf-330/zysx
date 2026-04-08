@@ -30,14 +30,29 @@ export const useAuthStore = defineStore('auth', () => {
 
     const login = async (account, password) => {
 
-
         try {
             console.log('login', account, password);
 
+            // Mock 登录成功（不需要后端）
+            const mockResponse = {
+                code: 1,
+                data: {
+                    token: 'mock_token_' + Date.now(),
+                    user_id: 1,
+                    username: account,
+                    age: 25,
+                    avatar: '',
+                    height: 170,
+                    weight: 65,
+                    gender: '男',
+                    phone_number: '13800138000'
+                }
+            }
 
-            const url = "/api/userInfo"
-            // const url = 'http://localhost:8081/api/userInfo'
-            const response = await userLogin(account, password)
+            // 注释掉真实API调用，方便前端单独开发
+            // const url = "/api/userInfo"
+            // const response = await userLogin(account, password)
+            const response = mockResponse
 
             console.log("响应登录", response);
 
@@ -64,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         } catch (error) {
             console.error("出错", error);
-            alert("加载失败，请稍后再试。"); // 友好的错误提示  
+            alert("加载失败，请稍后再试。");
         }
 
     }

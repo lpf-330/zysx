@@ -25,6 +25,12 @@ const getPreData = async (user_id) => {
     return await wsService.requestData('pre', user_id);
 }
 
+const getPressureData = async (user_id) => {
+    return await wsService.requestData('pre', user_id);
+}
+
+const dataWebSocketService = wsService;
+
 const getSlpData = async (user_id) => {
     return await wsService.requestData('slp', user_id);
 }
@@ -36,5 +42,7 @@ export {
     getOxygenData,
     getPiData,
     getPreData,
+    getPressureData,
+    dataWebSocketService,
     getSlpData,
 }

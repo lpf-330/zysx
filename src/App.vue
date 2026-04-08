@@ -10,8 +10,7 @@ import { RouterView } from 'vue-router';
 
 <style scoped>
 .background {
-   width: 10.00rem;
-   /* height: 5.72rem; */
+   width: 100%;
    height: 100vh;
 }
 </style>

@@ -1,321 +1,349 @@
-<template>
-  <el-button type="primary" class="Edit" @click="drawer = true" :icon="Edit" title="编辑"></el-button>
-  <el-drawer v-model="drawer" title="I am the title" :with-header="false" size="4.5rem">
-    <div class="personal-info-container">
-      <div class="info-card-header">
-        <div class="header">
-          <h2>基本信息</h2>
-        </div>
-        <div class="content">
-          <div class="info-item">
-            <label>姓名:</label>
-            <input v-model="userInfoStore.Username.value" type="text" id="input1" />
-          </div>
-          <div class="info-item">
-            <label>性别:</label>
-            <select v-model="userInfoStore.gender.value" id="select1" class="gender">
-              <option value="男">男</option>
-              <option value="女">女</option>
-            </select>
-          </div>
-          <div class="info-item">
-            <label>年龄:</label>
-            <input v-model.number="userInfoStore.Age.value" id="input2" />
-          </div>
-          <div class="info-item">
-            <label>手机号:</label>
-            <input v-model="userInfoStore.phone_number.value" type="tel" id="input3" />
-          </div>
-          <div class="info-item">
-            <label>身高:</label>
-            <input v-model="userInfoStore.Height.value" placeholder="m" id="input4" />
-          </div>
-          <div class="info-item">
-            <label>体重:</label>
-            <input v-model="userInfoStore.Weight.value" placeholder="kg" id="input5" />
-          </div>
-        </div>
-      </div>
-      <div class="decoration"></div>
-      <div class="info-card-header">
-        <div class="header">
-          <h2>医疗信息</h2>
-        </div>
-        <div class="medical-content">
-          <div class="info-item">
-            <label>家族遗传病史:</label>
-            <textarea v-model="medicalHistoryStore.family_history.value" placeholder="请输入家族遗传病史" />
-          </div>
-          <div class="info-item">
-            <label>过敏史:</label>
-            <textarea v-model="medicalHistoryStore.allergy_history.value" placeholder="请输入过敏史" />
-          </div>
-          <div class="info-item">
-            <label>既往病史:</label>
-            <textarea v-model="medicalHistoryStore.past_medical_history.value" placeholder="请输入既往病史" />
-          </div>
-          <div class="info-item">
-            <label>手术史:</label>
-            <textarea v-model="medicalHistoryStore.surgical_history.value" placeholder="请输入手术史" />
-          </div>
-          <div class="info-item">
-            <label>用药依从性记录:</label>
-            <textarea v-model="medicalHistoryStore.medication_compliance.value" placeholder="请输入用药依从性记录" />
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="operation">
-      <el-button class="cancel" @click="cancelClick">取消</el-button>
-      <el-button class="confirm" type="primary" @click="confirmClick">保存</el-button>
-    </div>
-  </el-drawer>
-</template>
-
 <script setup>
 import { ref } from 'vue';
-import { Edit } from '@element-plus/icons-vue';
-import axios from 'axios';
+import { useRouter } from 'vue-router';
 import useUserInfoStore from '../stores/user';
-import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
+import { updateUserInfo } from '../api/user';
+import { ElMessage } from 'element-plus';
 
-const drawer = ref(false);
+const dialogFormVisible = ref(false)
+const form = ref({
+    Username: '',
+    gender: '',
+    Age: '',
+    Height: '',
+    Weight: '',
+    phone_number: ''
+})
 
-function cancelClick() {
-  drawer.value = false;
+const userInfoStore = storeToRefs(useUserInfoStore())
+
+const router = useRouter()
+
+const logout = () => {
+    localStorage.clear();
+    router.push('/');
 }
 
-function confirmClick() {
-  fetchUserpagecenterdata();
+const openDialog = () => {
+    form.value = {
+        Username: userInfoStore.Username.value,
+        gender: userInfoStore.gender.value,
+        Age: userInfoStore.Age.value,
+        Height: userInfoStore.Height.value,
+        Weight: userInfoStore.Weight.value,
+        phone_number: userInfoStore.phone_number.value
+    }
+    dialogFormVisible.value = true
 }
 
-const userInfoStore = storeToRefs(useUserInfoStore());
-const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
-let user_id = userInfoStore.user_id.value;
+const confirmUpdate = async () => {
+    try {
+        await updateUserInfo(
+            userInfoStore.user_id.value,
+            form.value.Username,
+            form.value.gender,
+            form.value.Age,
+            form.value.Height,
+            form.value.Weight,
+            form.value.phone_number
+        )
+        userInfoStore.Username.value = form.value.Username
+        userInfoStore.gender.value = form.value.gender
+        userInfoStore.Age.value = form.value.Age
+        userInfoStore.Height.value = form.value.Height
+        userInfoStore.Weight.value = form.value.Weight
+        userInfoStore.phone_number.value = form.value.phone_number
 
-// const formData = ref({
-//   user_id: '',
-//   Username: userInfoStore.Username.value,
-//   gender: userInfoStore.gender.value,
-//   Age: userInfoStore.Age.value,
-//   phone_number: userInfoStore.phone_number.value,
-//   Height: userInfoStore.Height.value * 100,
-//   Weight: userInfoStore.Weight.value,
-//   family_history: medicalHistoryStore.family_history.value,
-//   allergy_history: medicalHistoryStore.allergy_history.value,
-//   past_medical_history: medicalHistoryStore.past_medical_history.value,
-//   surgical_history: medicalHistoryStore.surgical_history.value,
-//   medication_compliance: medicalHistoryStore.medication_compliance.value
-// });
-
-// console.log(medicalHistoryStore.family_history.value);
-
-
-/*
- * 保存用户的基本信息
- * 请求参数：
- * user_id:string
- * Username:string
- * gender:string
- * Age:int
- * phone_number:string
- * Height:Int
- * Weight:Int
- * family_history:string
- * allergy_history:string
- * past_medical_history:string
- * surgical_history:string
- * medical_compliance:string
- * 响应参数：
- * 返回成功或者失败
- */
-// const fetchUserpagecenterdata = async () => {
-//   console.log('userInfoStore.Username.value', typeof (userInfoStore.Username.value));
-
-
-//   try {
-//     const url = '/api/fetchUserPageCenterData'; //后端还没写 
-
-//     const response = await axios.post(url, {
-//       user_id: user_id,
-//       Username: userInfoStore.Username.value,
-//       gender: userInfoStore.gender.value,
-//       Age: userInfoStore.Age.value,
-//       phone_number: userInfoStore.phone_number.value,
-//       Height: userInfoStore.Height.value,
-//       Weight: userInfoStore.Weight.value,
-//       family_history: medicalHistoryStore.family_history.value,
-//       allergy_history: medicalHistoryStore.allergy_history.value,
-//       past_medical_history: medicalHistoryStore.past_medical_history.value,
-//       surgical_history: medicalHistoryStore.surgical_history.value,
-//       medical_compliance: medicalHistoryStore.medication_compliance.value
-//     }, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     console.log('fetchUserpagecenterdata', response.data);
-
-
-//   } catch (error) {
-//     console.error("出错", error);
-//     alert("保存失败，请稍后再试。");
-//   }
-// };
-
-const fetchUserpagecenterdata = () => {
-  alert("修改成功")
+        ElMessage({
+            message: '信息修改成功',
+            type: 'success',
+        })
+        dialogFormVisible.value = false
+    } catch (error) {
+        ElMessage({
+            message: '修改失败，请稍后再试',
+            type: 'error',
+        })
+    }
 }
 </script>
 
+<template>
+    <div class="popup-overlay" v-if="dialogFormVisible" @click.self="dialogFormVisible = false">
+        <div class="popup-card">
+            <div class="popup-header">
+                <div class="header-title">
+                    <span class="title-icon">✎</span>
+                    <span class="title-text">编辑个人信息</span>
+                </div>
+                <button class="close-btn" @click="dialogFormVisible = false">×</button>
+            </div>
+
+            <div class="popup-body">
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label class="form-label">姓名</label>
+                        <input v-model="form.Username" class="form-input" placeholder="请输入姓名" />
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">性别</label>
+                        <select v-model="form.gender" class="form-select">
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">年龄</label>
+                        <input v-model="form.Age" class="form-input" type="number" placeholder="请输入年龄" />
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">身高(cm)</label>
+                        <input v-model="form.Height" class="form-input" type="number" placeholder="请输入身高" />
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">体重(kg)</label>
+                        <input v-model="form.Weight" class="form-input" type="number" placeholder="请输入体重" />
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">手机号</label>
+                        <input v-model="form.phone_number" class="form-input" placeholder="请输入手机号" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="popup-footer">
+                <button class="btn-cancel" @click="dialogFormVisible = false">取消</button>
+                <button class="btn-confirm" @click="confirmUpdate">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button class="action-btn edit" @click="openDialog">
+            <span class="btn-icon">✎</span>
+            <span class="btn-text">编辑信息</span>
+        </button>
+        <button class="action-btn logout" @click="logout">
+            <span class="btn-icon">⏻</span>
+            <span class="btn-text">退出登录</span>
+        </button>
+    </div>
+</template>
+
 <style scoped>
-.Edit {
-  position: absolute;
-  width: 0.35rem;
-  height: 0.25rem;
-  top: 1.2rem;
-  left: 8.4rem;
+.action-bar {
+    display: flex;
+    gap: 0.08rem;
 }
 
-.Edit :deep(.el-icon) {
-  font-size: 0.13rem;
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.05rem;
+    padding: 0.08rem 0.1rem;
+    border: none;
+    border-radius: 0.06rem;
+    cursor: pointer;
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.1rem;
+    transition: all 0.3s ease;
 }
 
-.personal-info-container {
-  background-color: #f8fbfe;
-  border-radius: 0.15rem;
-  box-shadow: 0 4px 20px rgba(23, 113, 187, 0.08);
-  max-width: 100%;
-  margin: auto;
-  font-family: 'FanYuanTi';
+.action-btn.edit {
+    background: linear-gradient(135deg, rgba(45, 87, 45, 0.08) 0%, rgba(45, 87, 45, 0.12) 100%);
+    color: #2D572D;
 }
 
-.decoration {
-  margin: auto;
-  width: 98%;
-  height: 0.04rem;
-  border-radius: 0.1rem;
-  background-color: #64abf2;
-  margin-bottom: 0.1rem;
-  box-shadow: 0 4px 20px rgba(23, 113, 187, 0.08);
+.action-btn.edit:hover {
+    background: linear-gradient(135deg, rgba(45, 87, 45, 0.15) 0%, rgba(45, 87, 45, 0.2) 100%);
 }
 
-.info-card-header {
-  margin-bottom: 0.1rem;
-  background: white;
-  border-radius: 0.1rem;
-  padding: 0.15rem;
-  border: 0.01rem solid #64abf2;
-  box-shadow: 0 0.025rem 0.1rem rgba(23, 113, 187, 0.06);
+.action-btn.logout {
+    background: linear-gradient(135deg, rgba(229, 115, 115, 0.08) 0%, rgba(229, 115, 115, 0.12) 100%);
+    color: #E57373;
 }
 
-.header {
-  color: #3d97e1;
-  padding-bottom: 0.08rem;
-  margin-bottom: 0.1rem;
-  border-bottom: 0.025rem solid #e3e4e4;
+.action-btn.logout:hover {
+    background: linear-gradient(135deg, rgba(229, 115, 115, 0.15) 0%, rgba(229, 115, 115, 0.2) 100%);
 }
 
-.header h2 {
-  font-size: 0.13rem;
-  font-weight: 650;
-  margin: 0;
+.btn-icon {
+    font-size: 0.1rem;
 }
 
-.content {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.05rem 0.15rem;
+.btn-text {
+    font-weight: 500;
 }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 0.08rem;
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
 }
 
-.info-item label {
-  color: #4a6c8d;
-  font-size: 0.1rem;
-  margin-bottom: 0.05rem;
-  font-weight: 530;
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-input,
-select {
-  width: 1.5rem;
-  height: 0.05rem;
-  padding: 0.1rem 0.1rem;
-  border: 1px solid #d3e3f4;
-  border-radius: 0.06rem;
-  font-family: 'FanYuanTi';
-  font-size: 0.1rem;
-  transition: all 0.3s ease;
-  background-color: #f8fbfe;
+.popup-card {
+    width: 4rem;
+    background: #fff;
+    border-radius: 0.15rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
 }
 
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #7ab8ff;
-  box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+@keyframes slideUp {
+    from { transform: translateY(0.2rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-
-textarea:focus {
-  outline: none;
-  border-color: #7ab8ff;
-  box-shadow: 0 0 0 3px rgba(122, 184, 255, 0.1);
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.18rem 0.2rem;
+    background: linear-gradient(135deg, #2D572D 0%, #3d7a3d 100%);
 }
 
-textarea {
-  height: 0.6rem;
-  resize: vertical;
-  padding: 0.05rem 0.05rem;
-  border: 1px solid #d3e3f4;
-  border-radius: 0.06rem;
-  font-family: 'FanYuanTi';
-  font-size: 0.09rem;
-  transition: all 0.3s ease;
-  background-color: #f8fbfe;
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
 }
 
-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234a6c8d'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.08rem center;
-  background-size: 0.13rem;
+.title-icon {
+    font-size: 0.16rem;
+    color: #fff;
 }
 
-.gender {
-  padding: 0.03rem 0.75rem;
-  height: 0.26rem;
-  width: 1.71rem;
+.title-text {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.15rem;
+    font-weight: 600;
+    color: #fff;
 }
 
-.operation {
-  display: flex;
-  gap: 0.1rem;
-  justify-content: center;
-  margin-top: 0.15rem;
+.close-btn {
+    width: 0.28rem;
+    height: 0.28rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.16rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-.cancel {
-  width: 0.5rem;
-  height: 0.3rem;
-  font-weight: 600;
-  font-size: 0.1rem;
-  font-family: 'FanYuanTi';
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.confirm {
-  width: 0.5rem;
-  height: 0.3rem;
-  font-weight: 600;
-  font-size: 0.1rem;
-  font-family: 'FanYuanTi';
+.popup-body {
+    padding: 0.2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.15rem;
+}
+
+.form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.06rem;
+}
+
+.form-item:last-child {
+    grid-column: span 2;
+}
+
+.form-label {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.1rem;
+    color: #666;
+}
+
+.form-input,
+.form-select {
+    padding: 0.1rem 0.12rem;
+    border: 1px solid rgba(45, 87, 45, 0.2);
+    border-radius: 0.06rem;
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.12rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: #2D572D;
+}
+
+.form-select {
+    background: #fff;
+    cursor: pointer;
+}
+
+.popup-footer {
+    display: flex;
+    gap: 0.12rem;
+    padding: 0.15rem 0.2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    background: #fafafa;
+}
+
+.btn-cancel,
+.btn-confirm {
+    flex: 1;
+    padding: 0.1rem;
+    border: none;
+    border-radius: 0.06rem;
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.12rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.btn-cancel:hover {
+    background: #e8e8e8;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #2D572D 0%, #3d7a3d 100%);
+    color: #fff;
+}
+
+.btn-confirm:hover {
+    background: linear-gradient(135deg, #3d7a3d 0%, #4a8a4a 100%);
 }
 </style>

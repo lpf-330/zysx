@@ -1,150 +1,147 @@
-<template>
-  <div class="Medication-adherence-records">
-    <el-scrollbar height="3.5rem">
-      <div class="MAD-header">
-        <div class="decoration1"></div>
-        <span>用药依从性记录</span>
-        <div class="decoration2"><img width="80%" height="80%"
-            src="https://img.icons8.com/ios-filled/50/228BE6/capsule.png" alt="capsule" /></div>
-      </div>
-      <div class="decoration3"></div>
-      <div class="derection">
-        <div class="decoration4"><img width="100%" height="100%" src="https://img.icons8.com/fluency/48/help--v1.png"
-            alt="help--v1" /></div>
-        <div class="y_or_n">
-          <span class="y_or_n_span">是否服用过任何药物:</span>
-          <span>&nbsp;{{ (medicalHistoryStore.medication_compliance.value === '' ||
-            medicalHistoryStore.medication_compliance.value === null) ? '无' : '有' }}</span>
-        </div>
-      </div>
-      <div class="detail">
-        <div class="detail_image"><img width="100%" height="100%"
-            src="https://img.icons8.com/ios-filled/50/228BE6/fine-print.png" alt="fine-print" /></div>
-        <div>详细信息:</div>
-      </div>
-      <div class="detail_span_content">
-        <span class="detail-content">
-          {{ medicalHistoryStore.medication_compliance.value }}
-        </span>
-      </div>
-    </el-scrollbar>
-  </div>
-</template>
 <script setup>
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
 
 const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 
-
+const hasRecord = () => {
+    const value = medicalHistoryStore.medication_compliance.value;
+    return value !== '' && value !== null;
+};
 </script>
+
+<template>
+    <div class="medication-card">
+        <div class="card-header">
+            <span class="header-icon">◆</span>
+            <span class="header-title">用药记录</span>
+            <span class="status-indicator" :class="{ 'has': hasRecord() }">
+                <span class="status-dot"></span>
+                <span class="status-text">{{ hasRecord() ? '有用药' : '暂无' }}</span>
+            </span>
+        </div>
+
+        <div class="card-content">
+            <div class="info-row">
+                <span class="info-label">依从性</span>
+                <span class="info-value high">{{ medicalHistoryStore.medication_compliance.value || '暂无记录' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">药品名称</span>
+                <span class="info-value">盐酸二甲双胍</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">剂量</span>
+                <span class="info-value">500mg × 2次/日</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">服用时间</span>
+                <span class="info-value">早8:00 晚20:00</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">剩余药量</span>
+                <span class="info-value warn">还剩5天</span>
+            </div>
+        </div>
+    </div>
+</template>
+
 <style scoped>
-.scrollbar-demo-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-  margin: 10px;
-  text-align: center;
-  border-radius: 4px;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+.medication-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafcf8 100%);
+    border-radius: 0.12rem;
+    box-shadow: 0 2px 12px rgba(45, 87, 45, 0.06);
+    border: 1px solid rgba(45, 87, 45, 0.06);
+    overflow: hidden;
 }
 
-.Medication-adherence-records {
-  height: 86.5%;
-  width: 100%;
-  background-color: #fff;
-  border-radius: 0.2rem;
-  padding: 5%;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  /* transition: all 0.8s ease-in-out; */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.08rem;
+    padding: 0.1rem 0.12rem;
+    border-bottom: 1px solid rgba(45, 87, 45, 0.06);
 }
 
-/* .Medication-adherence-records:hover {
-  transform: scale(1.05);
-} */
-
-.MAD-header {
-  height: 0.3rem;
-  display: flex;
-  align-items: center;
-  font-family: 'FanYuanTi';
-  font-weight: 625;
-  font-size: 0.13rem;
-  gap: 0.05rem;
+.header-icon {
+    font-size: 0.12rem;
+    color: #2D572D;
 }
 
-.decoration1 {
-  width: 0.04rem;
-  height: 0.2rem;
-  border-radius: 0.2rem;
-  background-color: #5a93f0;
+.header-title {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.12rem;
+    font-weight: 600;
+    color: #1a1a1a;
 }
 
-.decoration2 {
-  width: 0.18rem;
-  height: 0.18rem;
+.status-indicator {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.04rem;
+    padding: 0.02rem 0.08rem;
+    border-radius: 0.1rem;
+    background: rgba(153, 153, 153, 0.1);
 }
 
-.decoration3 {
-  width: 100%;
-  height: 0.02rem;
-  background-color: #c8c6c6;
-  border-radius: 0.2rem;
+.status-indicator.has {
+    background: rgba(129, 199, 132, 0.12);
 }
 
-.decoration4 {
-  width: 0.13rem;
-  height: 0.13rem;
+.status-dot {
+    width: 0.05rem;
+    height: 0.05rem;
+    border-radius: 50%;
+    background: #999;
 }
 
-.derection {
-  margin-top: 0.08rem;
-  display: flex;
-  gap: 0.03rem;
-  color: #333333;
-  align-items: center;
-  font-family: 'FanYuanTi';
-  font-weight: 550;
-  font-size: 0.1rem;
+.status-indicator.has .status-dot {
+    background: #4CAF50;
 }
 
-.detail {
-  font-family: 'FanYuanTi';
-  font-weight: 550;
-  font-size: 0.1rem;
-  color: #333333;
-  display: flex;
-  gap: 0.03rem;
-  align-items: center;
-  height: 0.25rem;
-
+.status-text {
+    font-family: 'DIN Alternate', 'Roboto', sans-serif;
+    font-size: 0.09rem;
+    color: #999;
 }
 
-.detail_image {
-  width: 0.12rem;
-  height: 0.12rem;
+.status-indicator.has .status-text {
+    color: #388E3C;
 }
 
-.detail_span_content {
-  display: flex;
-  padding: 3% 3% 3% 3%;
-  background-color: #edecec;
-  box-shadow: #8d8686 0rem 0rem 0.025rem;
-  border-radius: 0.05rem;
-  color: #6a778d;
-  font-size: 0.1rem;
-  font-weight: 600;
-  font-family: 'FanYuanTi';
-  margin: auto;
-  width: 80%;
-  justify-content: space-between;
+.card-content {
+    padding: 0.1rem 0.12rem;
 }
 
-.detail_span_content span {
-  flex: 1;
-  text-align: justify;
-  word-wrap: break-word;
+.info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.08rem 0.1rem;
+    background: rgba(45, 87, 45, 0.02);
+    border-radius: 0.06rem;
+}
+
+.info-label {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.1rem;
+    color: #666;
+}
+
+.info-value {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.1rem;
+    color: #333;
+}
+
+.info-value.high {
+    color: #4CAF50;
+    font-weight: 600;
+}
+
+.info-value.warn {
+    color: #FF9800;
+    font-weight: 500;
 }
 </style>

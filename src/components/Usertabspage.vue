@@ -1,120 +1,6 @@
-<template>
-  <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick">
-    <el-tab-pane name="first">
-      <template #label>
-        <span class="family-history-label" id="tab1">家族遗传病史</span>
-      </template>
-      <el-scrollbar height="3.5rem">
-        <div class="Family_genetic_disease_history">
-          <div class="derection">
-            <div class="decoration1"><img width="100%" height="100%"
-                src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
-            <div class="y_or_n">
-              <span class="y_or_n_span">是否有家族遗传病史:</span>
-              <span>&nbsp;{{ (medicalHistoryStore.family_history.value === '' ||
-                medicalHistoryStore.family_history.value ===
-                null) ? '无' : '有' }}</span>
-            </div>
-          </div>
-          <div class="detail">
-            <div class="decoration2"></div>
-            <div class="detail_span_title">详细记录:</div>
-            <div class="detail_span_content">
-              <span class="detail-content">
-                {{ medicalHistoryStore.family_history.value }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-scrollbar>
-    </el-tab-pane>
-    <el-tab-pane label="过敏史" name="second">
-      <template #label>
-        <span class="History-of-allergies-label" id="tab2">过敏史</span>
-      </template>
-      <el-scrollbar height="3.5rem">
-        <div class="History of allergies">
-          <div class="derection">
-            <div class="decoration1"><img width="100%" height="100%"
-                src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
-            <div class="y_or_n">
-              <span class="y_or_n_span">是否有过敏史:</span>
-              <span>&nbsp;{{ (medicalHistoryStore.allergy_history.value === '' ||
-                medicalHistoryStore.allergy_history.value
-                === null) ? '无' : '有' }}</span>
-            </div>
-          </div>
-          <div class="detail">
-            <div class="decoration2"></div>
-            <div class="detail_span_title">详细记录:</div>
-            <div class="detail_span_content">
-              <span class="detail-content">{{ medicalHistoryStore.allergy_history.value }}</span>
-            </div>
-          </div>
-        </div>
-      </el-scrollbar>
-    </el-tab-pane>
-    <el-tab-pane label="既往病史" name="third">
-      <template #label>
-        <span class="Past-medical-history" id="tab3">既往病史</span>
-      </template>
-      <el-scrollbar height="3.5rem">
-        <div class="Past medical history">
-          <div class="derection">
-            <div class="decoration1"><img width="100%" height="100%"
-                src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
-            <div class="y_or_n">
-              <span class="y_or_n_span">是否有既往病史:</span>
-              <span>&nbsp;{{ (medicalHistoryStore.past_medical_history.value === '' ||
-                medicalHistoryStore.past_medical_history.value === null) ? '无' : '有' }}</span>
-            </div>
-          </div>
-          <div class="detail">
-            <div class="decoration2"></div>
-            <div class="detail_span_title">详细记录:</div>
-            <div class="detail_span_content">
-              <span class="detail-content">{{ medicalHistoryStore.past_medical_history.value }}</span>
-            </div>
-          </div>
-        </div>
-      </el-scrollbar>
-    </el-tab-pane>
-    <el-tab-pane label="手术史" name="fourth">
-      <template #label>
-        <span class="History-of-surgery" id="tab4">手术史</span>
-      </template>
-      <el-scrollbar height="3.5rem">
-        <div class="History of surgery">
-          <div class="derection">
-            <div class="decoration1"><img width="100%" height="100%"
-                src="https://img.icons8.com/fluency/48/help--v1.png" alt="help--v1" /></div>
-            <div class="y_or_n">
-              <span class="y_or_n_span">是否有手术史:</span>
-              <span>&nbsp;{{ (medicalHistoryStore.surgical_history.value === '' ||
-                medicalHistoryStore.surgical_history.value === null) ? '无' : '有' }}</span>
-            </div>
-          </div>
-          <div class="detail">
-            <div class="decoration2"></div>
-            <div class="detail_span_title">手术记录:</div>
-            <div class="detail_span_content">
-              <span class="detail-content">
-                {{ medicalHistoryStore.surgical_history.value }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </el-scrollbar>
-    </el-tab-pane>
-
-  </el-tabs>
-</template>
-
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { onMounted } from 'vue';
-import type { TabsPaneContext } from 'element-plus';
-import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import useMedicalHistoryStore from '../stores/medicalHistory';
 import { storeToRefs } from 'pinia';
@@ -126,124 +12,248 @@ const userStore = useUserInfoStore();
 const { user_id } = storeToRefs(userStore);
 const medicalHistoryStore = storeToRefs(useMedicalHistoryStore())
 
-const handleClick = (tab: TabsPaneContext, event: Event) => {
-  console.log(tab, event);
-};//点击事件，用于切换页面
-
 const fetchUsertabpagedata = async () => {
-  try {
-
-    const response = await getUserTabPageData(user_id.value)
-
-    console.log("fetchUsertabpagedata", response)
-
-    medicalHistoryStore.allergy_history.value = response.allergy_history
-    medicalHistoryStore.family_history.value = response.family_history
-    medicalHistoryStore.past_medical_history.value = response.past_medical_history
-    medicalHistoryStore.surgical_history.value = response.surgical_history
-    medicalHistoryStore.medication_compliance.value = response.medical_compliance
-
-
-  } catch (error) {
-    console.error("出错", error);
-    alert("获取信息失败，请稍后再试。");
-  }
+    try {
+        const response = await getUserTabPageData(user_id.value)
+        medicalHistoryStore.allergy_history.value = response.allergy_history
+        medicalHistoryStore.family_history.value = response.family_history
+        medicalHistoryStore.past_medical_history.value = response.past_medical_history
+        medicalHistoryStore.surgical_history.value = response.surgical_history
+        medicalHistoryStore.medication_compliance.value = response.medical_compliance
+    } catch (error) {
+        console.error("出错", error);
+    }
 };
 
 onMounted(() => {
-  fetchUsertabpagedata();
+    fetchUsertabpagedata();
 });
+
+const tabs = [
+    { name: 'first', label: '家族遗传', key: 'family_history' },
+    { name: 'second', label: '过敏史', key: 'allergy_history' },
+    { name: 'third', label: '既往病史', key: 'past_medical_history' },
+    { name: 'fourth', label: '手术史', key: 'surgical_history' },
+];
+
+const getTabIcon = (name: string) => {
+    const icons: Record<string, string> = {
+        first: '✦',
+        second: '◇',
+        third: '○',
+        fourth: '□'
+    };
+    return icons[name] || '●';
+};
+
+const hasRecord = (key: string) => {
+    const value = medicalHistoryStore[key as keyof typeof medicalHistoryStore].value;
+    return value !== '' && value !== null;
+};
 </script>
 
+<template>
+    <div class="medical-card">
+        <div class="card-header">
+            <span class="header-icon">☰</span>
+            <span class="header-title">医疗记录</span>
+        </div>
+
+        <div class="tabs-nav">
+            <div
+                v-for="tab in tabs"
+                :key="tab.name"
+                class="tab-item"
+                :class="{ 'active': activeName === tab.name }"
+                @click="activeName = tab.name"
+            >
+                <span class="tab-icon">{{ getTabIcon(tab.name) }}</span>
+                <span class="tab-label">{{ tab.label }}</span>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <div v-show="activeName === 'first'" class="tab-panel">
+                <div class="record-header">
+                    <span class="record-title">家族遗传病史</span>
+                    <span class="record-badge" :class="{ 'has': hasRecord('family_history') }">
+                        {{ hasRecord('family_history') ? '有记录' : '无记录' }}
+                    </span>
+                </div>
+                <div class="record-detail">
+                    {{ medicalHistoryStore.family_history.value || '暂无详细记录' }}
+                </div>
+            </div>
+
+            <div v-show="activeName === 'second'" class="tab-panel">
+                <div class="record-header">
+                    <span class="record-title">过敏史</span>
+                    <span class="record-badge" :class="{ 'has': hasRecord('allergy_history') }">
+                        {{ hasRecord('allergy_history') ? '有记录' : '无记录' }}
+                    </span>
+                </div>
+                <div class="record-detail">
+                    {{ medicalHistoryStore.allergy_history.value || '暂无详细记录' }}
+                </div>
+            </div>
+
+            <div v-show="activeName === 'third'" class="tab-panel">
+                <div class="record-header">
+                    <span class="record-title">既往病史</span>
+                    <span class="record-badge" :class="{ 'has': hasRecord('past_medical_history') }">
+                        {{ hasRecord('past_medical_history') ? '有记录' : '无记录' }}
+                    </span>
+                </div>
+                <div class="record-detail">
+                    {{ medicalHistoryStore.past_medical_history.value || '暂无详细记录' }}
+                </div>
+            </div>
+
+            <div v-show="activeName === 'fourth'" class="tab-panel">
+                <div class="record-header">
+                    <span class="record-title">手术史</span>
+                    <span class="record-badge" :class="{ 'has': hasRecord('surgical_history') }">
+                        {{ hasRecord('surgical_history') ? '有记录' : '无记录' }}
+                    </span>
+                </div>
+                <div class="record-detail">
+                    {{ medicalHistoryStore.surgical_history.value || '暂无详细记录' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <style scoped>
-.demo-tabs {
-  width: 5.5rem;
-  background-color: #fff;
-  border-radius: 0.2rem;
-  padding: 2%;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  /* transition: all 0.8s ease-in-out; */
+.medical-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafcf8 100%);
+    border-radius: 0.12rem;
+    box-shadow: 0 2px 12px rgba(45, 87, 45, 0.06);
+    border: 1px solid rgba(45, 87, 45, 0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-/* .demo-tabs:hover{
-    transform: scale(1.05);
-  } */
-
-.demo-tabs>.el-tabs__content {
-  padding: 1% 1% 1% 1%;
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.08rem;
+    padding: 0.12rem 0.15rem;
+    border-bottom: 1px solid rgba(45, 87, 45, 0.06);
 }
 
-
-.scrollbar-demo-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-  margin: 10px;
-  text-align: center;
-  border-radius: 4px;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+.header-icon {
+    font-size: 0.14rem;
+    color: #2D572D;
 }
 
-
-#tab1,
-#tab2,
-#tab3,
-#tab4 {
-  font-family: 'PuHuiTi';
-  font-size: 0.11rem;
-  font-weight: 550;
+.header-title {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.13rem;
+    font-weight: 600;
+    color: #1a1a1a;
 }
 
-.derection {
-  display: flex;
-  gap: 0.02rem;
-  color: #333333;
-  align-items: center;
-  font-weight: 550;
-  font-size: 0.105rem;
+.tabs-nav {
+    display: flex;
+    padding: 0.08rem 0.12rem;
+    gap: 0.06rem;
+    background: rgba(45, 87, 45, 0.02);
 }
 
-.decoration1 {
-  width: 0.13rem;
-  height: 0.13rem;
+.tab-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.04rem;
+    padding: 0.08rem;
+    cursor: pointer;
+    border-radius: 0.06rem;
+    transition: all 0.2s ease;
 }
 
-.decoration2 {
-  width: 0.8%;
-  border-radius: 0.2rem;
-  background-color: #5a93f0;
+.tab-item:hover {
+    background: rgba(45, 87, 45, 0.05);
 }
 
-.detail {
-  display: flex;
-  margin-top: 1%;
-  padding: 1.5% 1.5% 1.5% 1.5%;
-  background-color: #edecec;
-  box-shadow: #8d8686 0rem 0rem 0.025rem;
-  border-radius: 0.05rem;
-  color: #6b778c;
-  font-size: 0.1rem;
-  font-weight: 600;
-  font-family: 'PuHuiTi';
-  margin: 1%;
+.tab-item.active {
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.detail_span_title {
-  width: 9%;
-  margin-left: 1%;
+.tab-icon {
+    font-size: 0.12rem;
+    color: #999;
 }
 
-.detail_span_content {
-  width: 90%;
-  display: flex;
-  justify-content: space-between;
+.tab-item.active .tab-icon {
+    color: #2D572D;
 }
 
-.detail_span_content span {
-  flex: 1;
-  text-align: justify;
-  word-wrap: break-word;
+.tab-label {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.1rem;
+    color: #666;
+}
+
+.tab-item.active .tab-label {
+    color: #2D572D;
+    font-weight: 500;
+}
+
+.tab-content {
+    flex: 1;
+    padding: 0.12rem 0.15rem;
+    overflow-y: auto;
+}
+
+.tab-panel {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.record-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.1rem;
+}
+
+.record-title {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.12rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.record-badge {
+    font-family: 'DIN Alternate', 'Roboto', sans-serif;
+    font-size: 0.09rem;
+    padding: 0.02rem 0.08rem;
+    border-radius: 0.04rem;
+    background: rgba(153, 153, 153, 0.1);
+    color: #999;
+}
+
+.record-badge.has {
+    background: rgba(129, 199, 132, 0.15);
+    color: #388E3C;
+}
+
+.record-detail {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.11rem;
+    color: #666;
+    line-height: 1.6;
+    padding: 0.1rem;
+    background: rgba(45, 87, 45, 0.02);
+    border-radius: 0.06rem;
+    border-left: 2px solid rgba(45, 87, 45, 0.1);
 }
 </style>

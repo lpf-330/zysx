@@ -1,203 +1,319 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-const currentDate = ref(new Date());
-const events = ref(['2025-5-11', '2025-5-22']);
+const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+const today = new Date();
+const currentYear = ref(today.getFullYear());
+const currentMonth = ref(today.getMonth() + 1);
+const selectedDay = ref(today.getDate());
+const showYearPicker = ref(false);
 
-
-const yearMonth = computed(() => ({
-    year: currentDate.value.getFullYear(),
-    month: currentDate.value.getMonth()
-}));
-
-
-const calendarWeeks = computed(() => {
-    const { year, month } = yearMonth.value;
-    const weeks = [];
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-
-    let dayOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-
-
-    let currentDate = 1;
-    for (let week = 0; week < 6; week++) {
-        const days = [];
-        for (let day = 0; day < 7; day++) {
-            if ((week === 0 && day < dayOffset) || currentDate > lastDay.getDate()) {
-                days.push(createCalendarDay(false));
-            } else {
-                const dateStr = `${year}-${month + 1}-${currentDate}`;
-                days.push({
-                    date: currentDate,
-                    isCurrentMonth: true,
-                    isToday: isToday(year, month, currentDate),
-                    hasEvent: events.value.includes(dateStr)
-                });
-                currentDate++;
-            }
-        }
-        weeks.push(days);
-        if (currentDate > lastDay.getDate()) break;
+const yearOptions = computed(() => {
+    const years = [];
+    for (let y = currentYear.value - 10; y <= currentYear.value + 10; y++) {
+        years.push(y);
     }
-    return weeks;
+    return years;
 });
 
-
-const createCalendarDay = (isCurrentMonth) => ({
-    date: null,
-    isCurrentMonth,
-    isToday: false,
-    hasEvent: false
+const daysInMonth = computed(() => {
+    return new Date(currentYear.value, currentMonth.value, 0).getDate();
 });
 
-const isToday = (y, m, d) => {
-    const today = new Date();
-    return y === today.getFullYear() &&
-        m === today.getMonth() &&
-        d === today.getDate();
-};
+const firstDayOfMonth = computed(() => {
+    return new Date(currentYear.value, currentMonth.value - 1, 1).getDay();
+});
 
+const monthName = computed(() => {
+    const names = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+    return names[currentMonth.value - 1];
+});
 
 const prevMonth = () => {
-    currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() - 1
-    );
+    if (currentMonth.value === 1) {
+        currentMonth.value = 12;
+        currentYear.value--;
+    } else {
+        currentMonth.value--;
+    }
+    showYearPicker.value = false;
 };
 
 const nextMonth = () => {
-    currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() + 1
-    );
+    if (currentMonth.value === 12) {
+        currentMonth.value = 1;
+        currentYear.value++;
+    } else {
+        currentMonth.value++;
+    }
+    showYearPicker.value = false;
 };
 
+const selectYear = (year) => {
+    currentYear.value = year;
+    showYearPicker.value = false;
+};
 
-const formattedMonth = computed(() => {
-    return currentDate.value.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long'
-    });
-});
+const toggleYearPicker = () => {
+    showYearPicker.value = !showYearPicker.value;
+};
 
-const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+const selectDay = (day) => {
+    selectedDay.value = day;
+};
+
+const isToday = (day) => {
+    return day === today.getDate() &&
+        currentMonth.value === today.getMonth() + 1 &&
+        currentYear.value === today.getFullYear();
+};
+
+const isSelected = (day) => {
+    return day === selectedDay.value;
+};
 </script>
 
 <template>
-    <div class="calendar-container">
-        <div class="header">
-            <button @click="prevMonth">
-                < </button>
-                    <span>{{ formattedMonth }}</span>
-                    <button @click="nextMonth"> > </button>
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <div class="header-left">
+                <span class="month-title" @click="toggleYearPicker">{{ monthName }}</span>
+                <span class="year-badge" @click="toggleYearPicker">{{ currentYear }}年</span>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn" @click="prevMonth">
+                    <span>&lt;</span>
+                </button>
+                <button class="nav-btn" @click="nextMonth">
+                    <span>&gt;</span>
+                </button>
+            </div>
         </div>
 
-        <table class="calendar-grid">
-            <thead>
-                <tr>
-                    <th v-for="(day, index) in weekDays" :key="index">{{ day }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
-                    <td v-for="(day, dayIndex) in week" :key="dayIndex" :class="[
-                        { 'current-month': day.isCurrentMonth },
-                        { 'today': day.isToday },
-                        { 'has-event': day.hasEvent }
-                    ]">
-                        <div class="date">{{ day.date }}</div>
-                        <div v-if="day.hasEvent" class="event-indicator"></div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div v-if="showYearPicker" class="year-picker-overlay" @click.self="toggleYearPicker">
+            <div class="year-picker">
+                <div class="year-grid">
+                    <span
+                        v-for="year in yearOptions"
+                        :key="year"
+                        class="year-option"
+                        :class="{ 'active': year === currentYear }"
+                        @click="selectYear(year)"
+                    >
+                        {{ year }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="calendar-grid">
+            <div class="week-header">
+                <span v-for="day in weekDays" :key="day" class="week-day">{{ day }}</span>
+            </div>
+            <div class="days-grid">
+                <span
+                    v-for="i in firstDayOfMonth"
+                    :key="'empty-' + i"
+                    class="day-cell empty"
+                ></span>
+                <span
+                    v-for="day in daysInMonth"
+                    :key="day"
+                    class="day-cell"
+                    :class="{
+                        'today': isToday(day),
+                        'selected': isSelected(day)
+                    }"
+                    @click="selectDay(day)"
+                >
+                    {{ day }}
+                </span>
+            </div>
+        </div>
     </div>
 </template>
 
-
-
 <style scoped>
-.calendar-container {
-    width: 2rem;
-    font-family: Arial, sans-serif;
+.calendar-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafcf8 100%);
+    border-radius: 0.1rem;
+    padding: 0.15rem;
+    box-shadow: 0 2px 10px rgba(45, 87, 45, 0.05);
+    border: 1px solid rgba(45, 87, 45, 0.08);
+    position: relative;
 }
 
-.header {
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.1rem;
+    margin-bottom: 0.08rem;
+    border-bottom: 1px solid rgba(45, 87, 45, 0.06);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.08rem;
+}
+
+.month-title {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.14rem;
+    font-weight: 600;
+    color: #2D572D;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.month-title:hover {
+    color: #1a3d1a;
+}
+
+.year-badge {
+    font-family: 'DIN Alternate', 'Roboto', sans-serif;
+    font-size: 0.1rem;
+    color: #6B8E6B;
+    background: rgba(45, 87, 45, 0.06);
+    padding: 0.02rem 0.08rem;
+    border-radius: 0.04rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.year-badge:hover {
+    background: rgba(45, 87, 45, 0.12);
+    color: #2D572D;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 0.04rem;
+}
+
+.nav-btn {
+    background: rgba(45, 87, 45, 0.06);
+    border: none;
+    width: 0.24rem;
+    height: 0.24rem;
+    border-radius: 0.04rem;
+    cursor: pointer;
+    color: #2D572D;
+    font-size: 0.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.08rem;
-    margin-bottom: 0.05rem;
-    font-size: 0.13rem;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(45, 87, 45, 0.12);
+}
+
+.year-picker-overlay {
+    position: absolute;
+    top: 0.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    border-radius: 0.08rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.year-picker {
+    width: 90%;
+    background: #fff;
+    border: 1px solid rgba(45, 87, 45, 0.1);
+    border-radius: 0.08rem;
+    padding: 0.12rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.06rem;
+}
+
+.year-option {
+    text-align: center;
+    font-family: 'DIN Alternate', 'Roboto', sans-serif;
+    font-size: 0.12rem;
+    color: #666;
+    padding: 0.06rem;
+    border-radius: 0.04rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.year-option:hover {
+    background: rgba(45, 87, 45, 0.08);
+    color: #2D572D;
+}
+
+.year-option.active {
+    background: #2D572D;
+    color: #fff;
 }
 
 .calendar-grid {
     width: 100%;
-    border-collapse: collapse;
 }
 
-th {
-    font-family: 'OpenSans';
-    color: rgba(179, 185, 200, 1);
-    font-size: 0.1rem;
-    width: 0.02rem;
-    height: 0.2rem;
+.week-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.04rem;
+}
+
+.week-day {
     text-align: center;
-    position: relative;
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 0.09rem;
+    color: #999;
+    padding: 0.03rem 0;
 }
 
-td {
-    width: 0.15rem;
-    height: 0.2rem;
-    text-align: center;
-    position: relative;
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.01rem;
 }
 
-.current-month {
-    background-color: #fff;
-}
-
-.today {
-    background-color: rgba(201, 226, 255, 1) !important;
-    color: white;
-    border-radius: 0.06rem;
-}
-
-.event-indicator {
-    position: absolute;
-    bottom: 0.14rem;
-    left: 54%;
-    top: -15%;
-    transform: translateX(-50%);
-    width: 0.05rem;
-    height: 0.05rem;
-    background-color: #2ecc71;
+.day-cell {
+    aspect-ratio: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DIN Alternate', 'Roboto', sans-serif;
+    font-size: 0.11rem;
+    color: #333;
     border-radius: 50%;
-}
-
-/** */
-.date {
-    font-size: 0.12rem;
-    font-weight: 700;
-    font-family: 'OpenSans';
-    cursor: default;
-}
-
-.current-month:hover {
-    background-color: #ddd;
-}
-
-button {
     cursor: pointer;
-    background: transparent;
-    border: 0;
-    color: #3498db;
-    border-radius: 0.03rem;
-    font-size: 0.12rem;
+    transition: all 0.2s ease;
+}
+
+.day-cell:not(.empty):hover {
+    background: rgba(45, 87, 45, 0.08);
+    color: #2D572D;
+}
+
+.day-cell.today {
+    color: #D32F2F;
     font-weight: 600;
-    width: 0.2rem;
-    height: 0.15rem;
+}
+
+.day-cell.selected {
+    background: #2D572D;
+    color: #fff;
+}
+
+.day-cell.empty {
+    cursor: default;
 }
 </style>

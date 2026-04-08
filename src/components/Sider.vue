@@ -17,134 +17,178 @@ const select = (i) => {
 
 const exit = () => {
     router.push('/')
-    // authStore.logout()
 }
 
 </script>
 
 <template>
-    <div class="content">
+    <div class="header">
         <div class="logo">
-            <img src="../assets/img/logoText.png" alt="" class="logoImg">
+            <img src="D:/Code/Competition Code/jishe/health/test/4.png" alt="" class="logoImg">
+            <span class="logo-text">椿龄护安</span>
         </div>
         <div class="menu">
             <div class="opts">
-                <div class="home" @click="select(0)">
-                    <span class="iconfont icon-zhuye" :class="{ active: siderMode === 0 }"></span>
-                    <span class="menuText" :class="{ active: siderMode === 0 }">主页</span>
+                <div class="menuItem home" @click="select(0)" :class="{ active: siderMode === 0 }">
+                    <span class="iconfont icon-zhuye"></span>
+                    <span class="menuText">主页</span>
                 </div>
-                <div class="health" @click="select(1)">
-                    <span class="iconfont icon-jiankang" :class="{ active: siderMode === 1 }"></span>
-                    <span class="menuText" :class="{ active: siderMode === 1 }">健康</span>
+                <div class="menuItem health" @click="select(1)" :class="{ active: siderMode === 1 }">
+                    <span class="iconfont icon-jiankang"></span>
+                    <span class="menuText">健康</span>
                 </div>
-                <div class="person" @click="select(2)">
-                    <span class="iconfont icon-V" :class="{ active: siderMode === 2 }"></span>
-                    <span class="menuText" :class="{ active: siderMode === 2 }">问答</span>
+                <div class="menuItem person" @click="select(2)" :class="{ active: siderMode === 2 }">
+                    <span class="iconfont icon-V"></span>
+                    <span class="menuText">问答</span>
                 </div>
-                <div class="person" @click="select(3)">
-                    <span class="iconfont icon-yonghu" :class="{ active: siderMode === 3 }"></span>
-                    <span class="menuText" :class="{ active: siderMode === 3 }">用户</span>
+                <div class="menuItem person" @click="select(3)" :class="{ active: siderMode === 3 }">
+                    <span class="iconfont icon-yonghu"></span>
+                    <span class="menuText">用户</span>
                 </div>
-                <span class="iconfont YLine" :style="{ top: `${0.214 + siderMode * 0.68}rem` }"></span>
             </div>
         </div>
-        <div class="exit">
-            <span class="iconfont icon-tuichu" @click="exit"></span>
+        <div class="exit" @click="exit">
+            <span class="iconfont icon-tuichu"></span>
+            <span class="exit-text">退出</span>
         </div>
     </div>
 </template>
 
 <style scoped>
-.content {
-    background-color: #fff;
-    height: 100%;
-    width: 13%;
+.header {
+    background: linear-gradient(90deg, #2D572D 0%, #3d7a3d 50%, #2D572D 100%);
+    height: 0.5rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 100;
+    padding: 0 0.2rem;
 }
 
 .logo {
-    width: 100%;
-    height: 20%;
-    padding-left: 0.3rem;
-    padding-top: 0.35rem;
-    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-right: 0.3rem;
+}
+
+.logoImg {
+    height: 0.5rem;
+    width: auto;
+    object-fit: contain;
+}
+
+.logo-text {
+    font-family: 'STXingkai', 'STKaiti', 'KaiTi', '楷体', serif;
+    font-size: 0.24rem;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.15);
+    letter-spacing: 0.1rem;
+    margin-left: 0.15rem;
 }
 
 .menu {
-    width: 100%;
-    height: 70%;
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .opts {
     display: flex;
-    flex-direction: column;
-    padding-left: 15%;
-    padding-top: 5%;
-    box-sizing: border-box;
+    flex-direction: row;
+    align-items: center;
+    height: 100%;
+}
+
+.menuItem {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
     position: relative;
 }
 
-.exit {
-    width: 100%;
-    height: 10%;
-    box-sizing: border-box;
-    padding-left: 10%;
-    padding-top: 10%;
+.menuItem:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.logoImg {
-    width: 0.7rem;
-    height: 0.65rem;
+.menuItem.active {
+    background: rgba(255, 255, 255, 0.15);
 }
 
-.home,
-.health,
-.person {
-    width: 90%;
-    height: 0.4rem;
-    margin-bottom: 20%;
-    margin-top: 5%;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
+.menuItem.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 3px;
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
 .iconfont {
-    font-size: 0.23rem;
-    color: #C2DEEC;
-    transition-duration: 0.5s;
+    font-size: 0.14rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.25s ease;
 }
 
 .menuText {
-    font-size: 0.14rem;
+    font-size: 0.12rem;
     font-family: 'SiYuanHeiTi';
-    color: #C2DEEC;
-    margin-left: 20%;
-    margin-right: 27%;
-    transition-duration: 0.5s;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 0.05rem;
+    transition: all 0.25s ease;
 }
 
-
-.YLine {
-    display: inline-block;
-    width: 10%;
-    color: #6EB4FF;
-    position: absolute;
-    left: 1.05rem;
-    transition-duration: 0.5s;
+.menuItem:hover .iconfont,
+.menuItem:hover .menuText {
+    color: rgba(255, 255, 255, 0.85);
 }
 
-.YLine::before {
-    content: "\e6be";
-    float: left;
+.menuItem.active .iconfont,
+.menuItem.active .menuText {
+    color: #fff;
 }
 
-.active {
-    color: #6EB4FF;
+.exit {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 0.2rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.exit:hover {
+    background: rgba(255, 107, 107, 0.25);
 }
 
 .icon-tuichu {
-    cursor: pointer;
+    font-size: 0.14rem;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.25s ease;
+}
+
+.exit-text {
+    font-size: 0.11rem;
+    font-family: 'SiYuanHeiTi';
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: 0.04rem;
+    transition: all 0.25s ease;
+}
+
+.exit:hover .icon-tuichu,
+.exit:hover .exit-text {
+    color: #ff6b6b;
 }
 </style>

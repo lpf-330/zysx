@@ -4,48 +4,18 @@ import DataBox from './DataBox.vue';
 
 <template>
     <div class="content">
-        <div class="headBox">
-            <div class="headImg"></div>
-        </div>
-        <div class="DataBox">
-            <DataBox></DataBox>
-        </div>
+        <DataBox></DataBox>
     </div>
 </template>
 
 <style scoped>
 .content {
-    height: 90%;
-    width: 100%;
-}
-
-.headImg {
-    width: 78%;
-    height: 100%;
-    margin-left: 22%;
-    background-image: url('../assets/img/homeHead2.png');
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
-}
-
-.headBox {
-    width: 100%;
-    height: 37%;
-    box-sizing: border-box;
-    padding-left: 5%;
-    padding-right: 5%;
-    background-image: url('../assets/img/homeHead1.png');
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: 0.13rem center;
-}
-
-.DataBox {
-    width: 100%;
-    height: 63%;
+    flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(255,255,255,0.85);
+    border-radius: 0.1rem;
+    padding: 0.15rem;
+    box-shadow: 0 2px 12px rgba(45, 87, 45, 0.05);
+    border: 1px solid rgba(45, 87, 45, 0.08);
 }
 </style>
