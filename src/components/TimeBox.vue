@@ -53,10 +53,8 @@ onBeforeUnmount(() => {
                 <span class="greeting-text">{{ userName }}，您好</span>
             </div>
         </div>
-        <div class="right-decoration">
-            <div class="leaf leaf-1">🌿</div>
-            <div class="leaf leaf-2">🍃</div>
-            <div class="leaf leaf-3">🌱</div>
+        <div class="right-content">
+            <img src="/111.png" alt="健康图标" class="health-image">
         </div>
     </div>
 </template>
@@ -65,10 +63,9 @@ onBeforeUnmount(() => {
 .greeting-card {
     background: linear-gradient(135deg, #ffffff 0%, #f5faf5 100%);
     border-radius: 0.12rem;
-    padding: 0.18rem 0.25rem;
+    padding: 0.12rem 0.2rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     box-shadow: 0 2px 12px rgba(45, 87, 45, 0.06);
     border: 1px solid rgba(45, 87, 45, 0.08);
 }
@@ -76,6 +73,9 @@ onBeforeUnmount(() => {
 .left-content {
     display: flex;
     flex-direction: column;
+    width: 1.5rem;
+    flex-shrink: 0;
+    margin-right: 0.15rem;
 }
 
 .time-display {
@@ -106,40 +106,16 @@ onBeforeUnmount(() => {
     font-weight: 500;
 }
 
-.right-decoration {
-    position: relative;
-    width: 0.8rem;
-    height: 0.5rem;
+.right-content {
+    flex: 1;
+    height: 0.8rem;
+    display: flex;
+    justify-content: flex-end;
 }
 
-.leaf {
-    position: absolute;
-    opacity: 0.4;
-}
-
-.leaf-1 {
-    font-size: 0.22rem;
-    top: 0;
-    right: 0;
-    animation: float 3s ease-in-out infinite;
-}
-
-.leaf-2 {
-    font-size: 0.16rem;
-    bottom: 0.05rem;
-    right: 0.25rem;
-    animation: float 3s ease-in-out infinite 1s;
-}
-
-.leaf-3 {
-    font-size: 0.14rem;
-    top: 0.15rem;
-    right: 0.45rem;
-    animation: float 3s ease-in-out infinite 2s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-3px) rotate(5deg); }
+.health-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 </style>

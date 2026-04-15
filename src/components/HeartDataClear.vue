@@ -31,10 +31,8 @@ import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 import { getHeartData } from '../api/healthData';
-import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
 
 echarts.use([
     LineChart,
@@ -77,18 +75,13 @@ const hexToRgba = (hex, opacity) => {
 // 修改fetchHeartData方法
 const fetchHeartData = async () => {
     try {
-        // 先确保连接
-        await dataWebSocketService.connectIfNeeded();
-
-        // 然后发送请求
-        const response = Array.from(await dataWebSocketService.requestData('heart', user_id));
+        const response = await getHeartData(userInfoStore.user_id.value);
         console.log('获取到的数据:', response);
 
         // 处理返回的数据
-        // 取最近30个数据点
         const newData = response.map(item => ({
             heartData: item.heartData,
-            time: dateFormatter.Formatter(item.created_at)
+            time: dateFormatter.Formatter(item.recordTime)
         }));
 
         // 更新实时显示值
@@ -102,7 +95,9 @@ const fetchHeartData = async () => {
 
         formattedTime.value = newData.map(item => item.time);
 
-        maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20;
+        if (data.value.length > 0) {
+            maxY.value = Math.floor((Math.max(...data.value) + 20) / 20) * 20;
+        }
 
         loading.value = false;
         error.value = false;

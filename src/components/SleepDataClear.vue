@@ -28,7 +28,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { sleepData } from '../api/sleepData';
+import { getSlpData } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -63,18 +63,19 @@ const fetchSleepData = async () => {
 
     try {
 
-        const url = '/api/sleepData'    //这后面还没补上
-        const response = await sleepData(userInfoStore.user_id.value)
+        const url = '/sleepData'
+        const response = await getSlpData(userInfoStore.user_id.value)
 
         for (let i = 0; i < response.length; i++) {
             data.value.push(response[i].sleepData)
-            date.value.push(response[i].Date)
+            const dateField = response[i].Date || response[i].date || response[i].recordTime || response[i].createTime || `记录${i + 1}`
+            date.value.push(dateField)
         }
         console.log('响应睡眠', response);
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+        alert("加载失败，请稍后再试。"); // 友好的错误提示
 
     }
 

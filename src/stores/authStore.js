@@ -49,10 +49,10 @@ export const useAuthStore = defineStore('auth', () => {
                 }
             }
 
-            // 注释掉真实API调用，方便前端单独开发
-            // const url = "/api/userInfo"
-            // const response = await userLogin(account, password)
-            const response = mockResponse
+            // 使用真实API调用
+            const url = "/api/userInfo"
+            const response = await userLogin(account, password)
+            // const response = mockResponse
 
             console.log("响应登录", response);
 
@@ -62,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
                 token.value = response.data.token
                 localStorage.setItem('token', response.data.token)
 
-                userInfoStore.user_id.value = response.data.user_id
+                userInfoStore.user_id.value = response.data.id || response.data.user_id
                 userInfoStore.Username.value = response.data.username
                 userInfoStore.Age.value = response.data.age
                 userInfoStore.Avatar.value = response.data.avatar

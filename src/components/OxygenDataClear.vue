@@ -66,10 +66,8 @@ import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 import { getOxygenData } from '../api/healthData';
-import { dataWebSocketService } from '../api/healthData';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
 
 echarts.use([
     LineChart,
@@ -99,8 +97,7 @@ const maxDataPoints = 30;
 // 改进的数据获取函数，限制数据点数量并优化更新逻辑
 const fetchOxygenData = async () => {
     try {
-        await dataWebSocketService.connectIfNeeded();
-        const response = Array.from(await dataWebSocketService.requestData('oxygen', user_id));
+        const response = await getOxygenData(userInfoStore.user_id.value);
 
         // 只保留最新的 maxDataPoints 个数据点
         const newDataArray = response.slice(-maxDataPoints);
@@ -112,7 +109,7 @@ const fetchOxygenData = async () => {
         // 填充新数据
         for (const item of newDataArray) {
             data.value.push(item.oxygenData);
-            formattedTime.value.push(dateFormatter.Formatter(item.created_at));
+            formattedTime.value.push(dateFormatter.Formatter(item.recordTime));
         }
 
         // 更新当前显示值

@@ -2,37 +2,38 @@ import { httpService } from "../utils/apiService"
 import { wsService } from "../utils/apiService"
 
 const getDataBox = async (user_id) => {
-    return (await httpService.post('/api/data', { user_id: user_id })).data
+    console.log('API call - user_id:', user_id)
+    return (await httpService.post('/data', { user_id: user_id })).data
 }
 
 const getBloodData = async (user_id) => {
-    return await wsService.requestData('blood', user_id);
+    return (await httpService.post('/bloodData', { user_id: user_id })).data
 }
 
 const getHeartData = async (user_id) => {
-    return await wsService.requestData('heart', user_id);
+    return (await httpService.post('/heartData', { user_id: user_id })).data
 }
 
 const getOxygenData = async (user_id) => {
-    return await wsService.requestData('oxygen', user_id);
+    return (await httpService.post('/oxygenData', { user_id: user_id })).data
 }
 
 const getPiData = async (user_id) => {
-    return await wsService.requestData('pi', user_id);
+    return (await httpService.post('/piData', { user_id: user_id })).data
 }
 
 const getPreData = async (user_id) => {
-    return await wsService.requestData('pre', user_id);
+    return (await httpService.post('/pressureData', { user_id: user_id })).data
 }
 
 const getPressureData = async (user_id) => {
-    return await wsService.requestData('pre', user_id);
+    return (await httpService.post('/pressureData', { user_id: user_id })).data
 }
 
 const dataWebSocketService = wsService;
 
 const getSlpData = async (user_id) => {
-    return await wsService.requestData('slp', user_id);
+    return (await httpService.post('/sleepData', { user_id: user_id })).data
 }
 
 export {

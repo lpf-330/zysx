@@ -1,168 +1,100 @@
 <template>
-    <div ref="chart" style="width: 100%; height: 100%;"></div>
+    <div class="sleep-echart">
+        <v-chart :option="option" autoresize />
+    </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    DatasetComponent,
-    TransformComponent
-} from 'echarts/components';
-import { LabelLayout, UniversalTransition } from 'echarts/features';
-import { CanvasRenderer } from 'echarts/renderers';
-import { color } from 'echarts';
-import { defineProps } from 'vue';
-
-echarts.use([
-    LineChart,
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    DatasetComponent,
-    TransformComponent,
-    LabelLayout,
-    UniversalTransition,
-    CanvasRenderer
-]);
+import { computed } from 'vue';
+import * as echarts from 'echarts';
 
 const props = defineProps({
     data: {
         type: Array,
         required: true
     }
-})
+});
 
-const chart = ref(null);
-let myChart = null;
+const latestHours = computed(() => {
+    if (!props.data || props.data.length === 0) return 0;
+    return props.data[props.data.length - 1] / 1;
+});
 
-const dataX = [1, 2, 3, 4];
-
-const initChart = () => {
-    if (chart.value && !myChart) {
-        myChart = echarts.init(chart.value);
-        updateChart();
-    }
-};
-
-const updateChart = () => {
-    if (!myChart || props.data.length === 0) return;
-    const option = {
-        tooltip: {
+const option = computed(() => ({
+    backgroundColor: 'transparent',
+    series: [{
+        type: 'gauge',
+        startAngle: 180,
+        endAngle: 0,
+        center: ['50%', '83%'],
+        radius: '110%',
+        min: 0,
+        max: 12,
+        splitNumber: 6,
+        itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                { offset: 0, color: '#22c55e' },
+                { offset: 1, color: '#4ade80' }
+            ])
+        },
+        progress: {
+            show: true,
+            width: 20,
+            roundCap: true
+        },
+        pointer: {
             show: false
         },
-        legend: {
-            right: 'center',
-            top: '5%',
-            itemWidth: 16,
-            itemHeight: 16,
-            itemGap: 25,
-            icon: 'stack',
-            textStyle: {
-                color: '#E1E5E6'
+        axisLine: {
+            lineStyle: {
+                width: 18,
+                color: [[1, 'rgba(34,197,94,0.2)']]
+            },
+            roundCap: true
+        },
+        axisTick: {
+            distance: -25,
+            length: 8,
+            lineStyle: {
+                color: '#22c55e',
+                width: 2
             }
         },
-        grid: {
-            top: '20%',
-            right: '4%',
-            bottom: '20%',
-            left: '3%',
-            containLabel: true
-        },
-        xAxis: {
-            data: dataX,
-            type: 'category',
-            boundaryGap: false,
-            axisLabel: {
-                show: false
-            },
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                show: false
+        splitLine: {
+            distance: -30,
+            length: 12,
+            lineStyle: {
+                color: '#22c55e',
+                width: 3
             }
         },
-        yAxis: {
-            type: 'value',
-            min: Math.min(...props.data) - 3,
-            max: Math.max(...props.data) + 3,
-            axisTick: { show: false },
-            axisLine: {
-                show: false
-            },
-            axisLabel: {
-                show: false
-            },
-            splitLine: {
-                show: false
-            }
+        axisLabel: {
+            distance: -10,
+            color: 'rgba(34,197,94,0.8)',
+            fontSize: 12,
+            formatter: '{value}'
         },
-        series: [
-            {
-                smooth: true,
-                type: 'line',
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(
-                        0,
-                        0,
-                        0,
-                        1,
-                        [
-                            {
-                                offset: 0,
-                                color: 'rgba(253, 190, 93,.4)'
-                            },
-                            {
-                                offset: 0.9,
-                                color: 'rgba(253, 190, 93,0)'
-                            }
-                        ],
-                        false
-                    ),
-                    shadowColor: 'rgba(0, 0, 0, 0.1)'
-                },
-                showSymbol: false,
-                symbolSize: 8,
-                itemStyle: {
-                    color: 'rgba(253, 190, 93, 1)'
-                },
-            },
-            {
-                smooth: true,
-                type: 'line',
-                showSymbol: false,
-                symbolSize: 4,
-                itemStyle: {
-                    color: 'rgba(26, 119, 221, 1)'
-                },
-                data: props.data
-            }
-        ]
-    };
-
-
-    myChart.setOption(option);
-};
-
-// 监听数据变化
-watch(() => [props.data], () => {
-    updateChart();
-    myChart?.resize();
-}, { deep: true });
-
-
-onMounted(() => {
-    initChart();
-    window.addEventListener('resize', () => myChart.resize());
-});
-
-onUnmounted(() => {
-    window.removeEventListener('resize', () => myChart.resize());
-    myChart.dispose();
-});
+        anchor: { show: false },
+        title: { show: false },
+        detail: {
+            valueAnimation: true,
+            width: '60%',
+            lineHeight: 24,
+            borderRadius: 8,
+            offsetCenter: [0, '10%'],
+            fontSize: 24,
+            fontWeight: 'bold',
+            formatter: () => latestHours.value.toFixed(1) + 'h',
+            color: '#4ade80'
+        },
+        data: [{ value: latestHours.value }]
+    }]
+}));
 </script>
+
+<style scoped>
+.sleep-echart {
+    width: 100%;
+    height: 100%;
+}
+</style>

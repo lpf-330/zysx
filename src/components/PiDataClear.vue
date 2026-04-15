@@ -28,7 +28,7 @@ import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
-import { dataWebSocketService } from '../api/healthData';
+import { getPiData } from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -61,24 +61,19 @@ const fetchPiData = async () => {
 
     try {
 
-        // 先确保连接
-        await dataWebSocketService.connectIfNeeded();
-
-        const response = Array.from(await dataWebSocketService.requestData('pi', userInfoStore.user_id.value));
+        const response = await getPiData(userInfoStore.user_id.value);
 
         if (data.value.length === 0) {
             for (let j = 0; j < response.length; j++) {
                 data.value.push(response[j].piData)
 
-                formattedTime.value.push(dateFormatter.Formatter(response[j].created_at))
+                formattedTime.value.push(dateFormatter.Formatter(response[j].recordTime))
             }
         } else {
             for (let j = 0; j < response.length; j++) {
-                // data.value.push(response.data[j].heartData)
                 data.value[j] = response[j].piData
 
-                // formattedTime.value.push(dateFormatter.Formatter(response.data[j].created_at))
-                const tem = dateFormatter.Formatter(response[j].created_at)
+                const tem = dateFormatter.Formatter(response[j].recordTime)
                 formattedTime.value[j].time = tem.time
                 formattedTime.value[j].date = tem.date
             }
@@ -91,7 +86,7 @@ const fetchPiData = async () => {
 
     } catch (error) {
         console.error("出错", error);
-        alert("加载失败，请稍后再试。"); // 友好的错误提示  
+        alert("加载失败，请稍后再试。");
 
     }
 

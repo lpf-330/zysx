@@ -1,229 +1,130 @@
 <template>
-    <div ref="chart" style="width: 100%; height: 100%;"></div>
+    <div class="pressure-echart">
+        <div class="pressure-values">
+            <div class="value-item high" style="left: 32%;">
+                <span class="value">{{ props.data[0] || '--' }}</span>
+                <span class="unit">mmHg</span>
+            </div>
+            <div class="value-item low" style="left: 66%;">
+                <span class="value">{{ props.data[1] || '--' }}</span>
+                <span class="unit">mmHg</span>
+            </div>
+        </div>
+        <v-chart :option="option" autoresize />
+    </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    DatasetComponent,
-    TransformComponent
-} from 'echarts/components';
-import { LabelLayout, UniversalTransition } from 'echarts/features';
-import { CanvasRenderer } from 'echarts/renderers';
-import { defineProps } from 'vue';
-
-echarts.use([
-    LineChart,
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    DatasetComponent,
-    TransformComponent,
-    LabelLayout,
-    UniversalTransition,
-    CanvasRenderer
-]);
+import { computed } from 'vue';
+import * as echarts from 'echarts';
 
 const props = defineProps({
     data: {
-        type: Array,    //第一个值为收缩压（高压），第二个值为舒张压（低压）
+        type: Array,
         required: true
     }
-})
+});
 
-let information = {
-    color: "#069DFD",
-    area: ["高压", "低压"],
-    dataArray: [560, 480],
-};
-
-let style = {
-    width: 32,
-    height: 24,
-    padding: [5, 6, 0, 0],
-    fontSize: 20,
-    align: "center",
-    color: "#ffffff"
-}
-
-const chart = ref(null);
-let myChart = null;
-
-const initChart = () => {
-    if (chart.value && !myChart) {
-        myChart = echarts.init(chart.value);
-        updateChart();
-    }
-};
-
-const updateChart = () => {
-    if (!myChart || props.data.length === 0) return;
-
-    console.log('here');
-
-    const option = {
-        grid: {
-            left: "4%",
-            right: "10%",
-            top: "20%",
-            bottom: "10%",
-            containLabel: true,
-        },
-        xAxis: [
+const option = computed(() => ({
+    backgroundColor: 'transparent',
+    grid: {
+        left: '15%',
+        right: '15%',
+        top: '5%',
+        bottom: '35%'
+    },
+    xAxis: {
+        type: 'category',
+        data: ['高压', '低压'],
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false }
+    },
+    yAxis: {
+        type: 'value',
+        show: false,
+        min: 0,
+        max: 200
+    },
+    series: [{
+        type: 'bar',
+        data: [
             {
-                type: "value",
-                show: false,
-            },
-        ],
-        yAxis: [
-            {
-                type: "category",
-                splitLine: {
-                    show: false,
-                },
-                axisLine: {
-                    show: false,
-                },
-                axisTick: {
-                    show: false,
-                },
-                inverse: true,
-                data: information.area,
-                axisLabel: {
-                    color: "rgba(96, 98, 102, 1)",
-                    margin: 10,
-                    formatter: (name, index) => {
-                        if (index === 0) {
-                            return `{highPressure|${name}}`
-                        } else {
-                            return `{lowPressure|${name}}`
-                        }
-                    },
-                    rich: {
-                        highPressure: {
-                            padding: [0, 10, 0, 2],
-                            fontSize: 16,
-                            color: 'rgb(255, 105, 35)',
-                        },
-                        lowPressure: {
-                            padding: [0, 10, 0, 2],
-                            fontSize: 16,
-                            color: 'rgb(66, 157, 255)',
-                        },
-                        rank: {
-                            ...style,
-                            backgroundColor: new echarts.graphic.LinearGradient(0, 1, 1, 1, [
-                                {
-                                    offset: 0,
-                                    color: '#E7F4FF',
-                                },
-                                {
-                                    offset: 0.95,
-                                    color: '#fff',
-                                },
-                            ]),
-                        },
-                        rank1: {
-                            ...style,
-                            color: "#FF992B",
-                            backgroundColor: new echarts.graphic.LinearGradient(0, 1, 1, 1, [
-                                {
-                                    offset: 0,
-                                    color: '#E7F4FF',
-                                },
-                                {
-                                    offset: 0.95,
-                                    color: '#fff',
-                                },
-                            ]),
-                        },
-                    },
-                },
-            },
-            {
-                inverse: true,
-                axisTick: "none",
-                axisLine: "none",
-                show: true,
-                axisLabel: {
-                    color: "rgb(0, 0, 0)",
-                    fontSize: 16,
-                    margin: 20,
-                    formatter: function (value) {
-                        return value + 'mmhg';
-                    },
-                },
-                data: props.data,
-            },
-        ],
-        series: [
-            {
-                type: "bar",
-                barWidth: 14,
-                MaxSize: 0,
-                showBackground: true,
-                backgroundStyle: {
-                    color: "rgb(157, 230, 230)",
-                    borderRadius: 5,
-                },
-                data: props.data.map((item) => {
-                    return {
-                        value: item,
-                        itemStyle: {
-                            borderRadius: 5,
-                            color: information.color,
-                        },
-                    };
-                }),
-            },
-            {
-                type: 'scatter',
-                emphasis: {
-                    scale: false
-                },
-                symbol: 'rect',
+                value: props.data[0] || 0,
                 itemStyle: {
-                    barBorderRadius: [30, 0, 0, 30],
-                    color: '#fff',
-                    shadowColor: '#fff',
-                    shadowBlur: 1,
-                    borderWidth: 1,
-                    opacity: 1
-                },
-                symbolSize: [4, 13], // 进度条白点的大小
-                z: 2,
-                data: props.data,
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#f43f5e' },
+                        { offset: 1, color: '#fda4af' }
+                    ]),
+                    borderRadius: [12, 12, 0, 0]
+                }
             },
+            {
+                value: props.data[1] || 0,
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#0ea5e9' },
+                        { offset: 1, color: '#7dd3fc' }
+                    ]),
+                    borderRadius: [12, 12, 0, 0]
+                }
+            }
         ],
-    };
-    myChart.setOption(option);
-};
-
-// 监听数据变化
-watch(() => [props.data], () => {
-    updateChart();
-    myChart?.resize();
-}, { deep: true });
-
-
-onMounted(() => {
-    initChart();
-    window.addEventListener('resize', () => myChart.resize());
-});
-
-onUnmounted(() => {
-    window.removeEventListener('resize', () => myChart.resize());
-    myChart.dispose();
-});
+        barWidth: '50%'
+    }]
+}));
 </script>
 
 <style scoped>
-.hhh {
-    background-color: rgb(0, 0, 0);
+.pressure-echart {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.pressure-values {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 40%;
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    z-index: 10;
+}
+
+.value-item {
+    position: absolute;
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0px;
+    transform: translateX(-50%);
+}
+
+.value-item .value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    line-height: 1;
+}
+
+.value-item .unit {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+}
+
+.value-item.high .value {
+    color: #fda4af;
+    text-shadow: 0 0 10px rgba(253,164,175,0.8);
+}
+
+.value-item.low .value {
+    color: #7dd3fc;
+    text-shadow: 0 0 10px rgba(125,211,252,0.8);
 }
 </style>

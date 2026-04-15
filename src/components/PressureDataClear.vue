@@ -130,16 +130,16 @@ const fetchPressureData = async () => {
         console.log('user_id', userInfoStore.user_id.value);
 
 
-        const url = '/api/pressureData'
+        const url = '/pressureData'
         const response = await getPressureData(userInfoStore.user_id.value)
 
         for (let i = 0; i < response.length; i++) {
-            data2.value.push(response[i].diastolicBP)
-            data1.value.push('-' + response[i].systolicBP)
-            date.value.push(response[i].date)
+            data2.value.push(response[i].diastolicBp)
+            data1.value.push('-' + response[i].systolicBp)
+            date.value.push(response[i].recordTime)
 
-            avgData11.value += Number(response[i].diastolicBP)
-            avgData22.value += Number(response[i].systolicBP)
+            avgData11.value += Number(response[i].diastolicBp)
+            avgData22.value += Number(response[i].systolicBp)
         }
 
 

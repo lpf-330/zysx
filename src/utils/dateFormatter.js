@@ -6,8 +6,8 @@ class dateFormatter {
      */
     static Formatter(inputStr) {
         try {
-            // 拆分日期和时间部分
-            const [datePart, timePart] = inputStr.split(' ');
+            // 拆分日期和时间部分（处理 T 或空格分隔的格式）
+            const [datePart, timePart] = inputStr.replace('T', ' ').split(' ');
 
             // 处理日期部分
             const [year, month, day] = datePart.split('-');

@@ -1,6 +1,5 @@
 <script setup>
 import Userdetails from '../components/Userdetails.vue';
-import Userpagecenter from '../components/Userpagecenter.vue';
 import Usertabspage from '../components/Usertabspage.vue';
 import UserMAD from '../components/UserMAD.vue';
 </script>
@@ -9,6 +8,8 @@ import UserMAD from '../components/UserMAD.vue';
     <div class="person-container">
         <div class="person-content">
             <div class="left-column">
+                <Userdetails></Userdetails>
+
                 <div class="sport-card">
                     <div class="sport-card-header">
                         <span class="sport-card-icon">◈</span>
@@ -41,9 +42,6 @@ import UserMAD from '../components/UserMAD.vue';
                         </div>
                     </div>
                 </div>
-
-                <Userdetails></Userdetails>
-                <Userpagecenter></Userpagecenter>
             </div>
 
             <div class="right-column">
@@ -106,6 +104,8 @@ import UserMAD from '../components/UserMAD.vue';
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
+    position: relative;
+    z-index: 100;
 }
 
 .right-column {
@@ -152,6 +152,8 @@ import UserMAD from '../components/UserMAD.vue';
     border: 1px solid rgba(45, 87, 45, 0.06);
     overflow: hidden;
     margin-bottom: 0.04rem;
+    position: relative;
+    z-index: 1;
 }
 
 .sport-card-header {

@@ -1,11 +1,11 @@
 import { httpService } from "../utils/apiService"
 
 const getUserTabPageData = async (user_id) => {
-  return (await httpService.post('/api/personal_history', { user_id })).data;
+  return (await httpService.post('/personal_history', { user_id })).data;
 }
 
 const updateUserInfo = async (user_id, username, gender, age, height, weight, phone_number) => {
-  return (await httpService.post('/api/updateUserInfo', {
+  return (await httpService.post('/updateUserInfo', {
     user_id,
     username,
     gender,
@@ -16,5 +16,35 @@ const updateUserInfo = async (user_id, username, gender, age, height, weight, ph
   })).data;
 }
 
+const getTodosByDate = async (start_date, user_id) => {
+  return (await httpService.post('/api/todos/query', {
+    start_date: start_date,
+    user_id: user_id
+  })).data;
+}
 
-export { getUserTabPageData, updateUserInfo }
+const createTodo = async (todoData) => {
+  return (await httpService.post('/api/todos/create', todoData)).data;
+}
+
+const updateTodoMS = async (id, todoData) => {
+  return (await httpService.post(`/api/todos/update/${id}`, todoData)).data;
+}
+
+const deleteTodoMS = async (id) => {
+  return (await httpService.post(`/api/todos/delete/${id}`)).data;
+}
+
+const updateTodoStatusMS = async (id, completed) => {
+  return (await httpService.post(`/api/todos/update-status/${id}`, { completed })).data;
+}
+
+export {
+  getUserTabPageData,
+  updateUserInfo,
+  getTodosByDate,
+  createTodo,
+  updateTodoMS,
+  deleteTodoMS,
+  updateTodoStatusMS
+}

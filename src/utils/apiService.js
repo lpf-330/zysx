@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const httpService = axios.create({
-    //baseURL: 'http://localhost:8081/admin/common', 
+    baseURL: 'http://localhost:8081',
     timeout: 5000
 })
 
@@ -11,6 +11,8 @@ httpService.interceptors.request.use(config => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+    // 添加允许跨域的请求头
+    config.headers['Access-Control-Allow-Origin'] = '*';
     return config
 },
     (error) => {
@@ -24,6 +26,10 @@ httpService.interceptors.response.use(
         return response
     },
     error => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
         console.error('请求错误:', error)
         return Promise.reject(error)
     }

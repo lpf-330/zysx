@@ -27,7 +27,7 @@ import { color } from 'echarts';
 import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { getHeartData } from '../api/healthData';
+import { getBloodData } from '../api/healthData';
 
 let userInfoStore = storeToRefs(useUserInfoStore())
 
@@ -52,7 +52,7 @@ const fetchBloodData = async () => {
 
     try {
 
-        const response = await getHeartData(userInfoStore.user_id.value)
+        const response = await getBloodData(userInfoStore.user_id.value)
 
         for (let j = 0; j < response.length; j++) {
             data.value.push(response[j].bloodData)
