@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw spring-boot:run)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(findstr :8081)",
+      "Bash(cmd //c \"taskkill /F /PID 30464\")",
+      "Bash(./mvnw.cmd spring-boot:run)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx vite:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(xxd)",
+      "Bash(cd:*)",
+      "Bash(xxd \"D:/lab/competition/compute2/zysx/src/components/ModernHealthAlert.vue\")",
+      "Bash(jps -V)",
+      "Bash(findstr \":5173\")",
+      "Bash(ipconfig)",
+      "Bash(powershell -Command \"Get-NetIPAddress -AddressFamily IPv6 | Where-Object {$_.PrefixOrigin -ne 'WellKnown'} | Select-Object -First 10 IPAddress\")",
+      "Bash(powershell -Command \"Get-NetIPAddress -AddressFamily IPv6 | Select-Object IPAddress\")",
+      "Bash(powershell -Command \"Stop-Process -Id 24036 -Force\")",
+      "Bash(powershell -Command \"Get-Process | Where-Object { $_.ProcessName -like '*java*' }\")",
+      "Bash(./mvnw clean:*)",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 30648,25716 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 33176 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 27380,14760 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 34472 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 33412 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 14348,23664 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 21856 -Force\")",
+      "Bash(git add:*)"
+    ]
+  }
+}

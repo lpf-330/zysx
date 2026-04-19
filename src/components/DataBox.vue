@@ -1,3 +1,64 @@
+<template>
+    <div class="Box">
+        <div class="item" @click="toggleRouter('heartData')">
+            <div class="data">
+                <div class="dataNum">{{ heartData[heartData.length - 1] }}&nbsp;bpm</div>
+                <div class="title">心率</div>
+            </div>
+            <div class="chart">
+                <HeartData :data="heartData"></HeartData>
+            </div>
+        </div>
+        <div class="item" @click="toggleRouter('bloodData')">
+            <div class="data">
+                <div class="dataNum">{{ bloodData[bloodData.length - 1] }}&nbsp;&nbsp;&nbsp;</div>
+                <div class="title">血糖</div>
+            </div>
+            <div class="chart">
+                <BloodData :data="bloodData"></BloodData>
+            </div>
+        </div>
+        <div class="item pi-item" @click="toggleRouter('piData')">
+            <div class="chart">
+                <PiData :data="piData"></PiData>
+            </div>
+            <div class="data">
+                <div class="dataNum">{{ piData[piData.length - 1] }}&nbsp;&nbsp;pi</div>
+                <div class="title">灌注指数</div>
+            </div>
+        </div>
+        <div class="item" @click="toggleRouter('oxygenData')">
+            <div class="data">
+                <div class="dataNum">{{ oxygenData * 100 }}&nbsp;%</div>
+                <div class="title">血氧</div>
+            </div>
+            <div class="chart">
+                <OxygenData :data="oxygenData"></OxygenData>
+            </div>
+        </div>
+        <div class="item" @click="toggleRouter('sleepData')">
+            <div class="data">
+                <div class="dataNum">
+                    {{ Math.floor(sleepData[sleepData.length - 1] / 60) }}h{{ sleepData[sleepData.length - 1] % 60 }}min
+                </div>
+                <div class="title">睡眠</div>
+            </div>
+            <div class="chart">
+                <SleepData :data="sleepData"></SleepData>
+            </div>
+        </div>
+        <div class="item" @click="toggleRouter('pressureData')">
+            <div class="data">
+                <!-- <div class="dataNum">{{ pressureData[pressureData.length - 1] }}&nbsp;mmhg</div> -->
+                <div class="title">血压</div>
+            </div>
+            <div class="chart">
+                <PressureData :data="pressureData"></PressureData>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script setup>
 import HeartData from './HeartData.vue';
 import BloodData from './BloodData.vue';
@@ -5,11 +66,29 @@ import PiData from './PiData.vue';
 import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
-import { ref, onBeforeMount, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onBeforeUnmount, onBeforeMount } from 'vue';
+import { defineProps } from 'vue';
 import router from '../router';
+import axios from 'axios';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
-import { getDataBox } from '../api/healthData';
+import { 
+    getBloodData, 
+    getHeartData, 
+    getOxygenData, 
+    getPiData, 
+    getPreData, 
+    getSlpData,
+    // 实时订阅函数
+    subscribeHeartData,
+    subscribeBloodData,
+    subscribeOxygenData,
+    subscribePiData,
+    subscribePreData,
+    subscribeSlpData,
+    unsubscribeUserAllRealTimeData
+} from '../api/healthData';
+
 
 const heartData = ref([])
 const bloodData = ref([])
@@ -19,494 +98,279 @@ const sleepData = ref([])
 const pressureData = ref([])
 
 const userInfoStore = storeToRefs(useUserInfoStore())
+const user_id = userInfoStore.user_id.value
 
+
+// 初始数据获取
 const fetchData = async () => {
-    try {
-        heartData.value = []
-        bloodData.value = []
-        piData.value = []
-        sleepData.value = []
-        pressureData.value = []
-        oxygenData.value = 0
+  try {
+    // 使用 Promise.allSettled 同时开始所有请求
+    const [
+      heartResponse,
+      piResponse,
+      sleepResponse, 
+      bloodResponse,
+      pressureResponse, 
+      oxygenResponse 
+    ] = await Promise.allSettled([
+      getHeartData(user_id),
+      getPiData(user_id),
+      getSlpData(user_id),
+      getBloodData(user_id),
+      getPreData(user_id),
+      getOxygenData(user_id)
+    ]);
 
-        const user_id = userInfoStore.user_id.value
-        console.log('DataBox - user_id:', user_id)
-        const response = await getDataBox(user_id)
-        console.log('DataBox - response:', JSON.stringify(response, null, 2))
+    // 处理心率数据
+    if (heartResponse.status === 'fulfilled') {
+      const response = heartResponse.value;
+      console.log('心率数据展示', response);
+      const heartArray = response || [];
+      const heartCount = Math.min(4, heartArray.length);
+      const latestHeartUnprocessed = heartArray.slice(0, heartCount);
+      const latestHeartProcessed = latestHeartUnprocessed.reverse();
 
-        if (response.heartData && response.heartData.length > 0) {
-            for (const item of response.heartData) {
-                heartData.value.push(Number(item.heartData))
-            }
-        }
-        if (response.piData && response.piData.length > 0) {
-            for (const item of response.piData) {
-                piData.value.push(Number(item.piData))
-            }
-        }
-        if (response.sleepData && response.sleepData.length > 0) {
-            for (const item of response.sleepData) {
-                sleepData.value.push(Number(item.sleepData))
-            }
-        }
-        if (response.bloodData && response.bloodData.length > 0) {
-            for (const item of response.bloodData) {
-                bloodData.value.push(Number(item.bloodData))
-            }
-        }
-        if (response.bloodOxygenData && response.bloodOxygenData.length > 0) {
-            oxygenData.value = Number(response.bloodOxygenData[response.bloodOxygenData.length - 1].oxygenData) * 0.01
-        }
-        if (response.bloodPressureData && response.bloodPressureData.length > 0) {
-            pressureData.value.push(Number(response.bloodPressureData[response.bloodPressureData.length - 1].systolicBp))
-            pressureData.value.push(Number(response.bloodPressureData[response.bloodPressureData.length - 1].diastolicBp))
-        }
-    } catch (error) {
-        console.error("出错", error);
+      heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
+    } else {
+      console.error("获取心率数据失败:", heartResponse.reason);
     }
-}
 
-onBeforeMount(fetchData)
+    // 处理血流灌注指数 (PI) 数据
+    if (piResponse.status === 'fulfilled') {
+      const response = piResponse.value;
+      console.log('PI数据展示', response);
+      const piCount = Math.min(4, response?.length || 0);
+      const latestPiUnprocessed = (response || []).slice(0, piCount);
+      const latestPiProcessed = latestPiUnprocessed.reverse();
+
+      piData.value = latestPiProcessed.map(item => Number(item.piData));
+    } else {
+      console.error("获取PI数据失败:", piResponse.reason);
+    }
+
+    // 处理睡眠数据
+    if (sleepResponse.status === 'fulfilled') {
+      const response = sleepResponse.value;
+      console.log('睡眠数据展示', response);
+      const sleepCount = Math.min(4, response?.length || 0);
+      const latestSleepUnprocessed = (response || []).slice(0, sleepCount);
+      const latestSleepProcessed = latestSleepUnprocessed.reverse(); 
+
+      sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
+    } else {
+      console.error("获取睡眠数据失败:", sleepResponse.reason);
+    }
+
+    // 处理血糖数据
+    if (bloodResponse.status === 'fulfilled') {
+      const response = bloodResponse.value;
+      console.log('血糖数据展示', response);
+      const bloodCount = Math.min(7, response?.length || 0);
+      const latestBloodUnprocessed = (response || []).slice(0, bloodCount);
+      const latestBloodProcessed = latestBloodUnprocessed.reverse();
+
+      bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
+    } else {
+      console.error("获取血糖数据失败:", bloodResponse.reason);
+    }
+
+    // 处理血压数据
+    if (pressureResponse.status === 'fulfilled') {
+      const response = pressureResponse.value;
+      console.log('血压数据展示', response);
+      if (response && response.length > 0) {
+        const latestBP = response[0];
+        pressureData.value = [
+          Number(latestBP.systolicBp),
+          Number(latestBP.diastolicBp)
+        ];
+      }
+    } else {
+      console.error("获取血压数据失败:", pressureResponse.reason);
+    }
+
+    // 处理血氧数据
+    if (oxygenResponse.status === 'fulfilled') {
+      const response = oxygenResponse.value;
+      console.log('血氧数据展示', response);
+      if (response && response.length > 0) {
+        const latestOxygen = response[0];
+        oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
+      } else {
+         oxygenData.value = 0;
+      }
+    } else {
+      console.error("获取血氧数据失败:", oxygenResponse.reason);
+       oxygenData.value = 0; 
+    }
+
+    console.log('所有数据获取完成');
+    console.log('heartData.value (fetchData后):', heartData.value);
+    console.log('piData.value (fetchData后):', piData.value);
+    console.log('sleepData.value (fetchData后):', sleepData.value);
+    console.log('bloodData.value (fetchData后):', bloodData.value);
+    console.log('pressureData.value (fetchData后):', pressureData.value);
+    console.log('oxygenData.value (fetchData后):', oxygenData.value);
+
+  } catch (error) {
+    console.error("获取数据过程中发生未知错误", error);
+    alert("加载失败，请稍后再试。");
+  }
+};
+
+// 实时数据订阅
+const startRealTimeSubscriptions = () => {
+  // 清理旧的订阅
+  unsubscribeUserAllRealTimeData(user_id);
+  
+  // 订阅心率数据
+  subscribeHeartData(user_id, (data) => {
+    console.log('收到实时心率数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      // 保持最新4条数据
+      const heartCount = Math.min(4, data.length);
+      const latestHeartUnprocessed = data.slice(0, heartCount);
+      const latestHeartProcessed = latestHeartUnprocessed.reverse();
+      
+      // 更新心率数据
+      heartData.value = latestHeartProcessed.map(item => Number(item.heartData));
+    }
+  });
+  
+  // 订阅血糖数据
+  subscribeBloodData(user_id, (data) => {
+    console.log('收到实时血糖数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const bloodCount = Math.min(7, data.length);
+      const latestBloodUnprocessed = data.slice(0, bloodCount);
+      const latestBloodProcessed = latestBloodUnprocessed.reverse();
+      
+      bloodData.value = latestBloodProcessed.map(item => Number(item.bloodData));
+    }
+  });
+  
+  // 订阅灌注指数数据
+  subscribePiData(user_id, (data) => {
+    console.log('收到实时PI数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const piCount = Math.min(4, data.length);
+      const latestPiUnprocessed = data.slice(0, piCount);
+      const latestPiProcessed = latestPiUnprocessed.reverse();
+      
+      piData.value = latestPiProcessed.map(item => Number(item.piData));
+    }
+  });
+  
+  // 订阅血氧数据
+  subscribeOxygenData(user_id, (data) => {
+    console.log('收到实时血氧数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestOxygen = data[0];
+      oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
+    }
+  });
+  
+  // 订阅睡眠数据
+  subscribeSlpData(user_id, (data) => {
+    console.log('收到实时睡眠数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const sleepCount = Math.min(4, data.length);
+      const latestSleepUnprocessed = data.slice(0, sleepCount);
+      const latestSleepProcessed = latestSleepUnprocessed.reverse();
+      
+      sleepData.value = latestSleepProcessed.map(item => Number(item.sleepData));
+    }
+  });
+  
+  // 订阅血压数据
+  subscribePreData(user_id, (data) => {
+    console.log('收到实时血压数据:', data);
+    if (Array.isArray(data) && data.length > 0) {
+      const latestBP = data[0];
+      pressureData.value = [
+        Number(latestBP.systolicBp),
+        Number(latestBP.diastolicBp)
+      ];
+    }
+  });
+};
+
+onBeforeMount(() => {
+  // 初始获取一次数据
+  fetchData();
+  // 开始实时订阅
+  startRealTimeSubscriptions();
+});
+
+// 组件卸载时清理
+onBeforeUnmount(() => {
+  unsubscribeUserAllRealTimeData(user_id);
+});
+
+// const props = defineProps({
+//     onClick: Function
+// })
 
 const toggleRouter = (str) => {
+    // props.onClick()
     userInfoStore.siderMode.value = 1
     router.push({ name: str })
 }
 
-const cards = [
-    { id: 'heart', name: '心率', icon: '♥', unit: 'bpm', color: '#E57373', key: 'heartData' },
-    { id: 'blood', name: '血糖', icon: '🩸', unit: 'mmol/L', color: '#9575CD', key: 'bloodData' },
-    { id: 'oxygen', name: '血氧', icon: '💧', unit: '%', color: '#4FC3F7', key: 'oxygenData' },
-    { id: 'pressure', name: '血压', icon: '●', unit: 'mmHg', color: '#F06292', key: 'pressureData' },
-    { id: 'sleep', name: '睡眠', icon: '▲', unit: 'h', color: '#81C784', key: 'sleepData' },
-    { id: 'pi', name: '灌注指数', icon: '◆', unit: 'pi', color: '#FFB74D', key: 'piData' },
-];
-
-const getCardStyle = (card) => ({
-    '--card-color': card.color
-});
-
-const activeCardIndex = ref(0)
-
-const handleCardClick = (index) => {
-    activeCardIndex.value = index
-}
-
-const handleScroll = (e) => {
-    e.preventDefault()
-    const scrollSensitivity = 0.1
-    const delta = e.deltaY * scrollSensitivity
-    activeCardIndex.value = Math.max(0, Math.min(cards.length - 1, activeCardIndex.value + delta))
-}
-
-let containerRef = null
-
-const setContainerRef = (el) => {
-    containerRef = el
-}
-
-onMounted(() => {
-    if (containerRef) {
-        containerRef.addEventListener('wheel', handleScroll, { passive: false })
-    }
-})
-
-onBeforeUnmount(() => {
-    if (containerRef) {
-        containerRef.removeEventListener('wheel', handleScroll)
-    }
-})
 </script>
 
-<template>
-    <div class="data-container" ref="setContainerRef">
-        <div class="section-header">
-            <div class="section-title">
-                <span class="title-text">健康数据概览</span>
-                <span class="title-line"></span>
-            </div>
-            <span class="update-time">实时监测</span>
-        </div>
-        
-        <div class="main-content">
-            <!-- 时间轴 -->
-            <div class="timeline-section">
-                <div class="timeline">
-                    <div 
-                        v-for="(card, index) in cards" 
-                        :key="card.id"
-                        class="timeline-item"
-                        :class="{ active: index === activeCardIndex }"
-                        @click="handleCardClick(index)"
-                        :style="{ '--card-color': card.color }"
-                    >
-                        <div class="timeline-dot"></div>
-                        <div class="timeline-label">{{ card.name }}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 卡片堆叠 -->
-            <div class="cards-section">
-                <div class="stack-container" style="perspective: 1500px;">
-                    <div class="stack-wrapper" style="transform-style: preserve-3d;">
-                        <div
-                            v-for="(card, index) in [...cards].reverse()"
-                            :key="card.id"
-                            class="stack-card"
-                            :style="{
-                                transform: `
-                                    translateZ(${(cards.length - 1 - index - activeCardIndex) * -60}px)
-                                    translateY(${(cards.length - 1 - index - activeCardIndex) * -20}px)
-                                    scale(${Math.max(0.6, 1 - Math.abs(cards.length - 1 - index - activeCardIndex) * 0.15)})
-                                `,
-                                opacity: Math.abs(cards.length - 1 - index - activeCardIndex) < 0.5 ? 1 : 0,
-                                zIndex: Math.round((cards.length - Math.abs(cards.length - 1 - index - activeCardIndex)) * 10),
-                                pointerEvents: Math.abs(cards.length - 1 - index - activeCardIndex) < 0.5 ? 'auto' : 'none'
-                            }"
-                            @click="handleCardClick(cards.length - 1 - index)"
-                        >
-                            <div class="card-content" :style="getCardStyle(card)">
-                                <div class="card-header">
-                                    <span class="card-icon">{{ card.icon }}</span>
-                                    <span class="card-name">{{ card.name }}</span>
-                                </div>
-                                <div class="chart-area" :style="index === 4 ? { minHeight: '180px' } : {}">
-                                    <component
-                                        :is="[
-                                            PiData, SleepData, PressureData,
-                                            OxygenData, BloodData, HeartData
-                                        ][index]"
-                                        :data="[
-                                            piData, sleepData, pressureData,
-                                            oxygenData, bloodData, heartData
-                                        ][index]"
-                                    ></component>
-                                </div>
-                                <div class="card-footer">
-                                    <span class="card-unit">{{ card.unit }}</span>
-                                    <button 
-                                        class="detail-btn"
-                                        @click.stop="toggleRouter(card.key)"
-                                    >
-                                        查看详情
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 滚动提示 -->
-        <div class="scroll-hint">
-            滚动鼠标滚轮切换卡片
-        </div>
-    </div>
-</template>
-
 <style scoped>
-.data-container {
+.Box {
+    background-color: #fff;
+    width: 100%;
+    height: 80%;
+    border-radius: 0.3rem;
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr;
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.item {
     width: 100%;
     height: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    border-radius: 0.2rem;
     overflow: hidden;
-    position: relative;
-}
-
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.2rem;
-    padding: 0 0.1rem;
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.12rem;
-}
-
-.title-text {
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    font-size: 0.14rem;
-    font-weight: 600;
-    color: #2D572D;
-    letter-spacing: 1px;
-}
-
-.title-line {
-    width: 0.3rem;
-    height: 0.02rem;
-    background: linear-gradient(90deg, #2D572D, #81C784);
-}
-
-.update-time {
-    font-family: 'DIN Alternate', 'Roboto', sans-serif;
-    font-size: 0.1rem;
-    color: #999;
-    letter-spacing: 0.5px;
-}
-
-.main-content {
-    flex: 1;
-    display: flex;
-    position: relative;
-    overflow: hidden;
-    gap: 0.3rem;
-    padding: 0 0.1rem;
-}
-
-/* 时间轴部分 */
-.timeline-section {
-    width: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 40;
-}
-
-.timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.15rem 0;
-}
-
-.timeline-item {
-    display: flex;
-    align-items: center;
-    gap: 0.15rem;
-    padding: 0.08rem 0;
-    border-radius: 0.06rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 100%;
+    /* background-color: aquamarine; */
     box-sizing: border-box;
 }
 
-.timeline-item:hover {
-    transform: translateX(4px);
+.item:hover {
+    border: 0.02rem solid rgb(148, 199, 255);
 }
 
-.timeline-item.active {
-    transform: translateX(8px);
+.pi-item {
+    flex-direction: row-reverse;
 }
 
-.timeline-dot {
-    width: 0.08rem;
-    height: 0.08rem;
-    border-radius: 50%;
-    background: #999;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-}
-
-.timeline-item.active .timeline-dot {
-    background: var(--card-color);
-    width: 0.12rem;
-    height: 0.12rem;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
-}
-
-.timeline-label {
-    font-size: 0.1rem;
-    color: #666;
-    white-space: nowrap;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.timeline-item:hover .timeline-label {
-    color: #333;
-}
-
-.timeline-item.active .timeline-label {
-    color: var(--card-color);
-    font-weight: 600;
-}
-
-/* 卡片堆叠部分 */
-.cards-section {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    z-index: 1;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 0.2rem;
-    padding: 0.15rem;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
-    overflow: visible;
-}
-
-.stack-container {
-    width: 100%;
+.data {
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.stack-wrapper {
-    position: relative;
-    width: 80%;
-    height: 80%;
-    transform: translate(-5%, -10%);
-}
-
-.stack-card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform-origin: center center;
-}
-
-.card-content {
-    width: 100%;
-    height: 100%;
-    background: #ffffff;
-    border-radius: 0.15rem;
-    padding: 0.25rem;
+    width: 40%;
     display: flex;
     flex-direction: column;
-    position: relative;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    border: 1px solid rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-}
-
-.card-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 0.04rem;
-    background: var(--card-color);
-    border-radius: 0.15rem 0.15rem 0 0;
-}
-
-.card-content:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-}
-
-.card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.12rem;
-    margin-bottom: 0.2rem;
-}
-
-.card-icon {
-    font-size: 0.2rem;
-    color: var(--card-color);
-}
-
-.card-name {
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    font-size: 0.14rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.chart-area {
-    flex: 1;
-    min-height: 0;
-    margin: 0.1rem 0;
-    display: flex;
-    align-items: center;
     justify-content: center;
-}
-
-.chart-area > * {
-    width: 100%;
-    height: 100%;
-}
-
-.card-footer {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 0.2rem;
-    padding-top: 0.15rem;
-    border-top: 1px solid rgba(0,0,0,0.08);
+    font-size: 1.5rem;
 }
 
-.card-unit {
-    font-size: 0.11rem;
-    color: #666;
-    font-weight: 500;
+.chart {
+    background-color: rgb(255, 255, 255);
+    height: 100%;
+    width: 60%;
 }
 
-.detail-btn {
-    padding: 0.08rem 0.15rem;
-    border: 1px solid var(--card-color);
-    background: transparent;
-    border-radius: 0.08rem;
-    font-size: 0.11rem;
-    color: var(--card-color);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.detail-btn:hover {
-    background: var(--card-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-}
-
-/* 滚动提示 */
-.scroll-hint {
-    position: absolute;
-    bottom: 0.25rem;
-    left: 50%;
-    transform: translateX(-50%);
+.dataNum {
     font-size: 0.1rem;
-    color: #999;
-    opacity: 0.7;
-    pointer-events: none;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 0.08rem 0.16rem;
-    border-radius: 0.1rem;
-    backdrop-filter: blur(8px);
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .main-content {
-        flex-direction: column;
-        gap: 0.2rem;
-    }
-    
-    .timeline-section {
-        width: 100%;
-        height: 100px;
-    }
-    
-    .timeline {
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0.15rem;
-    }
-    
-    .timeline-item {
-        min-width: 80px;
-    }
-    
-    .stack-wrapper {
-        width: 95%;
-        height: 85%;
-    }
+.title {
+    font-size: 0.1rem;
+    color: rgba(0, 122, 255, 1);
 }
 </style>

@@ -75,6 +75,41 @@ const routes = [
                 component: () => import("../pages/Person.vue")
             }
         ]
+<<<<<<< Updated upstream
+=======
+    },
+    {
+        path: "/childHome",
+        name: "childHome",
+        component: () => import("../pages/ChildHome.vue"),
+    },
+    {
+        path: '/alerts',
+        name: 'Alerts',
+        component: () => import('../views/Alerts.vue'),
+        meta: {
+            title: '提醒通知',
+            keepAlive: false
+        }
+    },
+    {
+        path: '/profile',
+        name: 'Profile',
+        component: () => import('../pages/Profile.vue'),
+        meta: {
+            title: '个人资料',
+            keepAlive: false
+        }
+    },
+    {
+        path: '/accountSettings',
+        name: 'AccountSettings',
+        component: () => import('../pages/AccountSettings.vue'),
+        meta: {
+            title: '账户设置',
+            keepAlive: false
+        }
+>>>>>>> Stashed changes
     }
 ]
 

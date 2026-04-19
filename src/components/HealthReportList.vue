@@ -349,6 +349,7 @@ defineExpose({
                                 type="primary"
                                 size="small"
                                 text
+                                style="transform: scale(0.8); transform-origin: center;"
                                 @click="viewReport(report)"
                             >
                                 <el-icon><View /></el-icon>
@@ -358,6 +359,7 @@ defineExpose({
                                 type="success"
                                 size="small"
                                 text
+                                style="transform: scale(0.8); transform-origin: center;"
                                 @click="downloadReport(report)"
                                 :disabled="!report.content && !report.report"
                             >
@@ -368,6 +370,7 @@ defineExpose({
                                 type="danger"
                                 size="small"
                                 text
+                                style="transform: scale(0.8); transform-origin: center;"
                                 @click="deleteReport(report.id)"
                                 :loading="deletingReportId === report.id"
                             >

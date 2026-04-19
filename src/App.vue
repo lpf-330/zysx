@@ -1,4 +1,5 @@
 <script setup>
+<<<<<<< Updated upstream
 import { RouterView, useRoute } from 'vue-router';
 import { onMounted, onUnmounted, watch, nextTick } from 'vue';
 
@@ -111,12 +112,26 @@ onUnmounted(() => {
   if (leafInterval) clearInterval(leafInterval)
   if (collisionCheckInterval) clearInterval(collisionCheckInterval)
 })
+=======
+import { ref } from 'vue';
+import { RouterView } from 'vue-router';
+import GlobalDialog from '@/components/common/GlobalDialog.vue';
+import { setDialogInstance } from '@/composables/useDialog.js';
+
+const dialogRef = ref(null);
+
+const handleDialogReady = (instance) => {
+  console.log('Dialog ready:', instance)
+  setDialogInstance(instance);
+};
+>>>>>>> Stashed changes
 </script>
 
 <template>
    <div class="background">
       <div class="falling-leaves" id="fallingLeavesContainer"></div>
       <RouterView></RouterView>
+      <GlobalDialog ref="dialogRef" @ready="handleDialogReady" />
    </div>
 </template>
 
@@ -173,5 +188,6 @@ onUnmounted(() => {
 .background {
    width: 100%;
    height: 100vh;
+   position: relative;
 }
 </style>
