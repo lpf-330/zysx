@@ -284,10 +284,10 @@ onBeforeUnmount(() => {
                 </div>
             </div>
             <div class="header-right">
-                <el-button 
-                    type="primary" 
-                    plain 
-                    size="small" 
+                <el-button
+                    type="primary"
+                    plain
+                    size="small"
                     class="report-btn"
                     :disabled="!canGenerateReport"
                     :loading="isGeneratingReport"
@@ -295,10 +295,10 @@ onBeforeUnmount(() => {
                 >
                     {{ isGeneratingReport ? '生成中...' : '生成健康报告' }}
                 </el-button>
-                <el-button 
-                    type="danger" 
-                    plain 
-                    size="small" 
+                <el-button
+                    type="danger"
+                    plain
+                    size="small"
                     class="clear-btn"
                     :disabled="QAList.length === 0"
                     @click="handleCleanHistory"
@@ -309,45 +309,83 @@ onBeforeUnmount(() => {
         </el-header>
 
         <el-main class="main-container">
-            <!-- 左侧对话区域 -->
+            <!-- 左侧对话区域 - 包含内容 + 底部输入框 -->
             <div class="chat-container">
-                <el-scrollbar ref="chatScrollRef" height="100%" class="chat-scroll">
-                    <div v-if="QAList.length === 0" class="empty-tip">
-                        <div class="empty-icon">💬</div>
-                        <div class="empty-title">开始一次新的咨询</div>
-                        <div class="empty-desc">
-                            请简要描述您的症状、既往病史或当前用药情况，我将为您提供专业的健康科普建议。
-                            <div class="generate-report-hint">
-                                <el-icon><InfoFilled /></el-icon>
-                                您也可以直接点击上方的"生成健康报告"按钮，获取个性化的健康评估。
+                <div class="chat-wrapper">
+                    <el-scrollbar ref="chatScrollRef" class="chat-scroll">
+                        <div v-if="QAList.length === 0" class="empty-tip">
+                            <div class="empty-icon">💬</div>
+                            <div class="empty-title">开始一次新的咨询</div>
+                            <div class="empty-desc">
+                                请简要描述您的症状、既往病史或当前用药情况，我将为您提供专业的健康科普建议。
+                                <div class="generate-report-hint">
+                                    <el-icon><InfoFilled /></el-icon>
+                                    您也可以直接点击上方的"生成健康报告"按钮，获取个性化的健康评估。
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div v-else>
-                        <div 
-                            v-for="(data, index) in QAList" 
-                            :key="`qa-${index}`"
-                        >
-                            <div v-if="data.role === 'user'">
-                                <query-item :query="data.query" />
+                        <div v-else>
+                            <div
+                                v-for="(data, index) in QAList"
+                                :key="`qa-${index}`"
+                            >
+                                <div v-if="data.role === 'user'">
+                                    <query-item :query="data.query" />
+                                </div>
+
+                                <div v-if="data.role === 'assistant'">
+                                    <answer-item
+                                        :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')"
+                                    />
+                                </div>
+
+                                <div v-if="data.role === 'report'">
+                                    <health-report-item
+                                        :report="data.answer"
+                                        :loading="data.isGenerating"
+                                    />
+                                </div>
                             </div>
-                            
-                            <div v-if="data.role === 'assistant'">
-                                <answer-item 
-                                    :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')"
+                        </div>
+                    </el-scrollbar>
+
+                    <!-- 输入框在咨询框内部底部 -->
+                    <div class="input-wrapper">
+                        <div class="footer-top">
+                            <span class="input-tip">
+                                温馨提示：本助手不替代线下就医，如有严重不适请及时前往正规医疗机构。
+                            </span>
+                            <span class="status-text" v-if="isStreaming">正在生成回答…</span>
+                            <span class="status-text" v-else-if="isGeneratingReport">正在生成健康报告…</span>
+                        </div>
+                        <div class="footer-main">
+                            <el-scrollbar class="inputBoxMain" max-height="3.2rem">
+                                <el-input
+                                    class="inputArea"
+                                    v-model="query"
+                                    type="textarea"
+                                    placeholder="请描述您的症状、持续时间、年龄、既往疾病或用药情况…"
+                                    :rows="1"
+                                    autosize
+                                    @keyup.enter.exact.prevent="postQuery"
+                                    :disabled="isStreaming || isGeneratingReport"
                                 />
-                            </div>
-                            
-                            <div v-if="data.role === 'report'">
-                                <health-report-item 
-                                    :report="data.answer"
-                                    :loading="data.isGenerating"
-                                />
+                            </el-scrollbar>
+                            <div class="inputBoxFooter">
+                                <el-button
+                                    class="send-btn"
+                                    type="primary"
+                                    circle
+                                    :disabled="query === '' || isStreaming || isGeneratingReport"
+                                    @click="postQuery"
+                                >
+                                    <span class="iconfont icon-tijiaoxinxi"></span>
+                                </el-button>
                             </div>
                         </div>
                     </div>
-                </el-scrollbar>
+                </div>
             </div>
 
             <!-- 右侧健康报告列表区域 -->
@@ -355,41 +393,6 @@ onBeforeUnmount(() => {
                 <health-report-list ref="healthReportListRef" :user-id="user_id" />
             </div>
         </el-main>
-
-        <el-footer class="footer">
-            <div class="footer-top">
-                <span class="input-tip">
-                    温馨提示：本助手不替代线下就医，如有严重不适请及时前往正规医疗机构。
-                </span>
-                <span class="status-text" v-if="isStreaming">正在生成回答…</span>
-                <span class="status-text" v-else-if="isGeneratingReport">正在生成健康报告…</span>
-            </div>
-            <div class="footer-main">
-                <el-scrollbar class="inputBoxMain" max-height="3.2rem">
-                    <el-input
-                        class="inputArea"
-                        v-model="query"
-                        type="textarea"
-                        placeholder="请描述您的症状、持续时间、年龄、既往疾病或用药情况…"
-                        :rows="1"
-                        autosize
-                        @keyup.enter.exact.prevent="postQuery"
-                        :disabled="isStreaming || isGeneratingReport"
-                    />
-                </el-scrollbar>
-                <div class="inputBoxFooter">
-                    <el-button
-                        class="send-btn"
-                        type="primary"
-                        circle
-                        :disabled="query === '' || isStreaming || isGeneratingReport"
-                        @click="postQuery"
-                    >
-                        <span class="iconfont icon-tijiaoxinxi"></span>
-                    </el-button>
-                </div>
-            </div>
-        </el-footer>
     </el-container>
 </template>
 
@@ -498,6 +501,27 @@ onBeforeUnmount(() => {
     border-radius: 18px;
     box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding-bottom: 8px;
+}
+
+/* 对话包装器 - 滚动内容 + 底部输入 */
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex: 1;
+}
+
+.chat-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px 8px 24px 8px;
+    min-height: 0;
+    padding-bottom: 24px;
 }
 
 /* 右侧报告列表容器 */
@@ -509,6 +533,16 @@ onBeforeUnmount(() => {
     border-radius: 18px;
     box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
     overflow: hidden;
+}
+
+/* 隐藏所有元素滚动条 */
+:deep(.el-scrollbar__bar.is-vertical) {
+    display: none !important;
+}
+
+/* 隐藏右侧容器外滚动条 */
+:deep(.el-main) {
+    overflow-y: hidden;
 }
 
 .chat-scroll {
@@ -565,17 +599,12 @@ onBeforeUnmount(() => {
     flex-shrink: 0;
 }
 
-/* 底部输入区域 */
-.footer {
-    width: 87%;
-    max-width: 1400px;
-    position: fixed;
-    bottom: 22px;
-    padding: 0 16px;
-    box-sizing: border-box;
-    background: transparent;
-    z-index: 10;
-    height: 10%;
+/* 输入区域 - 在聊天框内部底部 */
+.input-wrapper {
+    flex: 0 0 auto;
+    padding: 8px 12px 10px 12px;
+    border-top: 1px solid #f0f0f0;
+    background: rgba(248, 250, 248, 0.95);
 }
 
 .footer-top {
@@ -600,7 +629,7 @@ onBeforeUnmount(() => {
     background: rgba(255, 255, 255, 0.98);
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    padding: 10px 12px 10px 14px;
+    padding: 10px 12px 10px 18px;
     display: flex;
     align-items: flex-end;
 }
@@ -608,6 +637,7 @@ onBeforeUnmount(() => {
 .inputBoxMain {
     flex: 1;
     margin-right: 10px;
+    max-width: 85%;
 }
 
 .inputBoxFooter {

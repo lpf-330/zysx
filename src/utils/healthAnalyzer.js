@@ -231,7 +231,155 @@ message: '血糖水平正常，继续保持良好习惯'
 };
 
 export const HeartRateRules = {
+// 异常值过滤配置
+FILTER_CONFIG: {
+	MIN_VALID: 30,       // 最小有效心率
+	MAX_VALID: 200,      // 最大有效心率（过滤掉 255 这样的传感器错误）
+	MAX_CHANGE: 50,      // 相邻读数允许的最大变化
+	MAX_TIME_GAP_MS: 2 * 60 * 1000,  // 仅在此时间间隔内应用突变检测
+},
 RESTING_RANGE: { min: 60, max: 100 },
+
+// 异常值过滤
+filterOutliers(heartData, timestamps, config = {}) {
+	const {
+		minValid = this.FILTER_CONFIG.MIN_VALID,
+		maxValid = this.FILTER_CONFIG.MAX_VALID,
+		maxChange = this.FILTER_CONFIG.MAX_CHANGE,
+		maxTimeGapMs = this.FILTER_CONFIG.MAX_TIME_GAP_MS
+	} = config;
+
+	const filteredData = [];
+	const filteredTimes = [];
+	const removedIndices = [];
+	let lastValidValue = null;
+
+	for (let i = 0; i < heartData.length; i++) {
+		const value = heartData[i];
+		const time = timestamps[i];
+		let isValid = true;
+
+		// 第一级：检查生理范围
+		if (value < minValid || value > maxValid) {
+			isValid = false;
+		}
+
+		// 第二级：检查突变（如果有前一个有效值且时间间隔不大）
+		if (isValid && lastValidValue !== null && i > 0) {
+			const timeDiff = new Date(time) - new Date(timestamps[i - 1]);
+			if (timeDiff < maxTimeGapMs) {
+				const change = Math.abs(value - lastValidValue);
+				if (change > maxChange) {
+					isValid = false;
+				}
+			}
+		}
+
+		if (isValid) {
+			filteredData.push(value);
+			filteredTimes.push(time);
+			lastValidValue = value;
+		} else {
+			// 异常值：如果已有有效值，用最后一个有效值替代，保持时间轴对齐
+			if (lastValidValue !== null) {
+				filteredData.push(lastValidValue);
+				filteredTimes.push(time);
+			}
+			// 如果第一个值就是异常且没有 lastValidValue，则直接丢弃
+			removedIndices.push(i);
+		}
+	}
+
+	return {
+		filteredData,
+		filteredTimes,
+		removedCount: removedIndices.length,
+		removedIndices
+	};
+},
+
+// 数据降采样 - 减少数据点密度，使图表更清晰
+// 保留每个桶内的极值，保持原始波形特征
+downsample(data, timestamps, targetPoints = 55, keepExtremes = true) {
+	// 如果数据点数已经少于目标，直接返回
+	if (data.length <= targetPoints) {
+		return {
+			downsampledData: data,
+			downsampledTimes: timestamps,
+			originalCount: data.length,
+			downsampledCount: data.length
+		};
+	}
+
+	const bucketSize = data.length / targetPoints;
+	const downsampledData = [];
+	const downsampledTimes = [];
+
+	// 始终保留第一个点
+	downsampledData.push(data[0]);
+	downsampledTimes.push(timestamps[0]);
+
+	// 处理每个桶
+	for (let i = 0; i < targetPoints; i++) {
+		const startIdx = Math.floor(i * bucketSize) + 1;
+		const endIdx = Math.min(Math.floor((i + 1) * bucketSize), data.length - 1);
+
+		if (startIdx >= endIdx) continue;
+
+		// 找到桶内的最小值和最大值
+		let bucketMin = data[startIdx];
+		let bucketMax = data[startIdx];
+		let minIdx = startIdx;
+		let maxIdx = startIdx;
+
+		for (let j = startIdx + 1; j <= endIdx; j++) {
+			if (data[j] < bucketMin) {
+				bucketMin = data[j];
+				minIdx = j;
+			}
+			if (data[j] > bucketMax) {
+				bucketMax = data[j];
+				maxIdx = j;
+			}
+		}
+
+		// 按时间顺序添加点
+		if (keepExtremes) {
+			if (minIdx < maxIdx) {
+				downsampledData.push(bucketMin);
+				downsampledTimes.push(timestamps[minIdx]);
+				downsampledData.push(bucketMax);
+				downsampledTimes.push(timestamps[maxIdx]);
+			} else {
+				downsampledData.push(bucketMax);
+				downsampledTimes.push(timestamps[maxIdx]);
+				downsampledData.push(bucketMin);
+				downsampledTimes.push(timestamps[minIdx]);
+			}
+		} else {
+			// 使用桶中点的平均值
+			const avg = (bucketMin + bucketMax) / 2;
+			const midIdx = Math.floor((startIdx + endIdx) / 2);
+			downsampledData.push(avg);
+			downsampledTimes.push(timestamps[midIdx]);
+		}
+	}
+
+	// 始终保留最后一个点
+	const lastIdx = data.length - 1;
+	if (downsampledData[downsampledData.length - 1] !== data[lastIdx]) {
+		downsampledData.push(data[lastIdx]);
+		downsampledTimes.push(timestamps[lastIdx]);
+	}
+
+	return {
+		downsampledData,
+		downsampledTimes,
+		originalCount: data.length,
+		downsampledCount: downsampledData.length
+	};
+},
+
 analyzeSingleHeartRate(value, timestamp = null) {
 const result = {
 value,

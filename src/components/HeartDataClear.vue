@@ -39,12 +39,14 @@ import  useUserInfoStore  from '../stores/user';
 import { useCalendarSelectionStore } from '../stores/calendarSelection';
 import { storeToRefs } from 'pinia';
 // 导入新的聚合API和实时数据API
-import { 
-    getHeartDataByDate, 
-    getHeartDataByWeek, 
-    getHeartDataByMonth, 
+import {
+    getHeartDataByDate,
+    getHeartDataByWeek,
+    getHeartDataByMonth,
     getHeartDataByYear,
-    getHeartData //导入实时数据API
+    getHeartData, //导入实时数据API
+    subscribeHeartData,
+    unsubscribeUserAllRealTimeData
 } from '../api/healthData';
 // 导入健康分析工具
 import healthAnalyzer from '../utils/healthAnalyzer';
@@ -143,9 +145,15 @@ const fetchRealTimeData = async () => {
         if (realTimeData && Array.isArray(realTimeData) && realTimeData.length > 0) {
             const latestRecord = realTimeData[0]; // 获取最新的一条记录
             // 根据您的API返回格式调整字段名，例如 heartData
-            nowData.value = latestRecord.heartData || 0; 
-            
-            console.log(`更新实时心率值: ${nowData.value}`);
+            const rawValue = latestRecord.heartData || 0;
+            // 过滤异常值：只在有效范围内更新
+            const { MIN_VALID, MAX_VALID } = healthAnalyzer.HeartRateRules.FILTER_CONFIG;
+            if (rawValue >= MIN_VALID && rawValue <= MAX_VALID) {
+                nowData.value = rawValue;
+                console.log(`更新实时心率值: ${nowData.value}`);
+            } else {
+                console.log(`过滤掉异常实时心率值: ${rawValue} (范围 ${MIN_VALID}-${MAX_VALID})`);
+            }
         }
     } catch (error) {
         console.error("获取实时心率数据失败:", error);
@@ -237,10 +245,27 @@ const fetchAggregatedData = async () => {
                     values: processedData
                 });
             }
-            // 更新响应式变量 (用于图表)
-            data.value = processedData;
+
+            // 过滤异常值
+            const filteringResult = healthAnalyzer.HeartRateRules.filterOutliers(processedData, rawTimes);
+            let filteredData = filteringResult.filteredData;
+            let filteredTimes = filteringResult.filteredTimes;
+            console.log(`心率数据过滤完成: 过滤掉 ${filteringResult.removedCount} 个异常值`);
+
+            // 日视图降采样 - 减少数据点密度使图表更清晰
+            if (viewType === 'day' && filteredData.length > 60) {
+                const downsampleResult = healthAnalyzer.HeartRateRules.downsample(filteredData, filteredTimes, 55, true);
+                filteredData = downsampleResult.downsampledData;
+                filteredTimes = downsampleResult.downsampledTimes;
+                console.log(`心率数据降采样完成: ${downsampleResult.originalCount} → ${downsampleResult.downsampledCount} 点`);
+            }
+
+            processedTimes = filteredTimes.map(time => formatRecordTime(time, viewType));
+
+            // 更新响应式变量 (用于图表) - 使用过滤和降采样后的数据
+            data.value = filteredData;
             formattedTime.value = processedTimes;
-            rawTimeData.value = rawTimes;
+            rawTimeData.value = filteredTimes;
             console.log('处理后的数据详情 (用于图表):', {
                 viewType,
                 dataLength: data.value.length,
@@ -249,12 +274,12 @@ const fetchAggregatedData = async () => {
                 timePoints: formattedTime.value,
                 rawTimes: rawTimeData.value
             });
-            
+
             // 更新图表
             updateChart();
-            
-            // 分析健康数据
-            analyzeHealthData(processedData, rawTimes);
+
+            // 分析健康数据 - 使用过滤和降采样后的数据
+            analyzeHealthData(filteredData, filteredTimes);
         } else {
             console.warn("API返回的心率聚合数据格式不正确、为空数组或无数据", apiResponse);
             resetData();
@@ -785,7 +810,69 @@ onMounted(() => {
     }, 100);
     
     // 获取实时数据用于顶部显示 (关键：在挂载时调用一次)
-    fetchRealTimeData(); 
+    fetchRealTimeData();
+
+    // 订阅实时心率数据，动态更新图表
+    subscribeHeartData(user_id, (newData) => {
+        console.log('收到实时心率数据更新:', newData);
+        if (Array.isArray(newData) && newData.length > 0) {
+            const { MIN_VALID, MAX_VALID } = healthAnalyzer.HeartRateRules.FILTER_CONFIG;
+            const currentViewType = calendarSelectionStore.currentViewType;
+
+            newData.forEach(record => {
+                const rawValue = Number(record.heartData);
+                const newTime = record.recordTime || new Date().toISOString();
+
+                // 过滤异常值 - 只保留有效范围内的值
+                if (rawValue >= MIN_VALID && rawValue <= MAX_VALID) {
+                    // 更新顶部当前心率显示
+                    nowData.value = rawValue;
+
+                    // 只在日视图动态更新图表，且只追加与当前选中日期相同的数据
+                    if (currentViewType === 'day' && calendarSelectionStore.selectedDate) {
+                        // 检查新数据日期是否与当前选中日期相同
+                        const newDateObj = new Date(newTime);
+                        const isSameDate =
+                            newDateObj.getFullYear() === calendarSelectionStore.selectedDate.getFullYear() &&
+                            newDateObj.getMonth() === calendarSelectionStore.selectedDate.getMonth() &&
+                            newDateObj.getDate() === calendarSelectionStore.selectedDate.getDate();
+
+                        if (isSameDate) {
+                            // 添加到数据数组
+                            data.value.push(rawValue);
+                            rawTimeData.value.push(newTime);
+                            formattedTime.value.push(formatRecordTime(newTime, 'day'));
+
+                            // 如果点数太多，自动降采样保持图表清晰
+                            if (data.value.length > 60) {
+                                // 先重新过滤（保持异常过滤）再降采样
+                                const filteringResult = healthAnalyzer.HeartRateRules.filterOutliers(data.value, rawTimeData.value);
+                                let filteredData = filteringResult.filteredData;
+                                let filteredTimes = filteringResult.filteredTimes;
+
+                                const downsampleResult = healthAnalyzer.HeartRateRules.downsample(filteredData, filteredTimes, 55, true);
+                                data.value = downsampleResult.downsampledData;
+                                rawTimeData.value = downsampleResult.downsampledTimes;
+                                formattedTime.value = downsampleResult.downsampledTimes.map(time => formatRecordTime(time, 'day'));
+
+                                console.log(`动态降采样完成: ${downsampleResult.originalCount} → ${downsampleResult.downsampledCount} 点`);
+                            }
+
+                            // 更新图表
+                            updateChart();
+                            // 重新分析健康数据
+                            analyzeHealthData(data.value, rawTimeData.value);
+                            console.log(`动态添加新心率数据: ${rawValue} bpm at ${newTime}`);
+                        } else {
+                            console.log(`新数据日期(${newDateObj.toLocaleDateString()})与当前选中日期不匹配，不追加到图表`);
+                        }
+                    }
+                } else {
+                    console.log(`过滤掉异常实时心率值: ${rawValue} (范围 ${MIN_VALID}-${MAX_VALID})`);
+                }
+            });
+        }
+    });
 
     const handleResize = () => {
         if (myChart && isMounted) {
@@ -822,6 +909,8 @@ onUnmounted(() => {
             console.warn("清理图表实例时出错:", error);
         }
     }
+    // 取消实时数据订阅
+    unsubscribeUserAllRealTimeData(user_id);
 });
 </script>
 
