@@ -5,8 +5,8 @@ import { useAuthStore } from '../stores/authStore';
 
 const authStore = useAuthStore()
 
-const account = ref('')
-const password = ref('')
+const account = ref('zhangsan')
+const password = ref('123456')
 const passwordTest = /^[a-zA-Z0-9_]{1,20}$/
 const loginType = ref('user')
 
