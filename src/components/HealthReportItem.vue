@@ -13,15 +13,19 @@ const props = defineProps({
 });
 
 const renderedReport = ref('');
+let debounceTimer = null;
 
 watch(
     () => props.report,
     (newReport) => {
-        if (newReport && newReport.trim()) {
-            renderedReport.value = marked.parse(newReport);
-        } else {
-            renderedReport.value = '';
-        }
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (newReport && newReport.trim()) {
+                renderedReport.value = marked.parse(newReport);
+            } else {
+                renderedReport.value = '';
+            }
+        }, 80);
     },
     { immediate: true }
 );
@@ -32,31 +36,31 @@ const downloadReport = () => {
         ElMessage.warning('当前没有可下载的报告内容');
         return;
     }
-    
+
     try {
         // 创建 markdown 格式的报告内容
         const reportContent = props.report;
-        
+
         // 创建 Blob 对象，使用 markdown 的 MIME 类型
-        const blob = new Blob([reportContent], { 
-            type: 'text/markdown;charset=utf-8' 
+        const blob = new Blob([reportContent], {
+            type: 'text/markdown;charset=utf-8'
         });
-        
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        
+
         // 使用当前日期作为文件名，扩展名为 .md
         const now = new Date();
         const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
         a.download = `健康报告_${dateStr}_${timeStr}.md`;
-        
+
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         ElMessage.success('Markdown 报告下载成功');
     } catch (error) {
         console.error('下载报告失败:', error);
@@ -71,26 +75,34 @@ const downloadReport = () => {
             <div class="header-title">📋 今日健康报告</div>
             <div class="header-subtitle">由 AI 生成的个性化健康评估</div>
         </div>
-        
+
         <div class="report-body">
-            <!-- 加载状态 -->
-            <div v-if="loading" class="loading-state">
-                <el-icon class="loading-icon"><Loading /></el-icon>
+            <div v-if="renderedReport" class="report-content" v-html="renderedReport"></div>
+
+            <div v-if="loading && renderedReport" class="streaming-indicator">
+                <el-icon class="streaming-icon">
+                    <Loading />
+                </el-icon>
+                <span>生成中…</span>
+            </div>
+
+            <div v-if="loading && !renderedReport" class="loading-state">
+                <el-icon class="loading-icon">
+                    <Loading />
+                </el-icon>
                 <div class="loading-text">正在为您生成健康报告，请稍候…</div>
             </div>
-            
-            <!-- 报告内容 -->
-            <div v-else-if="renderedReport" class="report-content" v-html="renderedReport"></div>
-            
-            <!-- 空状态 -->
-            <div v-else class="empty-state">
+
+            <div v-if="!loading && !renderedReport" class="empty-state">
                 暂无报告内容
             </div>
         </div>
-        
+
         <div class="report-footer" v-if="!loading && renderedReport">
             <el-button type="primary" size="small" plain @click="downloadReport">
-                <el-icon><Download /></el-icon>
+                <el-icon>
+                    <Download />
+                </el-icon>
                 下载报告 (.md)
             </el-button>
         </div>
@@ -158,9 +170,28 @@ const downloadReport = () => {
     color: #64748b;
 }
 
+.streaming-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    color: #3b82f6;
+    font-size: 12px;
+}
+
+.streaming-icon {
+    font-size: 14px;
+    animation: spin 1s linear infinite;
+}
+
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* 空状态样式 */
@@ -266,15 +297,15 @@ const downloadReport = () => {
         padding: 12px;
         border-radius: 14px;
     }
-    
+
     .header-title {
         font-size: 14px;
     }
-    
+
     .header-subtitle {
         font-size: 11px;
     }
-    
+
     .loading-text,
     .report-content {
         font-size: 12px;

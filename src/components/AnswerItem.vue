@@ -1,27 +1,27 @@
 <script setup>
-import { defineProps, ref, watch } from 'vue'; // 1. 导入 watch
+import { defineProps, ref, watch } from 'vue';
 import { marked } from 'marked';
 
 const props = defineProps({
     answer: String
 });
 
-// 用于存储渲染后的HTML内容
 const renderedAnswer = ref('');
+let debounceTimer = null;
 
-// 2. 监听 props.answer 的变化
 watch(
-    () => props.answer, // 监听目标
-    (newAnswer) => {    // 回调函数
-        if (newAnswer) {
-            // 使用 marked 将 Markdown 转换为 HTML
-            renderedAnswer.value = marked.parse(newAnswer);
-        } else {
-            // 如果 answer 为空，清空渲染结果
-            renderedAnswer.value = '';
-        }
+    () => props.answer,
+    (newAnswer) => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (newAnswer) {
+                renderedAnswer.value = marked.parse(newAnswer);
+            } else {
+                renderedAnswer.value = '';
+            }
+        }, 80);
     },
-    { immediate: true } // 立即执行一次，处理初始值
+    { immediate: true }
 );
 </script>
 

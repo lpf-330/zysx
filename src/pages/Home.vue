@@ -8,7 +8,10 @@ import { getTodosByDate, updateTodoStatusMS } from '../api/user';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 
-const user_id = ref(localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null);
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+const { user_id } = storeToRefs(useUserInfoStore())
 
 const selectedDate = ref(null);
 
@@ -248,20 +251,39 @@ const closeTodoManagement = () => {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(30, 60, 30, 0.45);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
+    animation: overlayFadeIn 0.3s ease;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .todo-modal-content {
     width: 90%;
     max-width: 8rem;
     height: 90vh;
-    background: white;
+    background: linear-gradient(160deg, #fafff9 0%, #f1f8e9 100%);
     border-radius: 0.1rem;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0.1rem 0.4rem rgba(45, 87, 45, 0.25), 0 0 0 0.005rem rgba(129, 199, 132, 0.3);
+    animation: modalSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(0.03rem) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 </style>

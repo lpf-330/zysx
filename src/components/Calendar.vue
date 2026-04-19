@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { getTodosByDate } from '../api/user';
 
+const emit = defineEmits(['date-selected']);
+
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 const today = new Date();
 const currentYear = ref(today.getFullYear());
@@ -10,7 +12,10 @@ const selectedDay = ref(today.getDate());
 const showYearPicker = ref(false);
 const events = ref([]);
 
-const user_id = localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null;
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
+
+const { user_id } = storeToRefs(useUserInfoStore())
 
 const fetchEvents = async () => {
     try {
@@ -92,6 +97,8 @@ const toggleYearPicker = () => {
 
 const selectDay = (day) => {
     selectedDay.value = day;
+    const date = new Date(currentYear.value, currentMonth.value - 1, day);
+    emit('date-selected', date);
 };
 
 const isToday = (day) => {
@@ -329,7 +336,7 @@ onMounted(() => {
 }
 
 .day-cell {
-    aspect-ratio: 1.2;
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;

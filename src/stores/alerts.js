@@ -3,19 +3,16 @@ import { ref, computed } from 'vue'
 import { mockParents, mockAlerts, mockHealthData } from '../utils/mockData'
 
 export const useAppStore = defineStore('app', () => {
-    // 状态
     const parents = ref(mockParents)
     const alerts = ref(mockAlerts)
     const healthData = ref(mockHealthData)
     const selectedParentId = ref(null)
     const isLoading = ref(false)
 
-    // 添加路由相关状态
     const currentRoute = ref('')
     const prevRoute = ref('')
     const navigationHistory = ref([])
 
-    // Getter
     const selectedParent = computed(() => {
         return parents.value.find(parent => parent.id === selectedParentId.value)
     })
@@ -28,7 +25,6 @@ export const useAppStore = defineStore('app', () => {
         return alerts.value.filter(alert => alert.severity === 'critical')
     })
 
-    // Actions
     const selectParent = (parentId) => {
         selectedParentId.value = parentId
     }
@@ -77,7 +73,6 @@ export const useAppStore = defineStore('app', () => {
         }
     }
 
-    // 路由相关actions
     const setCurrentRoute = (routeName) => {
         prevRoute.value = currentRoute.value
         currentRoute.value = routeName
@@ -86,7 +81,6 @@ export const useAppStore = defineStore('app', () => {
             timestamp: new Date().toISOString()
         })
 
-        // 限制历史记录长度
         if (navigationHistory.value.length > 10) {
             navigationHistory.value.shift()
         }
@@ -123,5 +117,9 @@ export const useAppStore = defineStore('app', () => {
         addAlert,
         setCurrentRoute,
         goBack
+    }
+}, {
+    persist: {
+        pick: ['currentRoute', 'prevRoute', 'navigationHistory', 'selectedParentId']
     }
 })

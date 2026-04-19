@@ -21,6 +21,7 @@ const streamQuery = async (userId, sessionId, question) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
         },
         body: requestBody,
     });

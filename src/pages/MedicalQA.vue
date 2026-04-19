@@ -20,26 +20,29 @@ const isStreaming = ref(false);
 const chatScrollRef = ref();
 
 const isGeneratingReport = ref(false);
-const healthReportListRef = ref(); // 用于调用列表组件的方法
+const healthReportListRef = ref();
+const isBusy = computed(() => isStreaming.value || isGeneratingReport.value);
 
 const scrollToBottom = async () => {
     await nextTick();
     if (chatScrollRef.value) {
         chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollTo({
             top: chatScrollRef.value.$el.querySelector('.el-scrollbar__wrap').scrollHeight,
-            behavior: 'smooth' 
+            behavior: 'smooth'
         });
     }
 };
 
 // 修改：只要有用户ID且不在生成过程中就可以生成报告
 const canGenerateReport = computed(() => {
-    return user_id && !isGeneratingReport.value && !isStreaming.value;
+    return user_id && !isBusy.value;
 });
 
 const postQuery = async () => {
-    if (!query.value.trim() || isStreaming.value) {
-        if (query.value.trim() === '') {
+    if (!query.value.trim() || isBusy.value) {
+        if (isBusy.value) {
+            ElMessage.warning('请等待当前请求完成后再发送');
+        } else if (query.value.trim() === '') {
             ElMessage.warning('请输入问题');
         }
         return;
@@ -47,18 +50,18 @@ const postQuery = async () => {
     const question = query.value.trim();
     query.value = '';
 
-    QAList.value.push({ 
-        role: 'user', 
-        query: question, 
+    QAList.value.push({
+        role: 'user',
+        query: question,
         answer: '',
-        isStreaming: false 
+        isStreaming: false
     });
 
-    QAList.value.push({ 
-        role: 'assistant', 
-        query: '', 
+    QAList.value.push({
+        role: 'assistant',
+        query: '',
         answer: '',
-        isStreaming: true 
+        isStreaming: true
     });
 
     isStreaming.value = true;
@@ -92,6 +95,7 @@ const postQuery = async () => {
                                 accumulatedAnswer += content;
                                 if (QAList.value[assistantIndex]) {
                                     QAList.value[assistantIndex].answer = accumulatedAnswer;
+                                    scrollToBottom();
                                 }
                             }
                             if (sseData.done === "true") {
@@ -147,15 +151,15 @@ const generateReport = async () => {
         }
         return;
     }
-    
+
     isGeneratingReport.value = true;
-    
+
     // 在对话区域显示健康报告
-    QAList.value.push({ 
-        role: 'report', 
-        query: '', 
+    QAList.value.push({
+        role: 'report',
+        query: '',
         answer: '',
-        isGenerating: true 
+        isGenerating: true
     });
 
     scrollToBottom();
@@ -189,6 +193,7 @@ const generateReport = async () => {
                                 accumulatedReport += content;
                                 if (QAList.value[reportIndex]) {
                                     QAList.value[reportIndex].answer = accumulatedReport;
+                                    scrollToBottom();
                                 }
                             }
                         } catch (e) {
@@ -196,6 +201,7 @@ const generateReport = async () => {
                                 accumulatedReport += dataContent + '\n';
                                 if (QAList.value[reportIndex]) {
                                     QAList.value[reportIndex].answer = accumulatedReport;
+                                    scrollToBottom();
                                 }
                             }
                         }
@@ -284,25 +290,12 @@ onBeforeUnmount(() => {
                 </div>
             </div>
             <div class="header-right">
-                <el-button
-                    type="primary"
-                    plain
-                    size="small"
-                    class="report-btn"
-                    :disabled="!canGenerateReport"
-                    :loading="isGeneratingReport"
-                    @click="generateReport"
-                >
+                <el-button type="primary" plain size="small" class="report-btn" :disabled="!canGenerateReport"
+                    :loading="isGeneratingReport" @click="generateReport">
                     {{ isGeneratingReport ? '生成中...' : '生成健康报告' }}
                 </el-button>
-                <el-button
-                    type="danger"
-                    plain
-                    size="small"
-                    class="clear-btn"
-                    :disabled="QAList.length === 0"
-                    @click="handleCleanHistory"
-                >
+                <el-button type="danger" plain size="small" class="clear-btn" :disabled="QAList.length === 0"
+                    @click="handleCleanHistory">
                     清空对话
                 </el-button>
             </div>
@@ -319,32 +312,26 @@ onBeforeUnmount(() => {
                             <div class="empty-desc">
                                 请简要描述您的症状、既往病史或当前用药情况，我将为您提供专业的健康科普建议。
                                 <div class="generate-report-hint">
-                                    <el-icon><InfoFilled /></el-icon>
+                                    <el-icon>
+                                        <InfoFilled />
+                                    </el-icon>
                                     您也可以直接点击上方的"生成健康报告"按钮，获取个性化的健康评估。
                                 </div>
                             </div>
                         </div>
 
                         <div v-else>
-                            <div
-                                v-for="(data, index) in QAList"
-                                :key="`qa-${index}`"
-                            >
+                            <div v-for="(data, index) in QAList" :key="`qa-${index}`">
                                 <div v-if="data.role === 'user'">
                                     <query-item :query="data.query" />
                                 </div>
 
                                 <div v-if="data.role === 'assistant'">
-                                    <answer-item
-                                        :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')"
-                                    />
+                                    <answer-item :answer="data.answer || (data.isStreaming ? '正在为您分析，请稍候…' : '')" />
                                 </div>
 
                                 <div v-if="data.role === 'report'">
-                                    <health-report-item
-                                        :report="data.answer"
-                                        :loading="data.isGenerating"
-                                    />
+                                    <health-report-item :report="data.answer" :loading="data.isGenerating" />
                                 </div>
                             </div>
                         </div>
@@ -356,30 +343,17 @@ onBeforeUnmount(() => {
                             <span class="input-tip">
                                 温馨提示：本助手不替代线下就医，如有严重不适请及时前往正规医疗机构。
                             </span>
-                            <span class="status-text" v-if="isStreaming">正在生成回答…</span>
-                            <span class="status-text" v-else-if="isGeneratingReport">正在生成健康报告…</span>
+                            <span class="status-text" v-if="isBusy">{{ isStreaming ? '正在生成回答…' : '正在生成健康报告…' }}</span>
                         </div>
                         <div class="footer-main">
                             <el-scrollbar class="inputBoxMain" max-height="3.2rem">
-                                <el-input
-                                    class="inputArea"
-                                    v-model="query"
-                                    type="textarea"
-                                    placeholder="请描述您的症状、持续时间、年龄、既往疾病或用药情况…"
-                                    :rows="1"
-                                    autosize
-                                    @keyup.enter.exact.prevent="postQuery"
-                                    :disabled="isStreaming || isGeneratingReport"
-                                />
+                                <el-input class="inputArea" v-model="query" type="textarea"
+                                    placeholder="请描述您的症状、持续时间、年龄、既往疾病或用药情况…" :rows="1" autosize
+                                    @keyup.enter.exact.prevent="postQuery" :disabled="isBusy" />
                             </el-scrollbar>
                             <div class="inputBoxFooter">
-                                <el-button
-                                    class="send-btn"
-                                    type="primary"
-                                    circle
-                                    :disabled="query === '' || isStreaming || isGeneratingReport"
-                                    @click="postQuery"
-                                >
+                                <el-button class="send-btn" type="primary" circle :disabled="query === '' || isBusy"
+                                    @click="postQuery">
                                     <span class="iconfont icon-tijiaoxinxi"></span>
                                 </el-button>
                             </div>
@@ -692,18 +666,18 @@ onBeforeUnmount(() => {
     .container {
         width: 95%;
     }
-    
+
     .main-container {
         flex-direction: column;
     }
-    
+
     .report-sidebar {
         min-width: 100%;
         max-width: 100%;
         order: 1;
         margin-bottom: 16px;
     }
-    
+
     .chat-container {
         order: 2;
     }
@@ -714,7 +688,7 @@ onBeforeUnmount(() => {
         width: 100%;
         padding: 0 8px;
     }
-    
+
     .header {
         margin-top: 8px;
         padding: 0 14px;
@@ -733,7 +707,7 @@ onBeforeUnmount(() => {
     .header-right {
         gap: 8px;
     }
-    
+
     .report-btn,
     .clear-btn {
         min-width: auto;
