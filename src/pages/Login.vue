@@ -126,7 +126,7 @@ function drawHeartbeatCurve() {
   }
   ctx.stroke()
   ctx.shadowBlur = 0
-  timeOffset += 0.004
+  timeOffset += 0.0015
   animationId = requestAnimationFrame(drawHeartbeatCurve)
 }
 
@@ -171,9 +171,9 @@ function startLeafFall() {
       createLeaf()
     }
     if (Math.random() < 0.3 && currentLeaves < 45) {
-      setTimeout(() => createLeaf(), 100)
+      setTimeout(() => createLeaf(), 200)
     }
-  }, 550)
+  }, 1200)
 }
 
 function createHeroParticles() {
