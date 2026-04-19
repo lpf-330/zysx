@@ -21,33 +21,38 @@ let leafInterval = null
 const modalDisplay = ref('none')
 
 const LoginTest = () => {
-    console.log('登录类型:', loginType.value);
+  console.log('登录类型:', loginType.value);
 
-    if (account.value) {
-        if (password.value) {
-            if (passwordTest.test(password.value)) {
-                console.log('开始登录');
-                authStore.login(account.value, password.value, loginType.value)
-            } else {
-                alert("密码必须在20个字符内，且仅限英文字母，数字和下划线")
-            }
-        } else {
-            alert("请输入密码")
-        }
+  if (account.value) {
+    if (password.value) {
+      if (passwordTest.test(password.value)) {
+        console.log('开始登录');
+        authStore.login(account.value, password.value, loginType.value)
+      } else {
+        alert("密码必须在20个字符内，且仅限英文字母，数字和下划线")
+      }
     } else {
-        alert("请输入账号")
+      alert("请输入密码")
     }
+  } else {
+    alert("请输入账号")
+  }
 }
 
 const toRegister = () => {
-    modalDisplay.value = 'none'
-    router.push('/register')
+  modalDisplay.value = 'none'
+  router.push('/register')
 }
 
 const toggleLoginType = () => {
-    loginType.value = loginType.value === 'user' ? 'child' : 'user'
-    account.value = ''
-    password.value = ''
+  loginType.value = loginType.value === 'user' ? 'child' : 'user'
+  if (loginType.value === 'user') {
+    account.value = 'zhangsan'
+    password.value = '123456'
+  } else {
+    account.value = 'zhangxiaoming'
+    password.value = '123456'
+  }
 }
 
 function scrollToTop() {
@@ -273,12 +278,22 @@ onUnmounted(() => {
           </div>
           <div class="cta-buttons">
             <button class="btn-primary" @click="scrollToFeatures"><i class="fas fa-arrow-down"></i> 探索核心功能</button>
-            <button class="btn-outline-light" @click="modalDisplay = 'flex'"><i class="fas fa-sign-in-alt"></i> 立即登录</button>
+            <button class="btn-outline-light" @click="modalDisplay = 'flex'"><i class="fas fa-sign-in-alt"></i>
+              立即登录</button>
           </div>
           <div class="hero-stats">
-            <div class="stat"><div class="stat-number">24/7</div><div>动态监测</div></div>
-            <div class="stat"><div class="stat-number">98.6%</div><div>数据准确率</div></div>
-            <div class="stat"><div class="stat-number">5+</div><div>智能终端适配</div></div>
+            <div class="stat">
+              <div class="stat-number">24/7</div>
+              <div>动态监测</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">98.6%</div>
+              <div>数据准确率</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">5+</div>
+              <div>智能终端适配</div>
+            </div>
           </div>
         </div>
         <div class="hero-logo-area">
@@ -297,11 +312,8 @@ onUnmounted(() => {
         <div class="section-title">核心协同功能矩阵</div>
         <div class="section-sub">基于区块链 + 物联网 + 知识图谱驱动，下拉解锁智能模块</div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-heartbeat"></i></div>
           <div class="card-content">
             <h3>多源动态体征监测</h3>
@@ -310,11 +322,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-chart-line"></i></div>
           <div class="card-content">
             <h3>AI健康预测 & 知识图谱问答</h3>
@@ -323,11 +332,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-bell"></i></div>
           <div class="card-content">
             <h3>智慧用药 & 适老提醒系统</h3>
@@ -336,11 +342,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
           <div class="card-content">
             <h3>联邦加密 & 区块链存证</h3>
@@ -349,11 +352,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-users"></i></div>
           <div class="card-content">
             <h3>多角色协同 & 子女端关爱</h3>
@@ -362,11 +362,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card"
-             @mousemove="handleCardMouseMove"
-             @mouseleave="handleCardMouseLeave"
-             @mouseenter="handleCardMouseEnter"
-             @mouseout="handleCardMouseOut">
+        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+          @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
           <div class="card-content">
             <h3>全维健康驾驶舱</h3>
@@ -381,7 +378,8 @@ onUnmounted(() => {
       <div class="scroll-container">
         <h3 style="color:#2D572D;">椿龄护安 · 让科技温暖银发时代</h3>
         <p style="margin:16px 0">智能健康监控养老协同平台 | 基于知识图谱 + 物联网 + 区块链</p>
-        <button class="btn-primary" style="background:#528A3A;" @click="scrollToTop"><i class="fas fa-arrow-up"></i> 返回顶部</button>
+        <button class="btn-primary" style="background:#528A3A;" @click="scrollToTop"><i class="fas fa-arrow-up"></i>
+          返回顶部</button>
       </div>
     </footer>
   </div>
@@ -394,13 +392,14 @@ onUnmounted(() => {
       </div>
 
       <div class="role-switch">
-        <div class="role-btn" :class="{ active: loginType === 'user' }" @click="loginType = 'user'">用户端</div>
-        <div class="role-btn" :class="{ active: loginType === 'child' }" @click="loginType = 'child'">子女端</div>
+        <div class="role-btn" :class="{ active: loginType === 'user' }" @click="toggleLoginType">用户端</div>
+        <div class="role-btn" :class="{ active: loginType === 'child' }" @click="toggleLoginType">子女端</div>
       </div>
 
       <div class="input-group">
         <label><i class="fas fa-user"></i> 账号</label>
-        <input type="text" v-model="account" :placeholder="loginType === 'user' ? '请输入用户账号' : '请输入子女账号'" autocomplete="off">
+        <input type="text" v-model="account" :placeholder="loginType === 'user' ? '请输入用户账号' : '请输入子女账号'"
+          autocomplete="off">
       </div>
       <div class="input-group">
         <label><i class="fas fa-lock"></i> 密码</label>
@@ -431,10 +430,12 @@ body {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: #e0e8e0;
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #2f6b2f;
   border-radius: 10px;
@@ -474,12 +475,15 @@ body {
     transform: translateY(0) rotate(0deg);
     opacity: 0;
   }
+
   12% {
     opacity: 0.9;
   }
+
   88% {
     opacity: 0.7;
   }
+
   100% {
     transform: translateY(110vh) rotate(360deg);
     opacity: 0;
@@ -496,15 +500,22 @@ body {
 
 .particle {
   position: absolute;
-  background: rgba(255,245,200,0.4);
+  background: rgba(255, 245, 200, 0.4);
   border-radius: 50%;
   filter: blur(8px);
   animation: floatParticle 20s infinite alternate;
 }
 
 @keyframes floatParticle {
-  0% { transform: translateY(0) scale(1); opacity: 0.15; }
-  100% { transform: translateY(-70px) scale(1.3); opacity: 0.45; }
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.15;
+  }
+
+  100% {
+    transform: translateY(-70px) scale(1.3);
+    opacity: 0.45;
+  }
 }
 </style>
 
@@ -619,7 +630,7 @@ body {
   border: none;
   cursor: pointer;
   transition: 0.2s;
-  box-shadow: 0 10px 20px -8px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
@@ -676,8 +687,8 @@ body {
 .logo-img {
   width: 320px;
   height: auto;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.12));
-  transform: rotate(-8deg);
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.12));
+  transform: rotate(8deg);
 }
 
 .scroll-down {
@@ -693,8 +704,15 @@ body {
 }
 
 @keyframes bounce {
-  0%,100%{ transform: translateX(-50%) translateY(0);}
-  50%{ transform: translateX(-50%) translateY(12px);}
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(12px);
+  }
 }
 
 .cards-scroll-section {
@@ -738,7 +756,7 @@ body {
   transition: all 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
   opacity: 0;
   transform: translateY(60px);
-  border: 1px solid rgba(150,200,120,0.3);
+  border: 1px solid rgba(150, 200, 120, 0.3);
   position: relative;
   z-index: 7;
 }
@@ -827,14 +845,21 @@ body {
   width: 90%;
   max-width: 460px;
   padding: 32px;
-  box-shadow: 0 30px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 30px 40px rgba(0, 0, 0, 0.2);
   animation: modalFadeIn 0.3s ease;
   border-top: 6px solid #4A8B2C;
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.96);}
-  to { opacity: 1; transform: scale(1);}
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-header {
@@ -856,7 +881,9 @@ body {
   transition: 0.2s;
 }
 
-.close-modal:hover { color: #2b5e2b; }
+.close-modal:hover {
+  color: #2b5e2b;
+}
 
 .role-switch {
   display: flex;
@@ -883,7 +910,7 @@ body {
 .role-btn.active {
   background: #4A8B2C;
   color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .input-group {
@@ -928,7 +955,9 @@ body {
   transition: 0.2s;
 }
 
-.login-btn:hover { background: #1F521F; }
+.login-btn:hover {
+  background: #1F521F;
+}
 
 .linkBox {
   width: 100%;
@@ -949,20 +978,28 @@ body {
 }
 
 @media (max-width: 850px) {
-  .feature-card, .feature-card:nth-child(even) {
+
+  .feature-card,
+  .feature-card:nth-child(even) {
     flex-direction: column;
     text-align: center;
   }
-  .hero-text h1 { font-size: 42px; }
+
+  .hero-text h1 {
+    font-size: 42px;
+  }
+
   .hero-content {
     flex-direction: column;
     text-align: center;
   }
+
   .hero-desc {
     margin: 24px auto;
     border-left: none;
     padding-left: 0;
   }
+
   .cta-buttons {
     justify-content: center;
   }

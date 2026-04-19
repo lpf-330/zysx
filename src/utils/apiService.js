@@ -8,7 +8,8 @@ const httpService = axios.create({
 // 请求拦截器
 httpService.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const isLoginRequest = config.url && (config.url.includes('/login') || config.url.includes('/userInfo'));
+    if (token && !isLoginRequest) {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config
