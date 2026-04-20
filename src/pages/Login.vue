@@ -272,9 +272,9 @@ onUnmounted(() => {
       <div class="hero-content">
         <div class="hero-text">
           <div class="hero-badge"><i class="fas fa-leaf"></i> 椿龄护安 · 智慧养老协同平台</div>
-          <h1>椿龄护安<br>智能健康监控养老协同平台</h1>
+          <h1>椿龄护安<br><span class="title-nowrap">智能健康监控养老协同平台</span></h1>
           <div class="hero-desc">
-            融合物联网、知识图谱与边缘计算，为银发群体打造全天候动态健康守护体系。实时体征监测 + AI 健康预警 + 多端协同。
+            融合物联网、知识图谱，为银发群体打造全天候动态健康守护体系。实时体征监测 + AI 健康预警 + 多端协同。
           </div>
           <div class="cta-buttons">
             <button class="btn-primary" @click="scrollToFeatures"><i class="fas fa-arrow-down"></i> 探索核心功能</button>
@@ -310,14 +310,14 @@ onUnmounted(() => {
     <section class="cards-scroll-section" id="features">
       <div class="scroll-container">
         <div class="section-title">核心协同功能矩阵</div>
-        <div class="section-sub">基于区块链 + 物联网 + 知识图谱驱动，下拉解锁智能模块</div>
+        <div class="section-sub">基于物联网 + 大语言模型 + 健康风险预测模型 + 知识图谱驱动，下拉解锁智能模块</div>
 
         <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
           @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-heartbeat"></i></div>
           <div class="card-content">
             <h3>多源动态体征监测</h3>
-            <p>适配血压仪、血氧仪、体脂秤、智能手表等IoT设备，实时采集血压、血氧、心率、血糖、睡眠参数，基于MQTT协议毫秒级同步。数据融合卡尔曼滤波，精准呈现血氧/血压/血糖周期曲线，异常值自动预警。</p>
+            <p>适配血压仪、血氧仪、智能手表等IoT设备，实时采集血压、血氧、心率、血糖、睡眠参数，基于MQTT协议毫秒级同步，精准呈现血氧/血压/血糖周期曲线，异常值自动预警。</p>
             <div class="tech-tags"><span>蓝牙5.0/Wi-Fi6</span><span>实时曲线绘制</span><span>多设备协同</span></div>
           </div>
         </div>
@@ -326,8 +326,8 @@ onUnmounted(() => {
           @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-chart-line"></i></div>
           <div class="card-content">
-            <h3>AI健康预测 & 知识图谱问答</h3>
-            <p>基于LSTM时序预测血糖/血压趋势（误差≤0.8mmol/L），构建Neo4j医疗知识图谱，支持智能问答助手（药物相互作用、症状分析）。同时生成个性化健康报告与风险提示，子女端同步。</p>
+            <h3>AI健康预测 & 知识图谱咨询</h3>
+            <p>基于LSTM时序预测血糖/血压趋势（误差≤0.8mmol/L），构建Neo4j医疗知识图谱，支持智能咨询助手（药物相互作用、症状分析）。同时生成个性化健康报告与风险提示，监护人端同步。</p>
             <div class="tech-tags"><span>Neo4j</span><span>LSTM预测</span><span>自然语言交互</span></div>
           </div>
         </div>
@@ -342,7 +342,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
+        <!-- <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
           @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
           <div class="card-content">
@@ -350,14 +350,14 @@ onUnmounted(() => {
             <p>国密SM4端到端加密 + Hyperledger Fabric 区块链保证健康数据不可篡改，细粒度权限控制，符合《数据安全法》。Redis+MySQL分级存储，高并发支持≥1000用户。</p>
             <div class="tech-tags"><span>国密SM4</span><span>区块链存证</span><span>RBAC权限</span></div>
           </div>
-        </div>
+        </div> -->
 
         <div class="feature-card" @mousemove="handleCardMouseMove" @mouseleave="handleCardMouseLeave"
           @mouseenter="handleCardMouseEnter" @mouseout="handleCardMouseOut">
           <div class="card-icon"><i class="fas fa-users"></i></div>
           <div class="card-content">
-            <h3>多角色协同 & 子女端关爱</h3>
-            <p>子女端小程序实时查看父母健康趋势，异常预警推送，在线医生咨询。家庭群组健康数据共享，社区医生可远程干预，构建闭环养老生态。</p>
+            <h3>多角色协同 & 监护人端关爱</h3>
+            <p>监护人端小程序实时查看父母健康趋势，异常预警推送，在线医生咨询。家庭群组健康数据共享，社区医生可远程干预，构建闭环养老生态。</p>
             <div class="tech-tags"><span>跨端同步</span><span>亲情关怀</span><span>远程医疗接口</span></div>
           </div>
         </div>
@@ -377,7 +377,7 @@ onUnmounted(() => {
     <footer class="footer-cta">
       <div class="scroll-container">
         <h3 style="color:#2D572D;">椿龄护安 · 让科技温暖银发时代</h3>
-        <p style="margin:16px 0">智能健康监控养老协同平台 | 基于知识图谱 + 物联网 + 区块链</p>
+        <p style="margin:16px 0">智能健康监控养老协同平台 | 基于物联网 + 大语言模型 + 健康风险预测模型 + 知识图谱驱动</p>
         <button class="btn-primary" style="background:#528A3A;" @click="scrollToTop"><i class="fas fa-arrow-up"></i>
           返回顶部</button>
       </div>
@@ -393,7 +393,7 @@ onUnmounted(() => {
 
       <div class="role-switch">
         <div class="role-btn" :class="{ active: loginType === 'user' }" @click="toggleLoginType">用户端</div>
-        <div class="role-btn" :class="{ active: loginType === 'child' }" @click="toggleLoginType">子女端</div>
+        <div class="role-btn" :class="{ active: loginType === 'child' }" @click="toggleLoginType">监护人端</div>
       </div>
 
       <div class="input-group">
@@ -406,7 +406,7 @@ onUnmounted(() => {
         <input type="password" v-model="password" placeholder="请输入密码">
       </div>
       <button class="login-btn" @click="LoginTest">
-        {{ loginType === 'user' ? '用户登录' : '子女端登录' }}
+        {{ loginType === 'user' ? '用户登录' : '监护人端登录' }}
       </button>
 
       <div class="linkBox">
@@ -601,6 +601,10 @@ body {
   color: transparent;
   line-height: 1.2;
   margin-bottom: 19px;
+}
+
+.title-nowrap {
+  white-space: nowrap;
 }
 
 .hero-desc {

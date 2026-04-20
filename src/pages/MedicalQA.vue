@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="title-area">
                     <span class="title">医疗咨询助手</span>
-                    <span class="subtitle">基于 AI 的智能健康问答 · 仅作健康科普参考</span>
+                    <span class="subtitle">基于 AI 的智能健咨询 · 仅作健康科普参考</span>
                 </div>
             </div>
             <div class="header-right">
@@ -565,7 +565,7 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    max-width: 400px;
+    max-width: 432px;
 }
 
 .generate-report-hint .el-icon {
@@ -606,6 +606,7 @@ onBeforeUnmount(() => {
     padding: 10px 12px 10px 18px;
     display: flex;
     align-items: flex-end;
+    justify-content: space-between;
 }
 
 .inputBoxMain {

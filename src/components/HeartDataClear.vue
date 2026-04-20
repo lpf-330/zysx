@@ -7,14 +7,17 @@
                 <span class="unit">bpm</span>
             </div>
         </div>
-        <div ref="chart" style="width: 100%; height: 100%;"></div>
+        <div ref="chart" style="width: 100%; height: 100%;">
+            <div v-if="loading" class="loading-overlay">加载中...</div>
+            <div v-else-if="error" class="error-overlay">数据加载失败</div>
+        </div>
         <ModernHealthAlert v-if="analysisResult && isMountedFlag" :analysis-result="analysisResult" data-type="heart"
             position="top-right" @export-data="handleExportData" />
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -29,6 +32,15 @@ import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import healthAnalyzer from '../utils/healthAnalyzer';
 import ModernHealthAlert from './ModernHealthAlert.vue';
+import useUserInfoStore from '../stores/user';
+import { useCalendarSelectionStore } from '../stores/calendarSelection';
+import { storeToRefs } from 'pinia';
+import {
+    getHeartDataByDate,
+    getHeartDataByWeek,
+    getHeartDataByMonth,
+    getHeartDataByYear
+} from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -43,6 +55,10 @@ echarts.use([
     CanvasRenderer
 ]);
 
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = userInfoStore.user_id.value;
+const calendarSelectionStore = useCalendarSelectionStore();
+
 const nowData = ref(0);
 const data = ref([]);
 const formattedTime = ref([]);
@@ -53,6 +69,9 @@ let isMountedFlag = false;
 let chartInitialized = false;
 const analysisResult = ref(null);
 const color = ["#FF0000", "#00CA69"];
+const loading = ref(false);
+const error = ref(false);
+let isFetching = false;
 
 const MAX_DISPLAY = 15;
 const INSERT_INTERVAL = 1000;
@@ -172,23 +191,220 @@ const stopSimulation = () => {
     }
 };
 
-const updateChartWithAnimation = () => {
-    if (!isMountedFlag || !myChart) return;
+const formatRecordTime = (timeStr, viewType = 'day') => {
+    if (!timeStr) return 'N/A';
     try {
-        if (data.value.length === 0) {
+        const date = new Date(timeStr);
+        if (isNaN(date.getTime())) {
+            return timeStr;
+        }
+        switch (viewType) {
+            case 'day':
+                return date.toLocaleTimeString('zh-CN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            case 'week':
+            case 'month':
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            case 'year':
+                const year = date.getFullYear();
+                const yearMonth = date.getMonth() + 1;
+                return `${year}-${yearMonth.toString().padStart(2, '0')}`;
+            default:
+                return date.toLocaleDateString('zh-CN');
+        }
+    } catch (error) {
+        console.error('时间格式化错误:', error);
+        return timeStr;
+    }
+};
+
+const formatDate = (dateObj) => {
+    if (!(dateObj instanceof Date)) return '';
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const fetchAggregatedData = async () => {
+    if (!isMountedFlag) {
+        console.warn("HeartDataClear 组件已卸载，停止数据获取");
+        return;
+    }
+    console.log("=== HeartDataClear 开始获取历史聚合数据 ===");
+    isFetching = true;
+    if (!user_id) {
+        console.warn("用户ID无效，无法获取数据");
+        data.value = [];
+        formattedTime.value = [];
+        rawTimeData.value = [];
+        updateChartWithAnimation();
+        isFetching = false;
+        return;
+    }
+    const selection = calendarSelectionStore;
+    const viewType = selection.currentViewType;
+
+    if (viewType === 'day') {
+        console.log("日视图使用模拟数据，跳过API请求");
+        isFetching = false;
+        return;
+    }
+
+    if (!myChart || !chartInitialized) {
+        console.warn("图表未初始化，尝试重新初始化");
+        if (chart.value) {
+            initChart();
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
+    let response = null;
+    loading.value = true;
+    error.value = false;
+    try {
+        if (selection.selectedWeek) {
+            const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
+            response = await getHeartDataByWeek(user_id, dateInWeekStr);
+            console.log(`获取周心率数据: ${dateInWeekStr}`, response);
+        } else if (selection.selectedMonth) {
+            response = await getHeartDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
+            console.log(`获取月心率数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
+        } else if (selection.selectedYear) {
+            response = await getHeartDataByYear(user_id, selection.selectedYear);
+            console.log(`获取年心率数据: ${selection.selectedYear}`, response);
+        } else {
+            console.log("当前无选中周期");
+            resetData();
+            isFetching = false;
+            return;
+        }
+
+        if (!isMountedFlag) {
+            console.warn("HeartDataClear 组件在数据获取期间已卸载");
+            isFetching = false;
+            return;
+        }
+
+        const apiResponse = response.data;
+        const responseData = apiResponse.data;
+        console.log(`原始响应数据 (${viewType}视图):`, responseData);
+
+        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
+            const sortedData = responseData.sort((a, b) => {
+                const dateA = a.date || a.weekStart || a.month || a.yearMonth;
+                const dateB = b.date || b.weekStart || b.month || b.yearMonth;
+                return new Date(dateA) - new Date(dateB);
+            });
+
+            const processedData = sortedData.map(item => item.avgValue);
+            const rawTimes = sortedData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+            const processedTimes = rawTimes.map(time => formatRecordTime(time, viewType));
+
+            data.value = processedData;
+            formattedTime.value = processedTimes;
+            rawTimeData.value = rawTimes;
+
+            console.log('处理后的数据详情:', {
+                viewType,
+                dataLength: data.value.length,
+                timeLength: formattedTime.value.length,
+                dataPoints: data.value,
+                timePoints: formattedTime.value
+            });
+
+            updateChartWithAnimation();
+            analyzeHealthData(processedData, rawTimes);
+        } else {
+            console.warn("API返回的心率聚合数据格式不正确、为空数组或无数据", apiResponse);
+            resetData();
+        }
+    } catch (err) {
+        console.error("获取心率聚合数据失败", err);
+        error.value = true;
+        resetData();
+    } finally {
+        loading.value = false;
+        isFetching = false;
+    }
+    console.log("=== HeartDataClear 历史聚合数据获取完成 ===");
+};
+
+const resetData = () => {
+    data.value = [];
+    formattedTime.value = [];
+    rawTimeData.value = [];
+    analysisResult.value = null;
+    updateChartWithAnimation();
+};
+
+const updateChartWithAnimation = () => {
+    console.log("=== HeartDataClear 开始更新图表 ===");
+    console.log("组件挂载状态:", isMountedFlag);
+    console.log("图表实例存在:", !!myChart);
+    console.log("DOM引用存在:", !!chart.value);
+    console.log("数据长度:", data.value.length);
+    console.log("时间长度:", formattedTime.value.length);
+
+    if (!isMountedFlag) {
+        console.warn("HeartDataClear 组件已卸载，停止图表更新");
+        return;
+    }
+    if (!myChart || !chart.value) {
+        console.warn("图表实例不存在或DOM未挂载，尝试重新初始化");
+        setTimeout(() => {
+            if (isMountedFlag && chart.value) {
+                initChart();
+                setTimeout(() => {
+                    if (myChart) {
+                        doUpdateChart();
+                    }
+                }, 50);
+            }
+        }, 100);
+        return;
+    }
+    doUpdateChart();
+};
+
+const doUpdateChart = () => {
+    try {
+        if (data.value.length === 0 || formattedTime.value.length === 0) {
+            console.log("无数据可显示，显示空图表");
             myChart.setOption({
-                title: { text: '等待数据...', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } },
-                xAxis: { show: false, data: [] },
-                yAxis: { show: false },
-                series: [{ data: [] }]
+                title: {
+                    text: '暂无数据',
+                    left: 'center',
+                    top: 'center',
+                    textStyle: {
+                        color: '#999',
+                        fontSize: 14
+                    }
+                },
+                xAxis: {
+                    show: false,
+                    data: []
+                },
+                yAxis: {
+                    show: false
+                },
+                series: [{
+                    data: []
+                }]
             });
             return;
         }
 
-        const displayData = data.value;
-        const displayTimes = formattedTime.value;
-        const maxVal = Math.max(...displayData);
-        const minVal = Math.min(...displayData);
+        const displayData = data.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
+        const displayTimes = formattedTime.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
+
+        const maxVal = Math.max(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
+        const minVal = Math.min(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
         const yMax = Math.max(120, Math.ceil(maxVal * 1.15));
         const yMin = Math.min(40, Math.floor(minVal * 0.85));
 
@@ -200,20 +416,57 @@ const updateChartWithAnimation = () => {
             zoomStart = ((totalPoints - MAX_DISPLAY) / totalPoints) * 100;
         }
 
+        const currentOption = myChart.getOption() || {};
         myChart.setOption({
+            title: { show: false },
             animation: true,
             animationDuration: 500,
             animationEasing: 'cubicOut',
-            xAxis: { data: displayTimes },
-            yAxis: { min: yMin, max: yMax },
+            xAxis: {
+                ...(currentOption.xAxis?.[0] || {}),
+                show: true,
+                data: displayTimes,
+                axisLabel: {
+                    ...(currentOption.xAxis?.[0]?.axisLabel || {}),
+                    rotate: displayTimes.length > 10 ? 30 : 0
+                }
+            },
+            yAxis: {
+                ...(currentOption.yAxis?.[0] || {}),
+                show: true,
+                min: yMin,
+                max: yMax
+            },
             dataZoom: [
                 { type: 'inside', start: zoomStart, end: zoomEnd, zoomLock: false },
                 { type: 'slider', show: true, bottom: 10, start: zoomStart, end: zoomEnd, height: 20, borderColor: '#ddd' }
             ],
-            series: [{ data: displayData }]
-        }, { notMerge: false, lazyUpdate: true });
+            series: [{
+                ...(currentOption.series?.[0] || {}),
+                data: displayData
+            }]
+        }, {
+            notMerge: false,
+            lazyUpdate: true
+        });
+
+        setTimeout(() => {
+            if (myChart && isMountedFlag) {
+                try {
+                    myChart.resize();
+                } catch (e) {
+                    console.error("图表重绘失败:", e);
+                }
+            }
+        }, 50);
+        console.log("=== HeartDataClear 图表更新完成 ===");
     } catch (e) {
         console.error('更新图表动画失败:', e);
+        if (isMountedFlag) {
+            setTimeout(() => {
+                initChart();
+            }, 200);
+        }
     }
 };
 
@@ -238,15 +491,28 @@ const getTooltipFormatter = () => {
 };
 
 const initChart = () => {
-    if (!isMountedFlag || !chart.value) return;
+    console.log("=== HeartDataClear 开始初始化图表 ===");
+    console.log("组件挂载状态:", isMountedFlag);
+    console.log("DOM引用存在:", !!chart.value);
+    if (!isMountedFlag || !chart.value) {
+        console.warn("HeartDataClear 组件未挂载或DOM不存在，无法初始化图表");
+        return;
+    }
     if (myChart && chartInitialized) {
-        try { myChart.dispose(); } catch (e) { }
+        try {
+            myChart.dispose();
+            console.log("已销毁旧图表实例");
+        } catch (e) {
+            console.warn("清理旧图表实例时出错:", e);
+        }
     }
     try {
         myChart = echarts.init(chart.value);
         chartInitialized = true;
+        console.log("图表实例创建成功");
         const option = {
             color,
+            title: { show: false },
             animation: true,
             animationDuration: 800,
             animationEasing: 'cubicOut',
@@ -344,6 +610,7 @@ const initChart = () => {
             }]
         };
         myChart.setOption(option);
+        console.log("=== HeartDataClear 图表初始化成功 ===");
     } catch (error) {
         console.error('初始化图表失败:', error);
         chartInitialized = false;
@@ -384,13 +651,19 @@ const handleExportData = () => {
 };
 
 onMounted(() => {
+    console.log("=== HeartDataClear.vue 组件开始挂载 ===");
     isMountedFlag = true;
     setTimeout(() => {
         if (isMountedFlag && chart.value) {
             initChart();
             setTimeout(() => {
                 if (isMountedFlag) {
-                    startSimulation();
+                    const viewType = calendarSelectionStore.currentViewType;
+                    if (viewType === 'day' || viewType === null) {
+                        startSimulation();
+                    } else {
+                        fetchAggregatedData();
+                    }
                 }
             }, 300);
         }
@@ -405,10 +678,61 @@ onMounted(() => {
     window.__heartChartResizeHandler = handleResize;
 });
 
+let fetchTimeout = null;
+const debouncedFetchData = () => {
+    if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+    }
+    if (isFetching) {
+        console.log("数据获取中，跳过重复请求");
+        return;
+    }
+    fetchTimeout = setTimeout(() => {
+        const viewType = calendarSelectionStore.currentViewType;
+        stopSimulation();
+        data.value = [];
+        formattedTime.value = [];
+        rawTimeData.value = [];
+
+        if (viewType === 'day' || viewType === null) {
+            startSimulation();
+        } else {
+            fetchAggregatedData();
+        }
+    }, 150);
+};
+
+watch(
+    () => [
+        calendarSelectionStore.selectedDate,
+        calendarSelectionStore.selectedWeek,
+        calendarSelectionStore.selectedMonth,
+        calendarSelectionStore.selectedYear,
+        calendarSelectionStore.currentViewType
+    ],
+    (newVal, oldVal) => {
+        if (JSON.stringify(newVal) === JSON.stringify(oldVal)) {
+            return;
+        }
+        console.log("HeartDataClear: CalendarSelectionStore 状态变化", {
+            old: oldVal,
+            new: newVal,
+            viewType: calendarSelectionStore.currentViewType
+        });
+        debouncedFetchData();
+    },
+    { deep: true }
+);
+
 onUnmounted(() => {
+    console.log("=== HeartDataClear.vue 组件开始卸载 ===");
     isMountedFlag = false;
     chartInitialized = false;
     stopSimulation();
+    if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+        fetchTimeout = null;
+    }
     if (window.__heartChartResizeHandler) {
         window.removeEventListener('resize', window.__heartChartResizeHandler);
         delete window.__heartChartResizeHandler;
@@ -470,5 +794,26 @@ onUnmounted(() => {
     position: relative;
     width: 100%;
     height: 100%;
+}
+
+.loading-overlay,
+.error-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.16rem;
+    color: #666;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    z-index: 10;
+}
+
+.error-overlay {
+    color: #ff4d4f;
 }
 </style>

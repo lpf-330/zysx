@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
     const token = ref(localStorage.getItem('token') || null)
     const user = ref(null)
 
-    // 登录方法 - 现在支持用户和子女端登录
+    // 登录方法 - 现在支持用户和监护人端登录
     const login = async (account, password, loginType = 'user') => {
         try {
             console.log('login', account, password, loginType);
@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
                     alert(response.msg)
                 }
             } else if (loginType === 'child') {
-                // 子女端登录
+                // 监护人端登录
                 const response = await childLogin(account, password)
                 console.log("子女登录响应", response);
 
@@ -73,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         useUserInfoStore().fullReset()
         useMedicalHistoryStore().fullReset()
-        
+
         // 如果是子女登录，也要重置子女信息
         const childUserStore = useChildUserStore()
         childUserStore.fullReset()

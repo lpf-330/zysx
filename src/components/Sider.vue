@@ -39,7 +39,7 @@ const exit = () => {
                 </div>
                 <div class="menuItem person" @click="select(2)" :class="{ active: siderMode === 2 }">
                     <span class="iconfont icon-V"></span>
-                    <span class="menuText">问答</span>
+                    <span class="menuText">咨询</span>
                 </div>
                 <div class="menuItem person" @click="select(3)" :class="{ active: siderMode === 3 }">
                     <span class="iconfont icon-yonghu"></span>

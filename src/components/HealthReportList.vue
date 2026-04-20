@@ -2,7 +2,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { 
+import {
     Document,
     Clock,
     View,
@@ -44,16 +44,16 @@ const fetchReports = async () => {
         reports.value = [];
         return;
     }
-    
+
     console.log('获取报告列表，用户ID:', props.userId);
     isLoading.value = true;
     try {
         const response = await getHealthReportList(props.userId);
         console.log('获取报告列表API响应:', response);
-        
+
         // 根据API响应结构处理数据
         let reportData = [];
-        
+
         if (response && response.code === 200) {
             // 成功响应，检查是否有data字段
             if (Array.isArray(response.data)) {
@@ -73,28 +73,28 @@ const fetchReports = async () => {
             console.warn('未识别的响应格式:', response);
             reportData = [];
         }
-        
+
         // 处理报告数据，添加必要的字段
         reports.value = reportData.map((report, index) => {
             // 生成一个唯一的ID（如果API没有返回id）
             const reportId = report.id || report.report_id || `report_${Date.now()}_${index}`;
-            
+
             // 生成标题
             const title = report.title || report.report_title || `健康报告 #${reportId.toString().substring(0, 8)}`;
-            
+
             // 获取创建时间
             const createTime = report.createdAt || report.createTime || report.created_time || new Date().toISOString();
-            
+
             // 获取内容（如果有的话）
             const content = report.content || report.report || report.report_content || '';
-            
+
             // 计算字数
             const wordCount = calculateWordCount(content);
-            
+
             // 生成摘要
-            const summary = report.summary || 
-                          (content ? content.substring(0, 100).replace(/\n/g, ' ').trim() + '...' : '暂无摘要');
-            
+            const summary = report.summary ||
+                (content ? content.substring(0, 100).replace(/\n/g, ' ').trim() + '...' : '暂无摘要');
+
             const processedReport = {
                 id: reportId,
                 title: title,
@@ -106,13 +106,13 @@ const fetchReports = async () => {
                 // 保留原始数据中的所有字段
                 ...report
             };
-            
+
             console.log(`处理报告 ${index + 1}:`, processedReport);
             return processedReport;
         });
-        
+
         console.log('处理后的报告列表:', reports.value);
-        
+
         // 按创建时间降序排序
         reports.value.sort((a, b) => {
             try {
@@ -124,14 +124,14 @@ const fetchReports = async () => {
                 return 0;
             }
         });
-        
+
         console.log('排序后的报告列表:', reports.value);
-        
+
         // 如果没有报告数据，显示信息
         if (reports.value.length === 0) {
             console.log('用户没有历史报告');
         }
-        
+
     } catch (error) {
         console.error('获取健康报告列表失败:', error);
         ElMessage.error('获取报告列表失败');
@@ -152,34 +152,34 @@ const calculateWordCount = (text) => {
 // 清理内容中的多余空行
 const cleanContent = (content) => {
     if (!content) return '';
-    
+
     // 1. 将不同格式的换行符统一为\n
     let cleaned = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
+
     // 2. 移除行首尾的空白字符
     cleaned = cleaned.split('\n').map(line => line.trim()).join('\n');
-    
+
     // 3. 将连续3个以上的换行符替换为2个换行符
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-    
+
     // 4. 移除Markdown表格前后的多余空行
     cleaned = cleaned.replace(/\n+(\|.*\|.*\n)+\n+/g, '\n$1\n');
-    
+
     return cleaned;
 };
 
 // 后处理HTML：移除多余的空元素和空白
 const postProcessHtml = (html) => {
     if (!html) return '';
-    
+
     // 创建一个临时div来操作DOM
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
-    
+
     // 移除空的段落
     const emptyParagraphs = tempDiv.querySelectorAll('p:empty, p:has(br:only-child)');
     emptyParagraphs.forEach(p => p.remove());
-    
+
     // 移除只有空白字符的段落
     const paragraphs = tempDiv.querySelectorAll('p');
     paragraphs.forEach(p => {
@@ -187,7 +187,7 @@ const postProcessHtml = (html) => {
             p.remove();
         }
     });
-    
+
     // 移除连续的<br>标签（保留一个）
     const brElements = tempDiv.querySelectorAll('br');
     let lastBr = null;
@@ -198,36 +198,36 @@ const postProcessHtml = (html) => {
             lastBr = br;
         }
     });
-    
+
     // 为表格添加样式类
     const tables = tempDiv.querySelectorAll('table');
     tables.forEach(table => {
         table.classList.add('report-table');
     });
-    
+
     return tempDiv.innerHTML;
 };
 
 // 检测内容类型
 const detectContentType = (content) => {
     if (!content) return 'plain';
-    
+
     // 检查是否包含Markdown特征
     const hasMarkdownHeaders = /^#+\s+/m.test(content);
     const hasMarkdownLists = /^\s*[\-\*\+]\s+/m.test(content);
     const hasMarkdownTables = /\|.*\|.*\n\|/.test(content);
     const hasMarkdownCodeBlocks = /```[\s\S]*?```/.test(content);
-    
+
     if (hasMarkdownHeaders || hasMarkdownLists || hasMarkdownTables || hasMarkdownCodeBlocks) {
         return 'markdown';
     }
-    
+
     // 检查是否包含HTML标签
     const hasHtmlTags = /<[a-z][\s\S]*>/i.test(content);
     if (hasHtmlTags) {
         return 'html';
     }
-    
+
     return 'plain';
 };
 
@@ -240,7 +240,7 @@ const formatMarkdownContent = (content) => {
         headerIds: false, // 不生成标题ID
         mangle: false,    // 不转义标题
         silent: false,    // 不静默失败
-        
+
         // 自定义渲染器，减少空行
         renderer: new marked.Renderer({
             // 重写段落渲染，减少空行
@@ -250,21 +250,21 @@ const formatMarkdownContent = (content) => {
                 if (!trimmedText) return ''; // 空段落不渲染
                 return `<p>${trimmedText}</p>`;
             },
-            
+
             // 重写列表项渲染
             listitem(text) {
                 const trimmedText = text.trim();
                 if (!trimmedText) return '';
                 return `<li>${trimmedText}</li>`;
             },
-            
+
             // 重写代码块渲染
             code(code, language) {
                 if (!code.trim()) return '';
                 const langClass = language ? ` class="language-${language}"` : '';
                 return `<pre><code${langClass}>${code}</code></pre>`;
             },
-            
+
             // 重写表格渲染
             table(header, body) {
                 if (!body) return '';
@@ -272,16 +272,16 @@ const formatMarkdownContent = (content) => {
             }
         })
     });
-    
+
     // 预处理内容：减少连续空行
     const cleanedContent = cleanContent(content);
-    
+
     // 使用marked解析markdown
     const rawHtml = marked.parse(cleanedContent);
-    
+
     // 使用DOMPurify清理HTML以防止XSS攻击
     const cleanHtml = DOMPurify.sanitize(rawHtml);
-    
+
     // 后处理HTML：移除多余的空段落和空白
     return postProcessHtml(cleanHtml);
 };
@@ -289,9 +289,9 @@ const formatMarkdownContent = (content) => {
 // 格式化报告内容（用于显示）
 const formatReportContent = (content) => {
     if (!content) return '<p>暂无报告内容</p>';
-    
+
     const contentType = detectContentType(content);
-    
+
     try {
         switch (contentType) {
             case 'markdown':
@@ -316,7 +316,7 @@ const formatReportContent = (content) => {
 // 格式化日期
 const formatDate = (dateString) => {
     if (!dateString) return '未知时间';
-    
+
     try {
         const date = new Date(dateString);
         const now = new Date();
@@ -324,7 +324,7 @@ const formatDate = (dateString) => {
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        
+
         if (diffMinutes < 1) {
             return '刚刚';
         }
@@ -337,7 +337,7 @@ const formatDate = (dateString) => {
         if (diffDays < 7) {
             return `${diffDays}天前`;
         }
-        
+
         // 超过一周显示具体日期
         return date.toLocaleDateString('zh-CN', {
             month: '2-digit',
@@ -354,7 +354,7 @@ const formatDate = (dateString) => {
 // 格式化详细日期
 const formatDetailedDate = (dateString) => {
     if (!dateString) return '';
-    
+
     try {
         const date = new Date(dateString);
         return date.toLocaleDateString('zh-CN', {
@@ -377,7 +377,7 @@ const getReportStatusType = (report) => {
         const now = new Date();
         const diffMs = now - createTime;
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays < 1) return 'success'; // 今天
         if (diffDays < 3) return 'warning'; // 3天内
         return 'info'; // 更早
@@ -395,7 +395,7 @@ const getReportStatusText = (report) => {
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        
+
         if (diffMinutes < 1) return '刚刚';
         if (diffMinutes < 60) return `${diffMinutes}分钟前`;
         if (diffHours < 24) return `${diffHours}小时前`;
@@ -409,7 +409,7 @@ const getReportStatusText = (report) => {
 const viewReport = async (report) => {
     try {
         console.log('查看报告详情:', report);
-        
+
         // 先显示已有的报告内容
         activeReport.value = {
             ...report,
@@ -417,23 +417,23 @@ const viewReport = async (report) => {
             contentLength: report.wordCount || calculateWordCount(report.content || report.report || '')
         };
         showReportDetail.value = true;
-        
+
         // 如果没有内容，尝试从API获取详细内容
         if (!report.content && !report.report && report.id) {
             try {
                 console.log('从API获取报告详情，报告ID:', report.id);
                 const response = await getHealthReport(report.id);
                 console.log('获取报告详情API响应:', response);
-                
+
                 // 修改这里：正确处理API响应结构
                 if (response && response.code === 200) {
                     // API返回的是 {code, message, data}
                     const reportData = response.data || {};
-                    
+
                     // 计算字数
                     const content = reportData.report || reportData.content || '';
                     const wordCount = calculateWordCount(content);
-                    
+
                     // 更新弹窗中的报告内容
                     activeReport.value = {
                         ...activeReport.value,
@@ -445,7 +445,7 @@ const viewReport = async (report) => {
                     // 如果API直接返回报告数据（兼容其他格式）
                     const content = response.report || response.content || '';
                     const wordCount = calculateWordCount(content);
-                    
+
                     activeReport.value = {
                         ...activeReport.value,
                         content: content,
@@ -473,16 +473,16 @@ const closeReportDetail = () => {
 // 下载报告
 const downloadReport = (report) => {
     if (!report) return;
-    
+
     try {
         const reportContent = report.content || report.report || '';
         if (!reportContent.trim()) {
             ElMessage.warning('报告内容为空，无法下载');
             return;
         }
-        
-        const blob = new Blob([reportContent], { 
-            type: 'text/markdown;charset=utf-8' 
+
+        const blob = new Blob([reportContent], {
+            type: 'text/markdown;charset=utf-8'
         });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -494,7 +494,7 @@ const downloadReport = (report) => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         ElMessage.success('报告下载开始');
     } catch (error) {
         console.error('下载报告错误:', error);
@@ -505,7 +505,7 @@ const downloadReport = (report) => {
 // 删除报告
 const deleteReport = async (reportId) => {
     if (!reportId) return;
-    
+
     try {
         await ElMessageBox.confirm(
             '确定要删除这份健康报告吗？此操作不可恢复。',
@@ -517,18 +517,18 @@ const deleteReport = async (reportId) => {
                 customClass: 'delete-confirm-dialog'
             }
         );
-        
+
         deletingReportId.value = reportId;
         await deleteHealthReport(reportId);
-        
+
         // 从本地列表中移除
         reports.value = reports.value.filter(r => r.id !== reportId);
-        
+
         // 如果删除的是当前查看的报告，关闭详情
         if (activeReport.value && activeReport.value.id === reportId) {
             closeReportDetail();
         }
-        
+
         ElMessage.success('报告删除成功');
     } catch (error) {
         if (error !== 'cancel') {
@@ -570,22 +570,19 @@ defineExpose({
         <div class="header-section">
             <div class="title-container">
                 <div class="title-icon">
-                    <el-icon><Document /></el-icon>
+                    <el-icon>
+                        <Document />
+                    </el-icon>
                 </div>
                 <div class="title-content">
                     <h3 class="section-title">健康报告档案</h3>
                     <div class="section-subtitle">历史生成的健康报告管理</div>
                 </div>
             </div>
-            <el-button 
-                type="default" 
-                size="small" 
-                plain
-                @click="fetchReports"
-                :loading="isLoading"
-                :disabled="!userId"
-            >
-                <el-icon><Refresh /></el-icon>
+            <el-button type="default" size="small" plain @click="fetchReports" :loading="isLoading" :disabled="!userId">
+                <el-icon>
+                    <Refresh />
+                </el-icon>
                 刷新
             </el-button>
         </div>
@@ -593,7 +590,9 @@ defineExpose({
         <!-- 未登录提示 -->
         <div v-if="!userId" class="no-user-prompt">
             <div class="prompt-icon">
-                <el-icon><InfoFilled /></el-icon>
+                <el-icon>
+                    <InfoFilled />
+                </el-icon>
             </div>
             <p>请先登录以查看健康报告档案</p>
         </div>
@@ -602,21 +601,27 @@ defineExpose({
         <div v-else class="report-content">
             <div class="list-header">
                 <div class="list-title">
-                    <el-icon><Document /></el-icon>
+                    <el-icon>
+                        <Document />
+                    </el-icon>
                     <span>历史报告 ({{ totalReports }})</span>
                 </div>
             </div>
 
             <!-- 加载状态 -->
             <div v-if="isLoading" class="loading-state">
-                <el-icon class="loading-icon"><Loading /></el-icon>
+                <el-icon class="loading-icon">
+                    <Loading />
+                </el-icon>
                 <p>加载报告中...</p>
             </div>
 
             <!-- 空状态 -->
             <div v-else-if="reports.length === 0" class="empty-state">
                 <div class="empty-icon">
-                    <el-icon><Document /></el-icon>
+                    <el-icon>
+                        <Document />
+                    </el-icon>
                 </div>
                 <h4>暂无健康报告</h4>
                 <p>在上方点击"生成健康报告"按钮创建第一份报告</p>
@@ -628,29 +633,26 @@ defineExpose({
             <!-- 报告列表 -->
             <el-scrollbar v-else class="report-scroll" height="calc(100%)">
                 <div class="report-items">
-                    <div 
-                        v-for="(report, index) in reports" 
-                        :key="report.id || index"
-                        class="report-item"
-                    >
+                    <div v-for="(report, index) in reports" :key="report.id || index" class="report-item">
                         <div class="report-item-content">
                             <div class="report-icon">
-                                <el-icon><Document /></el-icon>
+                                <el-icon>
+                                    <Document />
+                                </el-icon>
                             </div>
                             <div class="report-info">
                                 <div class="report-header">
-                                    <span class="report-name">{{ report.title || `健康报告 #${(report.id || '').toString().substring(0, 8)}` }}</span>
-                                    <el-tag 
-                                        :type="getReportStatusType(report)"
-                                        size="small"
-                                        class="report-status"
-                                    >
+                                    <span class="report-name">{{ report.title || `健康报告 #${(report.id ||
+                                        '').toString().substring(0, 8)}` }}</span>
+                                    <el-tag :type="getReportStatusType(report)" size="small" class="report-status">
                                         {{ getReportStatusText(report) }}
                                     </el-tag>
                                 </div>
                                 <div class="report-meta">
                                     <span class="report-date">
-                                        <el-icon><Clock /></el-icon>
+                                        <el-icon>
+                                            <Clock />
+                                        </el-icon>
                                         {{ formatDate(report.createdAt || report.createTime) }}
                                     </span>
                                 </div>
@@ -659,35 +661,26 @@ defineExpose({
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="report-actions">
-                            <el-button 
-                                type="primary" 
-                                size="small" 
-                                text
-                                @click="viewReport(report)"
-                            >
-                                <el-icon><View /></el-icon>
+                            <el-button type="primary" size="small" text @click="viewReport(report)">
+                                <el-icon>
+                                    <View />
+                                </el-icon>
                                 查看
                             </el-button>
-                            <el-button 
-                                type="success" 
-                                size="small" 
-                                text
-                                @click="downloadReport(report)"
-                                :disabled="!report.content && !report.report"
-                            >
-                                <el-icon><Download /></el-icon>
+                            <el-button type="success" size="small" text @click="downloadReport(report)"
+                                :disabled="!report.content && !report.report">
+                                <el-icon>
+                                    <Download />
+                                </el-icon>
                                 下载
                             </el-button>
-                            <el-button 
-                                type="danger" 
-                                size="small" 
-                                text
-                                @click="deleteReport(report.id)"
-                                :loading="deletingReportId === report.id"
-                            >
-                                <el-icon><Delete /></el-icon>
+                            <el-button type="danger" size="small" text @click="deleteReport(report.id)"
+                                :loading="deletingReportId === report.id">
+                                <el-icon>
+                                    <Delete />
+                                </el-icon>
                                 删除
                             </el-button>
                         </div>
@@ -697,49 +690,44 @@ defineExpose({
         </div>
 
         <!-- 报告详情弹窗 -->
-        <el-dialog
-            v-model="showReportDetail"
-            :title="activeReport?.title || '健康报告详情'"
-            width="80%"
-            top="5vh"
-            custom-class="report-detail-dialog"
-            @close="closeReportDetail"
-        >
+        <el-dialog v-model="showReportDetail" :title="activeReport?.title || '健康报告详情'" width="70%"
+            :close-on-click-modal="true" :show-close="true" custom-class="report-detail-dialog"
+            @close="closeReportDetail">
             <div class="report-detail-content">
                 <div class="detail-header">
                     <div class="detail-meta">
                         <span>
-                            <el-icon><Clock /></el-icon>
+                            <el-icon>
+                                <Clock />
+                            </el-icon>
                             生成时间: {{ activeReport?.formattedDate || '未知时间' }}
                         </span>
                         <span>
-                            <el-icon><Document /></el-icon>
+                            <el-icon>
+                                <Document />
+                            </el-icon>
                             字数统计: {{ activeReport?.contentLength || 0 }}字
                         </span>
                     </div>
                 </div>
-                
+
                 <el-scrollbar height="400px" class="detail-scroll">
-                    <div 
-                        class="detail-body" 
-                        v-html="formatReportContent(activeReport?.content || activeReport?.report)" 
-                    ></div>
+                    <div class="detail-body"
+                        v-html="formatReportContent(activeReport?.content || activeReport?.report)"></div>
                 </el-scrollbar>
-                
+
                 <div class="detail-footer">
-                    <el-button 
-                        type="primary" 
-                        @click="downloadReport(activeReport)"
-                        :disabled="!activeReport?.content && !activeReport?.report"
-                    >
-                        <el-icon><Download /></el-icon>
+                    <el-button type="primary" @click="downloadReport(activeReport)"
+                        :disabled="!activeReport?.content && !activeReport?.report">
+                        <el-icon>
+                            <Download />
+                        </el-icon>
                         下载报告 (.md)
                     </el-button>
-                    <el-button 
-                        type="danger" 
-                        @click="deleteReport(activeReport?.id)"
-                    >
-                        <el-icon><Delete /></el-icon>
+                    <el-button type="danger" @click="deleteReport(activeReport?.id)">
+                        <el-icon>
+                            <Delete />
+                        </el-icon>
                         删除报告
                     </el-button>
                 </div>
@@ -882,8 +870,13 @@ defineExpose({
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* 空状态 */
@@ -1060,31 +1053,31 @@ defineExpose({
     .health-report-list {
         padding: 12px;
     }
-    
+
     .header-section {
         flex-direction: column;
         gap: 12px;
         align-items: stretch;
     }
-    
+
     .title-container {
         justify-content: center;
     }
-    
+
     .report-item {
         padding: 12px;
     }
-    
+
     .report-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
     }
-    
+
     .report-status {
         align-self: flex-start;
     }
-    
+
     .report-actions {
         flex-wrap: wrap;
     }
@@ -1092,78 +1085,126 @@ defineExpose({
 </style>
 
 <style>
-/* 报告详情弹窗样式 */
+/* 报告详情弹窗样式 - 椿绿色典雅风格 */
+.report-detail-dialog {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(45, 87, 45, 0.25), 0 8px 20px rgba(45, 87, 45, 0.15);
+    transform: translateY(-50%);
+    max-width: 70vw;
+}
+
 .report-detail-dialog .el-dialog__header {
-    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
-    border-radius: 12px 12px 0 0;
-    padding: 16px 20px;
+    background: linear-gradient(135deg, #2D572D 0%, #3d7a3d 50%, #4a8f4a 100%);
+    border-radius: 16px 16px 0 0;
+    padding: 18px 24px;
     margin-right: 0;
+    position: relative;
+}
+
+.report-detail-dialog .el-dialog__header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #81C784, #A5D6A7, #C8E6C9);
 }
 
 .report-detail-dialog .el-dialog__title {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
-    color: #1e3a8a;
+    color: #ffffff;
+    letter-spacing: 0.03em;
+}
+
+.report-detail-dialog .el-dialog__headerbtn {
+    top: 18px;
+    right: 20px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.report-detail-dialog .el-dialog__headerbtn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.report-detail-dialog .el-dialog__headerbtn .el-dialog__close {
+    color: #ffffff;
+    font-size: 16px;
 }
 
 .report-detail-dialog .el-dialog__body {
-    padding: 20px;
-    max-height: 70vh;
-    overflow-y: auto;
+    padding: 24px;
+    background: linear-gradient(180deg, #f8fdf8 0%, #ffffff 100%);
+    max-height: 75vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 报告内容样式优化 */
 .detail-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(45, 87, 45, 0.1);
 }
 
 .detail-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
-    font-size: 12px;
-    color: #64748b;
+    font-size: 13px;
+    color: #5a6a5a;
 }
 
 .detail-meta span {
-    background: #f1f5f9;
-    padding: 6px 10px;
-    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(45, 87, 45, 0.08), rgba(45, 87, 45, 0.04));
+    padding: 8px 14px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 6px;
+    border: 1px solid rgba(45, 87, 45, 0.1);
 }
 
 .detail-meta .el-icon {
-    font-size: 12px;
+    font-size: 13px;
+    color: #2D572D;
 }
 
 .detail-scroll {
     margin: 16px 0;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    border: 1px solid rgba(45, 87, 45, 0.15);
     background: #ffffff;
+    box-shadow: inset 0 2px 8px rgba(45, 87, 45, 0.05);
+    flex: 1;
+    overflow: hidden;
 }
 
 .detail-body {
-    padding: 20px;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #1f2937;
-    max-height: 50vh;
+    padding: 24px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #2d3748;
+    max-height: 55vh;
     overflow-y: auto;
 }
 
 /* 段落间距优化 */
 .detail-body p {
     margin: 0.8em 0;
-    min-height: 1em; /* 确保段落有最小高度 */
+    min-height: 1em;
 }
 
 .detail-body p:empty {
-    display: none; /* 隐藏空段落 */
+    display: none;
 }
 
 /* 标题间距优化 */
@@ -1173,42 +1214,74 @@ defineExpose({
 .detail-body h4,
 .detail-body h5,
 .detail-body h6 {
-    margin-top: 1.2em;
+    margin-top: 1.4em;
     margin-bottom: 0.6em;
     font-weight: 600;
-    color: #1e3a8a;
+    color: #2D572D;
+    border-left: 3px solid #81C784;
+    padding-left: 12px;
+}
+
+.detail-body h1 {
+    font-size: 1.5em;
+}
+
+.detail-body h2 {
+    font-size: 1.3em;
+}
+
+.detail-body h3 {
+    font-size: 1.15em;
+}
+
+.detail-body h4,
+.detail-body h5,
+.detail-body h6 {
+    font-size: 1em;
 }
 
 /* 列表样式优化 */
 .detail-body ul,
 .detail-body ol {
-    margin: 0.6em 0;
+    margin: 0.8em 0;
     padding-left: 1.8em;
 }
 
 .detail-body li {
-    margin: 0.4em 0;
-    line-height: 1.6;
+    margin: 0.5em 0;
+    line-height: 1.7;
+}
+
+.detail-body ul li::marker {
+    color: #81C784;
+}
+
+.detail-body ol li::marker {
+    color: #2D572D;
+    font-weight: 600;
 }
 
 /* 代码块样式 */
 .detail-body pre {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 12px;
+    background: linear-gradient(135deg, #f0f7f0 0%, #e8f5e8 100%);
+    border: 1px solid rgba(45, 87, 45, 0.2);
+    border-radius: 10px;
+    padding: 16px;
     overflow-x: auto;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 0.9em;
-    margin: 0.8em 0;
+    margin: 1em 0;
+    box-shadow: 0 2px 8px rgba(45, 87, 45, 0.1);
 }
 
 .detail-body code:not(pre code) {
-    background-color: #e2e8f0;
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
+    background: linear-gradient(135deg, rgba(45, 87, 45, 0.1), rgba(45, 87, 45, 0.05));
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 0.9em;
+    color: #2D572D;
+    border: 1px solid rgba(45, 87, 45, 0.15);
 }
 
 /* 表格样式优化 */
@@ -1217,73 +1290,116 @@ defineExpose({
     border-collapse: collapse;
     margin: 1em 0;
     font-size: 0.95em;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(45, 87, 45, 0.1);
 }
 
 .detail-body .report-table th,
 .detail-body .report-table td {
-    border: 1px solid #e2e8f0;
-    padding: 8px 12px;
+    border: 1px solid rgba(45, 87, 45, 0.15);
+    padding: 10px 14px;
     text-align: left;
     vertical-align: top;
 }
 
 .detail-body .report-table th {
-    background-color: #f8fafc;
+    background: linear-gradient(135deg, #2D572D, #3d7a3d);
     font-weight: 600;
-    color: #334155;
+    color: #ffffff;
 }
 
 .detail-body .report-table tr:nth-child(even) {
-    background-color: #f8fafc;
+    background-color: rgba(45, 87, 45, 0.03);
+}
+
+.detail-body .report-table tr:hover {
+    background-color: rgba(45, 87, 45, 0.08);
 }
 
 /* 引用块样式 */
 .detail-body blockquote {
-    border-left: 4px solid #3b82f6;
-    padding: 0.8em 1.2em;
+    border-left: 4px solid #81C784;
+    padding: 12px 16px;
     margin: 1em 0;
-    color: #475569;
+    color: #4a5568;
     font-style: italic;
-    background-color: rgba(59, 130, 246, 0.05);
-    border-radius: 0 6px 6px 0;
+    background: linear-gradient(135deg, rgba(129, 199, 132, 0.1), rgba(129, 199, 132, 0.05));
+    border-radius: 0 8px 8px 0;
 }
 
 /* 水平线样式 */
 .detail-body hr {
     border: none;
-    border-top: 1px solid #e2e8f0;
+    border-top: 2px solid rgba(45, 87, 45, 0.15);
     margin: 1.5em 0;
+    background: transparent;
 }
 
 /* 图片样式 */
 .detail-body img {
     max-width: 100%;
     height: auto;
-    border-radius: 6px;
+    border-radius: 10px;
     margin: 1em 0;
+    box-shadow: 0 4px 12px rgba(45, 87, 45, 0.15);
 }
 
-/* 纯文本模式（当markdown解析失败时） */
+/* 纯文本模式 */
 .report-plain-text {
     white-space: pre-wrap;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-    line-height: 1.6;
-    font-size: 12px;
-    color: #334155;
-    background: #f8fafc;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
+    line-height: 1.7;
+    font-size: 13px;
+    color: #2d3748;
+    background: linear-gradient(135deg, #f0f7f0 0%, #ffffff 100%);
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(45, 87, 45, 0.15);
     max-height: 400px;
     overflow-y: auto;
+    box-shadow: inset 0 2px 8px rgba(45, 87, 45, 0.05);
 }
 
 .detail-footer {
-    padding-top: 16px;
-    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+    margin-top: 16px;
+    border-top: 1px solid rgba(45, 87, 45, 0.1);
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 14px;
+}
+
+.detail-footer .el-button {
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.detail-footer .el-button--primary {
+    background: linear-gradient(135deg, #2D572D, #3d7a3d);
+    border: none;
+    box-shadow: 0 4px 12px rgba(45, 87, 45, 0.3);
+}
+
+.detail-footer .el-button--primary:hover {
+    background: linear-gradient(135deg, #3d7a3d, #4a8f4a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(45, 87, 45, 0.4);
+}
+
+.detail-footer .el-button--danger {
+    background: linear-gradient(135deg, #fafafa, #f5f5f5);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+}
+
+.detail-footer .el-button--danger:hover {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 /* 删除确认对话框 */
@@ -1310,44 +1426,46 @@ defineExpose({
 @media (max-width: 768px) {
     .report-detail-dialog {
         width: 90% !important;
-        margin-top: 10vh !important;
+        max-width: 90vw;
+        margin-top: 50% !important;
+        transform: translateY(-50%);
     }
-    
+
     .report-detail-dialog .el-dialog__header {
-        padding: 12px 16px;
+        padding: 14px 18px;
     }
-    
+
     .report-detail-dialog .el-dialog__body {
         padding: 16px;
     }
-    
+
     .detail-meta {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
-    
+
     .detail-body {
-        font-size: 12px;
-        line-height: 1.6;
-        padding: 12px;
+        font-size: 13px;
+        line-height: 1.7;
+        padding: 16px;
     }
-    
+
     .detail-body .report-table {
         font-size: 0.9em;
     }
-    
+
     .detail-body .report-table th,
     .detail-body .report-table td {
-        padding: 6px 8px;
+        padding: 8px 10px;
     }
-    
+
     .detail-footer {
         flex-direction: column;
     }
-    
+
     .detail-footer .el-button {
         width: 100%;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
 }
 </style>
