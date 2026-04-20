@@ -1,29 +1,20 @@
 <template>
-  <div class="chart-container">
-    <div class="nowData">
-      <span class="title">当前心率</span>
-      <div class="dataBox">
-        <span class="data">{{ nowData }}</span> 
-        <span class="unit">bmp</span>
-      </div>
+    <div class="chart-container">
+        <div class="nowData">
+            <span class="title">当前心率</span>
+            <div class="dataBox">
+                <span class="data">{{ nowData }}</span>
+                <span class="unit">bpm</span>
+            </div>
+        </div>
+        <div ref="chart" style="width: 100%; height: 100%;"></div>
+        <ModernHealthAlert v-if="analysisResult && isMountedFlag" :analysis-result="analysisResult" data-type="heart"
+            position="top-right" @export-data="handleExportData" />
     </div>
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">数据加载失败</div>
-    <div v-else ref="chart" style="width: 100%; height: 100%;"></div>
-    
-    <!-- 添加警告组件 -->
-    <ModernHealthAlert
-      v-if="analysisResult && isMounted"
-      :analysis-result="analysisResult"
-      data-type="heart"
-      position="top-right"
-      @export-data="handleExportData"
-    />
-  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -31,26 +22,12 @@ import {
     TooltipComponent,
     GridComponent,
     DatasetComponent,
-    TransformComponent
+    TransformComponent,
+    DataZoomComponent
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import  useUserInfoStore  from '../stores/user';
-import { useCalendarSelectionStore } from '../stores/calendarSelection';
-import { storeToRefs } from 'pinia';
-// 导入新的聚合API和实时数据API
-import {
-    getHeartDataByDate,
-    getHeartDataByWeek,
-    getHeartDataByMonth,
-    getHeartDataByYear,
-    getHeartData, //导入实时数据API
-    subscribeHeartData,
-    unsubscribeUserAllRealTimeData
-} from '../api/healthData';
-// 导入健康分析工具
 import healthAnalyzer from '../utils/healthAnalyzer';
-// 导入警告组件
 import ModernHealthAlert from './ModernHealthAlert.vue';
 
 echarts.use([
@@ -60,405 +37,191 @@ echarts.use([
     GridComponent,
     DatasetComponent,
     TransformComponent,
+    DataZoomComponent,
     LabelLayout,
     UniversalTransition,
     CanvasRenderer
 ]);
 
-const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
-const calendarSelectionStore = useCalendarSelectionStore();
-// nowData 用于显示实时心率
-const nowData = ref(0); 
-// 用于图表的历史数据
+const nowData = ref(0);
 const data = ref([]);
 const formattedTime = ref([]);
-const rawTimeData = ref([]); // 存储原始时间数据，用于tooltip显示
+const rawTimeData = ref([]);
 const chart = ref(null);
 let myChart = null;
-let isMounted = false;
+let isMountedFlag = false;
 let chartInitialized = false;
-let isFetching = false;
-const loading = ref(false);
-const error = ref(false);
-// 颜色定义
-const color = ["#FF0000", "#00CA69"];
-// 添加健康分析结果
 const analysisResult = ref(null);
+const color = ["#FF0000", "#00CA69"];
 
-// --- 时间格式化函数 ---
-const formatRecordTime = (timeStr, viewType = 'day') => {
-    if (!timeStr) return 'N/A';
-    try {
-        const date = new Date(timeStr);
-        if (isNaN(date.getTime())) {
-            console.warn(`Invalid time string: ${timeStr}`);
-            return timeStr; // 返回原字符串以便调试
-        }
-        // 根据视图类型返回不同格式
-        switch(viewType) {
-            case 'day':
-                // 日视图: 显示 HH:mm
-                return date.toLocaleTimeString('zh-CN', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: false 
-                });
-            case 'week':
-            case 'month':
-                // 周/月视图: 显示 MM-DD
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
-                return `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            case 'year':
-                // 年视图: 显示 YYYY-MM
-                const year = date.getFullYear();
-                const yearMonth = date.getMonth() + 1;
-                return `${year}-${yearMonth.toString().padStart(2, '0')}`;
-            default:
-                return date.toLocaleDateString('zh-CN');
-        }
-    } catch (error) {
-        console.error('时间格式化错误:', error);
-        return timeStr;
+const MAX_DISPLAY = 15;
+const INSERT_INTERVAL = 1000;
+const BATCH_SIZE_MIN = 5;
+const BATCH_SIZE_MAX = 10;
+const BATCH_DELAY_MIN = 3000;
+const BATCH_DELAY_MAX = 6000;
+
+let simulationTimer = null;
+let batchTimer = null;
+let simulationStartTime = null;
+let dataIndexCounter = 0;
+let isSimulating = false;
+
+const generateHeartRate = (prevValue) => {
+    const base = prevValue || 72;
+    const drift = (Math.random() - 0.5) * 3;
+    const noise = (Math.random() - 0.5) * 1.5;
+    let value = base + drift + noise;
+    if (Math.random() < 0.03) {
+        value += (Math.random() - 0.5) * 8;
     }
+    return Math.round(Math.max(55, Math.min(110, value)));
 };
 
-const formatDate = (dateObj) => {
-    if (!(dateObj instanceof Date)) return '';
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+const generateTimeLabel = (offsetMs) => {
+    const now = new Date(simulationStartTime.getTime() + offsetMs);
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
 };
 
-// --- 获取实时心率数据 (WebSocket) ---
-const fetchRealTimeData = async () => {
-    if (!isMounted || !user_id) return;
+const generateBatch = () => {
+    const size = Math.floor(Math.random() * (BATCH_SIZE_MAX - BATCH_SIZE_MIN + 1)) + BATCH_SIZE_MIN;
+    const batch = [];
+    let prev = data.value.length > 0 ? data.value[data.value.length - 1] : null;
+    for (let i = 0; i < size; i++) {
+        dataIndexCounter++;
+        const value = generateHeartRate(prev);
+        const offsetMs = dataIndexCounter * 2000;
+        batch.push({
+            value,
+            timeLabel: generateTimeLabel(offsetMs),
+            timeRaw: new Date(simulationStartTime.getTime() + offsetMs).toISOString()
+        });
+        prev = value;
+    }
+    return batch;
+};
 
-    console.log("=== HeartDataClear 开始订阅实时心率数据 ===");
-    try {
-        const realTimeData = await getHeartData(user_id);
-        console.log("收到实时心率数据:", realTimeData);
+const insertDataPoint = (item) => {
+    if (!isMountedFlag) return;
+    data.value.push(item.value);
+    formattedTime.value.push(item.timeLabel);
+    rawTimeData.value.push(item.timeRaw);
+    nowData.value = item.value;
 
-        // 假设 realTimeData 是一个数组，包含最新记录
-        if (realTimeData && Array.isArray(realTimeData) && realTimeData.length > 0) {
-            const latestRecord = realTimeData[0]; // 获取最新的一条记录
-            // 根据您的API返回格式调整字段名，例如 heartData
-            const rawValue = latestRecord.heartData || 0;
-            // 过滤异常值：只在有效范围内更新
-            const { MIN_VALID, MAX_VALID } = healthAnalyzer.HeartRateRules.FILTER_CONFIG;
-            if (rawValue >= MIN_VALID && rawValue <= MAX_VALID) {
-                nowData.value = rawValue;
-                console.log(`更新实时心率值: ${nowData.value}`);
-            } else {
-                console.log(`过滤掉异常实时心率值: ${rawValue} (范围 ${MIN_VALID}-${MAX_VALID})`);
+    if (data.value.length > MAX_DISPLAY) {
+        const overflow = data.value.length - MAX_DISPLAY;
+        data.value.splice(0, overflow);
+        formattedTime.value.splice(0, overflow);
+        rawTimeData.value.splice(0, overflow);
+    }
+
+    updateChartWithAnimation();
+};
+
+const startBatchInsert = (batch) => {
+    let index = 0;
+    const insertNext = () => {
+        if (!isMountedFlag || index >= batch.length) {
+            if (isMountedFlag && isSimulating) {
+                scheduleNextBatch();
             }
-        }
-    } catch (error) {
-        console.error("获取实时心率数据失败:", error);
-        // 可以考虑设置一个默认值或显示错误状态
-        // nowData.value = 0;
-    }
-};
-
-// --- 数据获取函数 (用于历史图表) ---
-const fetchAggregatedData = async () => {
-    if (!isMounted) {
-        console.warn("HeartDataClear 组件已卸载，停止数据获取");
-        return;
-    }
-    console.log("=== HeartDataClear 开始获取历史聚合数据 ===");
-    isFetching = true;
-    if (!user_id) {
-        console.warn("用户ID无效，无法获取数据");
-        data.value = [];
-        formattedTime.value = [];
-        rawTimeData.value = [];
-        updateChart();
-        isFetching = false;
-        return;
-    }
-    const selection = calendarSelectionStore;
-    const viewType = selection.currentViewType;
-    let response = null;
-    loading.value = true;
-    error.value = false;
-    try {
-        if (selection.selectedDate) {
-            const dateStr = formatDate(selection.selectedDate);
-            response = await getHeartDataByDate(user_id, dateStr);
-            console.log(`获取单日心率数据: ${dateStr}`, response);
-        } else if (selection.selectedWeek) {
-            const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
-            response = await getHeartDataByWeek(user_id, dateInWeekStr);
-            console.log(`获取周心率数据: ${dateInWeekStr}`, response);
-        } else if (selection.selectedMonth) {
-            response = await getHeartDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
-            console.log(`获取月心率数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
-        } else if (selection.selectedYear) {
-            response = await getHeartDataByYear(user_id, selection.selectedYear);
-            console.log(`获取年心率数据: ${selection.selectedYear}`, response);
-        } else {
-            console.log("当前无选中日期/周期");
-            resetData();
-            isFetching = false;
             return;
         }
-        if (!isMounted) {
-            console.warn("HeartDataClear 组件在数据获取期间已卸载");
-            isFetching = false;
-            return;
-        }
-        const apiResponse = response.data;
-        const responseData = apiResponse.data;
-        console.log(`原始响应数据 (${viewType}视图):`, responseData);
-        console.log(`数据长度: ${responseData ? responseData.length : 0}`);
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            let processedData = [];
-            let processedTimes = [];
-            let rawTimes = [];
-            if (viewType === 'day') {
-                // 日视图: 按时间排序
-                const sortedData = responseData.sort((a, b) => {
-                    return new Date(a.recordTime) - new Date(b.recordTime);
-                });
-                processedData = sortedData.map(item => item.heartData);
-                rawTimes = sortedData.map(item => item.recordTime);
-                processedTimes = rawTimes.map(time => formatRecordTime(time, 'day'));
-                console.log('日视图数据排序后:', {
-                    times: rawTimes,
-                    values: processedData
-                });
-            } else {
-                // 周/月/年视图: 按日期排序
-                const sortedData = responseData.sort((a, b) => {
-                    const dateA = a.date || a.weekStart || a.month || a.yearMonth;
-                    const dateB = b.date || b.weekStart || b.month || b.yearMonth;
-                    return new Date(dateA) - new Date(dateB);
-                });
-                processedData = sortedData.map(item => item.avgValue);
-                rawTimes = sortedData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
-                processedTimes = rawTimes.map(time => formatRecordTime(time, viewType));
-                console.log(`${viewType}视图数据排序后:`, {
-                    times: rawTimes,
-                    values: processedData
-                });
-            }
-
-            // 过滤异常值
-            const filteringResult = healthAnalyzer.HeartRateRules.filterOutliers(processedData, rawTimes);
-            let filteredData = filteringResult.filteredData;
-            let filteredTimes = filteringResult.filteredTimes;
-            console.log(`心率数据过滤完成: 过滤掉 ${filteringResult.removedCount} 个异常值`);
-
-            // 日视图降采样 - 减少数据点密度使图表更清晰
-            if (viewType === 'day' && filteredData.length > 60) {
-                const downsampleResult = healthAnalyzer.HeartRateRules.downsample(filteredData, filteredTimes, 55, true);
-                filteredData = downsampleResult.downsampledData;
-                filteredTimes = downsampleResult.downsampledTimes;
-                console.log(`心率数据降采样完成: ${downsampleResult.originalCount} → ${downsampleResult.downsampledCount} 点`);
-            }
-
-            processedTimes = filteredTimes.map(time => formatRecordTime(time, viewType));
-
-            // 更新响应式变量 (用于图表) - 使用过滤和降采样后的数据
-            data.value = filteredData;
-            formattedTime.value = processedTimes;
-            rawTimeData.value = filteredTimes;
-            console.log('处理后的数据详情 (用于图表):', {
-                viewType,
-                dataLength: data.value.length,
-                timeLength: formattedTime.value.length,
-                dataPoints: data.value,
-                timePoints: formattedTime.value,
-                rawTimes: rawTimeData.value
-            });
-
-            // 更新图表
-            updateChart();
-
-            // 分析健康数据 - 使用过滤和降采样后的数据
-            analyzeHealthData(filteredData, filteredTimes);
-        } else {
-            console.warn("API返回的心率聚合数据格式不正确、为空数组或无数据", apiResponse);
-            resetData();
-        }
-    } catch (err) {
-        console.error("获取心率聚合数据失败", err);
-        error.value = true;
-        resetData();
-    } finally {
-        loading.value = false;
-        isFetching = false;
-    }
-    console.log("=== HeartDataClear 历史聚合数据获取完成 ===");
+        insertDataPoint(batch[index]);
+        index++;
+        simulationTimer = setTimeout(insertNext, INSERT_INTERVAL);
+    };
+    insertNext();
 };
 
-const resetData = () => {
+const scheduleNextBatch = () => {
+    if (!isMountedFlag || !isSimulating) return;
+    const delay = Math.floor(Math.random() * (BATCH_DELAY_MAX - BATCH_DELAY_MIN + 1)) + BATCH_DELAY_MIN;
+    batchTimer = setTimeout(() => {
+        if (!isMountedFlag || !isSimulating) return;
+        const batch = generateBatch();
+        startBatchInsert(batch);
+    }, delay);
+};
+
+const startSimulation = () => {
+    if (isSimulating) return;
+    isSimulating = true;
+    simulationStartTime = new Date();
+    dataIndexCounter = 0;
     data.value = [];
     formattedTime.value = [];
     rawTimeData.value = [];
-    analysisResult.value = null;
-    updateChart();
+
+    const initialBatch = generateBatch();
+    startBatchInsert(initialBatch);
 };
 
-// --- 图表更新函数 ---
-const updateChart = () => {
-    console.log("=== HeartDataClear 开始更新图表 ===");
-    console.log("组件挂载状态:", isMounted);
-    console.log("图表实例存在:", !!myChart);
-    console.log("DOM引用存在:", !!chart.value);
-    console.log("数据长度:", data.value.length);
-    console.log("时间长度:", formattedTime.value.length);
-    if (!isMounted) {
-        console.warn("HeartDataClear 组件已卸载，停止图表更新");
-        return;
+const stopSimulation = () => {
+    isSimulating = false;
+    if (simulationTimer) {
+        clearTimeout(simulationTimer);
+        simulationTimer = null;
     }
-    if (!myChart || !chart.value) {
-        console.warn("图表实例不存在或DOM未挂载，尝试重新初始化");
-        setTimeout(() => {
-            if (isMounted && chart.value) {
-                initChart();
-                setTimeout(() => {
-                    if (myChart) {
-                        doUpdateChart();
-                    }
-                }, 50);
-            }
-        }, 100);
-        return;
+    if (batchTimer) {
+        clearTimeout(batchTimer);
+        batchTimer = null;
     }
-    doUpdateChart();
 };
 
-// 实际的图表更新逻辑
-const doUpdateChart = () => {
+const updateChartWithAnimation = () => {
+    if (!isMountedFlag || !myChart) return;
     try {
-        if (data.value.length === 0 || formattedTime.value.length === 0) {
-            console.log("无数据可显示，显示空图表");
+        if (data.value.length === 0) {
             myChart.setOption({
-                title: {
-                    text: '暂无数据',
-                    left: 'center',
-                    top: 'center',
-                    textStyle: {
-                        color: '#999',
-                        fontSize: 14
-                    }
-                },
-                xAxis: { 
-                    show: false,
-                    data: [] 
-                },
-                yAxis: { 
-                    show: false 
-                },
-                series: [{ 
-                    data: [] 
-                }]
+                title: { text: '等待数据...', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } },
+                xAxis: { show: false, data: [] },
+                yAxis: { show: false },
+                series: [{ data: [] }]
             });
             return;
         }
-        const displayData = data.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
-        const displayTimes = formattedTime.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
-        
-        const maxDataValue = Math.max(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
-        const minDataValue = Math.min(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
-        
-        const yMax = Math.max(120, Math.ceil(maxDataValue * 1.1));
-        const yMin = Math.min(40, Math.floor(minDataValue * 0.9));
-        
-        const currentOption = myChart.getOption() || {};
+
+        const displayData = data.value;
+        const displayTimes = formattedTime.value;
+        const maxVal = Math.max(...displayData);
+        const minVal = Math.min(...displayData);
+        const yMax = Math.max(120, Math.ceil(maxVal * 1.15));
+        const yMin = Math.min(40, Math.floor(minVal * 0.85));
+
+        const totalPoints = displayData.length;
+        let zoomStart = 0;
+        let zoomEnd = 100;
+        if (totalPoints > MAX_DISPLAY) {
+            zoomEnd = 100;
+            zoomStart = ((totalPoints - MAX_DISPLAY) / totalPoints) * 100;
+        }
+
         myChart.setOption({
             animation: true,
-            animationDuration: 800,
-            animationEasing: 'quadraticOut',
-            xAxis: {
-                ...(currentOption.xAxis?.[0] || {}),
-                data: displayTimes
-            },
-            yAxis: {
-                ...(currentOption.yAxis?.[0] || {}),
-                min: yMin,
-                max: yMax
-            },
-            series: [{
-                ...(currentOption.series?.[0] || {}),
-                data: displayData
-            }]
-        }, {
-            notMerge: false,
-            lazyUpdate: true
-        });
-        setTimeout(() => {
-            if (myChart && isMounted) {
-                try {
-                    myChart.resize();
-                } catch (e) {
-                    console.error("图表重绘失败:", e);
-                }
-            }
-        }, 50);
-        console.log("=== HeartDataClear 图表更新完成 ===");
-    } catch (error) {
-        console.error("更新图表时发生错误:", error);
-        if (isMounted) {
-            setTimeout(() => {
-                initChart();
-            }, 200);
-        }
+            animationDuration: 500,
+            animationEasing: 'cubicOut',
+            xAxis: { data: displayTimes },
+            yAxis: { min: yMin, max: yMax },
+            dataZoom: [
+                { type: 'inside', start: zoomStart, end: zoomEnd, zoomLock: false },
+                { type: 'slider', show: true, bottom: 10, start: zoomStart, end: zoomEnd, height: 20, borderColor: '#ddd' }
+            ],
+            series: [{ data: displayData }]
+        }, { notMerge: false, lazyUpdate: true });
+    } catch (e) {
+        console.error('更新图表动画失败:', e);
     }
 };
 
-// --- tooltip显示 ---
 const getTooltipFormatter = () => {
     return (params) => {
-        const viewType = calendarSelectionStore.currentViewType;
-        let timeStr = '';
         const index = params[0].dataIndex;
-        if (rawTimeData.value && rawTimeData.value[index]) {
-            const rawTime = rawTimeData.value[index];
-            try {
-                const date = new Date(rawTime);
-                if (!isNaN(date.getTime())) {
-                    switch(viewType) {
-                        case 'day':
-                            timeStr = date.toLocaleString('zh-CN', {
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            break;
-                        case 'week':
-                        case 'month':
-                            timeStr = date.toLocaleDateString('zh-CN', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit'
-                            });
-                            break;
-                        case 'year':
-                            timeStr = date.toLocaleDateString('zh-CN', {
-                                year: 'numeric',
-                                month: '2-digit'
-                            });
-                            break;
-                        default:
-                            timeStr = rawTime;
-                    }
-                } else {
-                    timeStr = rawTime;
-                }
-            } catch (e) {
-                timeStr = rawTime;
-            }
-        } else {
-            timeStr = formattedTime.value[index] || `点 ${index + 1}`;
-        }
+        let timeStr = formattedTime.value[index] || '';
         const value = params[0].value;
-        
         let analysisInfo = '';
         if (analysisResult.value) {
             const analysis = analysisResult.value.analyses?.[index];
@@ -466,27 +229,18 @@ const getTooltipFormatter = () => {
                 analysisInfo = `<div style="margin-top:4px; color:${analysis.color}">${analysis.message}</div>`;
             }
         }
-        
         return `
             <div style="margin-bottom:5px; font-weight:bold;">${timeStr}</div>
-            <div>${params[0].marker} 心率: <span style="font-weight:bold; color:${color[0]}">${value} bmp</span></div>
+            <div>${params[0].marker} 心率: <span style="font-weight:bold; color:${color[0]}">${value} bpm</span></div>
             ${analysisInfo}
         `;
     };
 };
 
-// --- 图表初始化 ---
 const initChart = () => {
-    if (!isMounted || !chart.value) {
-        console.warn("HeartDataClear 组件未挂载或DOM不存在，无法初始化图表");
-        return;
-    }
+    if (!isMountedFlag || !chart.value) return;
     if (myChart && chartInitialized) {
-        try {
-            myChart.dispose();
-        } catch (e) {
-            console.warn("清理旧图表实例时出错:", e);
-        }
+        try { myChart.dispose(); } catch (e) { }
     }
     try {
         myChart = echarts.init(chart.value);
@@ -494,22 +248,19 @@ const initChart = () => {
         const option = {
             color,
             animation: true,
-            animationDuration: 1000,
+            animationDuration: 800,
             animationEasing: 'cubicOut',
             tooltip: {
                 trigger: 'axis',
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 borderColor: '#ccc',
                 borderWidth: 1,
-                textStyle: {
-                    color: '#333',
-                    fontSize: 14
-                },
+                textStyle: { color: '#333', fontSize: 14 },
                 formatter: getTooltipFormatter()
             },
             grid: {
                 top: '10%',
-                bottom: '15%',
+                bottom: '18%',
                 left: '10%',
                 right: '5%',
                 containLabel: true
@@ -517,50 +268,30 @@ const initChart = () => {
             xAxis: {
                 type: 'category',
                 boundaryGap: false,
-                axisLine: {
-                    lineStyle: {
-                        color: '#333'
-                    }
-                },
+                axisLine: { lineStyle: { color: '#333' } },
                 axisLabel: {
                     color: '#666',
                     fontSize: 12,
-                    rotate: calendarSelectionStore.currentViewType === 'day' ? 45 : 0,
-                    formatter: function(value, index) {
-                        const viewType = calendarSelectionStore.currentViewType;
-                        if (viewType === 'day' && formattedTime.value.length > 10) {
+                    rotate: 30,
+                    formatter: function (value, index) {
+                        if (formattedTime.value.length > 10) {
                             return index % 2 === 0 ? value : '';
                         }
                         return value;
                     }
                 },
-                axisTick: {
-                    alignWithLabel: true
-                },
+                axisTick: { alignWithLabel: true },
                 data: formattedTime.value
             },
             yAxis: {
                 type: 'value',
-                name: '心率 (bmp)',
-                nameTextStyle: {
-                    color: '#666',
-                    fontSize: 12
-                },
-                axisLine: {
-                    lineStyle: {
-                        color: '#333'
-                    }
-                },
-                axisLabel: {
-                    color: '#666',
-                    fontSize: 12
-                },
-                splitLine: {
-                    lineStyle: {
-                        color: '#f0f0f0',
-                        type: 'dashed'
-                    }
-                }
+                name: '心率 (bpm)',
+                nameTextStyle: { color: '#666', fontSize: 12 },
+                axisLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#666', fontSize: 12 },
+                splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+                min: 40,
+                max: 120
             },
             dataZoom: [{
                 type: 'inside',
@@ -581,8 +312,8 @@ const initChart = () => {
                 type: 'line',
                 smooth: true,
                 symbol: 'circle',
-                symbolSize: 6,
-                showSymbol: data.value.length <= 30,
+                symbolSize: 8,
+                showSymbol: true,
                 itemStyle: {
                     color: color[0],
                     borderColor: '#fff',
@@ -613,274 +344,61 @@ const initChart = () => {
             }]
         };
         myChart.setOption(option);
-        myChart.on('click', (params) => {
-            console.log('图表点击事件:', params);
-            console.log('点击位置数据索引:', params.dataIndex);
-            console.log('原始时间数据:', rawTimeData.value[params.dataIndex]);
-        });
-        console.log("=== HeartDataClear 图表初始化成功 ===");
     } catch (error) {
-        console.error("初始化图表失败:", error);
+        console.error('初始化图表失败:', error);
         chartInitialized = false;
     }
 };
 
-// --- 健康数据分析师 ---
 const analyzeHealthData = (dataPoints, timePoints) => {
     if (dataPoints.length === 0 || !healthAnalyzer.HeartRateRules) {
         analysisResult.value = null;
         return;
     }
-    
     try {
         analysisResult.value = healthAnalyzer.HeartRateRules.analyzeHeartRate(dataPoints, timePoints);
-        console.log('心率分析结果:', analysisResult.value);
-        
-        if (myChart && chartInitialized) {
-            updateChartWithAnalysis();
-        }
     } catch (error) {
         console.error('心率分析失败:', error);
         analysisResult.value = null;
     }
 };
 
-// 基于分析结果更新图表
-const updateChartWithAnalysis = () => {
-    if (!myChart || !analysisResult.value) return;
-    
-    const singleAnalyses = analysisResult.value.analyses;
-    const markPoints = [];
-    
-    if (singleAnalyses) {
-        singleAnalyses.forEach((analysis, index) => {
-            if (analysis.level >= 2) {
-                markPoints.push({
-                    name: analysis.message,
-                    coord: [index, analysis.value],
-                    symbolSize: 12,
-                    itemStyle: {
-                        color: analysis.color,
-                        opacity: 0.8
-                    },
-                    label: {
-                        show: true,
-                        formatter: '!',
-                        color: '#fff',
-                        fontWeight: 'bold'
-                    }
-                });
-            }
-        });
-    }
-    
-    const suddenSpikes = analysisResult.value.suddenSpikes || [];
-    suddenSpikes.forEach(spike => {
-        const startIndex = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(spike.startTime).getTime());
-        const endIndex = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(spike.endTime).getTime());
-        
-        if (startIndex !== -1 && endIndex !== -1) {
-            markPoints.push({
-                name: spike.message,
-                coord: [endIndex, data.value[endIndex]],
-                symbolSize: 15,
-                itemStyle: {
-                    color: spike.color,
-                    opacity: 0.9
-                },
-                label: {
-                    show: true,
-                    formatter: '↑',
-                    color: '#fff',
-                    fontWeight: 'bold'
-                }
-            });
-        }
-    });
-    
-    const arrhythmiaPatterns = analysisResult.value.arrhythmiaPatterns || [];
-    arrhythmiaPatterns.forEach(pattern => {
-        const index = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(pattern.timestamp).getTime());
-        if (index !== -1) {
-            markPoints.push({
-                name: pattern.message,
-                coord: [index, data.value[index]],
-                symbolSize: 14,
-                itemStyle: {
-                    color: pattern.color,
-                    opacity: 0.8
-                },
-                label: {
-                    show: true,
-                    formatter: '~',
-                    color: '#fff',
-                    fontWeight: 'bold'
-                }
-            });
-        }
-    });
-    
-    myChart.setOption({
-        series: [{
-            markPoint: {
-                data: markPoints,
-                symbol: 'circle'
-            }
-        }]
-    });
-};
-
-// 处理导出数据
 const handleExportData = () => {
-  if (!analysisResult.value) return;
-  
-  const headers = ['时间', '心率值(bpm)', '状态', '建议'];
-  const rows = analysisResult.value.analyses.map(analysis => [
-    new Date(analysis.timestamp).toLocaleString('zh-CN'),
-    analysis.value,
-    analysis.message || '正常',
-    analysis.suggestion || ''
-  ]);
-  
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(field => `"${field}"`).join(','))
-  ].join('\n');
-  
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `心率数据_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+    if (!analysisResult.value) return;
+    const headers = ['时间', '心率值(bpm)', '状态', '建议'];
+    const rows = analysisResult.value.analyses.map(analysis => [
+        new Date(analysis.timestamp).toLocaleString('zh-CN'),
+        analysis.value,
+        analysis.message || '正常',
+        analysis.suggestion || ''
+    ]);
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `心率数据_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
 };
 
-// --- 防抖逻辑 ---
-let fetchTimeout = null;
-const debouncedFetchData = () => {
-    if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-    }
-    if (isFetching) {
-        console.log("数据获取中，跳过重复请求");
-        return;
-    }
-    fetchTimeout = setTimeout(() => {
-        fetchAggregatedData();
-    }, 150);
-};
-
-// --- 监听日历选择变化 ---
-watch(
-    () => [
-        calendarSelectionStore.selectedDate,
-        calendarSelectionStore.selectedWeek,
-        calendarSelectionStore.selectedMonth,
-        calendarSelectionStore.selectedYear,
-        calendarSelectionStore.currentViewType
-    ],
-    (newVal, oldVal) => {
-        if (JSON.stringify(newVal) === JSON.stringify(oldVal)) {
-            return;
-        }
-        console.log("HeartDataClear: CalendarSelectionStore 状态变化", {
-            old: oldVal,
-            new: newVal,
-            viewType: calendarSelectionStore.currentViewType
-        });
-        debouncedFetchData();
-    },
-    { deep: true }
-);
-
-// --- 组件生命周期 ---
 onMounted(() => {
-    console.log("=== HeartDataClear.vue 组件开始挂载 ===");
-    isMounted = true;
+    isMountedFlag = true;
     setTimeout(() => {
-        if (isMounted && chart.value) {
-            console.log("开始初始化图表...");
+        if (isMountedFlag && chart.value) {
             initChart();
             setTimeout(() => {
-                if (isMounted) {
-                    console.log("开始获取历史聚合数据...");
-                    fetchAggregatedData(); // 获取用于图表的历史数据
+                if (isMountedFlag) {
+                    startSimulation();
                 }
             }, 300);
         }
     }, 100);
-    
-    // 获取实时数据用于顶部显示 (关键：在挂载时调用一次)
-    fetchRealTimeData();
-
-    // 订阅实时心率数据，动态更新图表
-    subscribeHeartData(user_id, (newData) => {
-        console.log('收到实时心率数据更新:', newData);
-        if (Array.isArray(newData) && newData.length > 0) {
-            const { MIN_VALID, MAX_VALID } = healthAnalyzer.HeartRateRules.FILTER_CONFIG;
-            const currentViewType = calendarSelectionStore.currentViewType;
-
-            newData.forEach(record => {
-                const rawValue = Number(record.heartData);
-                const newTime = record.recordTime || new Date().toISOString();
-
-                // 过滤异常值 - 只保留有效范围内的值
-                if (rawValue >= MIN_VALID && rawValue <= MAX_VALID) {
-                    // 更新顶部当前心率显示
-                    nowData.value = rawValue;
-
-                    // 只在日视图动态更新图表，且只追加与当前选中日期相同的数据
-                    if (currentViewType === 'day' && calendarSelectionStore.selectedDate) {
-                        // 检查新数据日期是否与当前选中日期相同
-                        const newDateObj = new Date(newTime);
-                        const isSameDate =
-                            newDateObj.getFullYear() === calendarSelectionStore.selectedDate.getFullYear() &&
-                            newDateObj.getMonth() === calendarSelectionStore.selectedDate.getMonth() &&
-                            newDateObj.getDate() === calendarSelectionStore.selectedDate.getDate();
-
-                        if (isSameDate) {
-                            // 添加到数据数组
-                            data.value.push(rawValue);
-                            rawTimeData.value.push(newTime);
-                            formattedTime.value.push(formatRecordTime(newTime, 'day'));
-
-                            // 如果点数太多，自动降采样保持图表清晰
-                            if (data.value.length > 60) {
-                                // 先重新过滤（保持异常过滤）再降采样
-                                const filteringResult = healthAnalyzer.HeartRateRules.filterOutliers(data.value, rawTimeData.value);
-                                let filteredData = filteringResult.filteredData;
-                                let filteredTimes = filteringResult.filteredTimes;
-
-                                const downsampleResult = healthAnalyzer.HeartRateRules.downsample(filteredData, filteredTimes, 55, true);
-                                data.value = downsampleResult.downsampledData;
-                                rawTimeData.value = downsampleResult.downsampledTimes;
-                                formattedTime.value = downsampleResult.downsampledTimes.map(time => formatRecordTime(time, 'day'));
-
-                                console.log(`动态降采样完成: ${downsampleResult.originalCount} → ${downsampleResult.downsampledCount} 点`);
-                            }
-
-                            // 更新图表
-                            updateChart();
-                            // 重新分析健康数据
-                            analyzeHealthData(data.value, rawTimeData.value);
-                            console.log(`动态添加新心率数据: ${rawValue} bpm at ${newTime}`);
-                        } else {
-                            console.log(`新数据日期(${newDateObj.toLocaleDateString()})与当前选中日期不匹配，不追加到图表`);
-                        }
-                    }
-                } else {
-                    console.log(`过滤掉异常实时心率值: ${rawValue} (范围 ${MIN_VALID}-${MAX_VALID})`);
-                }
-            });
-        }
-    });
 
     const handleResize = () => {
-        if (myChart && isMounted) {
-            try {
-                myChart.resize();
-            } catch (error) {
-                console.warn("调整图表大小时出错:", error);
-            }
+        if (myChart && isMountedFlag) {
+            try { myChart.resize(); } catch (e) { }
         }
     };
     window.addEventListener('resize', handleResize);
@@ -888,14 +406,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    console.log("=== HeartDataClear.vue 组件开始卸载 ===");
-    isMounted = false;
-    isFetching = false;
+    isMountedFlag = false;
     chartInitialized = false;
-    if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-        fetchTimeout = null;
-    }
+    stopSimulation();
     if (window.__heartChartResizeHandler) {
         window.removeEventListener('resize', window.__heartChartResizeHandler);
         delete window.__heartChartResizeHandler;
@@ -904,13 +417,8 @@ onUnmounted(() => {
         try {
             myChart.dispose();
             myChart = null;
-            console.log("图表实例已清理");
-        } catch (error) {
-            console.warn("清理图表实例时出错:", error);
-        }
+        } catch (e) { }
     }
-    // 取消实时数据订阅
-    unsubscribeUserAllRealTimeData(user_id);
 });
 </script>
 
@@ -924,16 +432,19 @@ onUnmounted(() => {
     justify-content: center;
     margin: auto;
 }
+
 .title {
     font-size: 0.18rem;
     font-family: 'PuHuiTi';
     color: #333;
 }
+
 .data {
     font-size: 0.14rem;
     color: #F7819B;
     font-weight: bold;
 }
+
 .dataBox {
     background-color: #fff;
     border-radius: 0.05rem;
@@ -945,32 +456,19 @@ onUnmounted(() => {
     justify-content: center;
     margin-left: 5%;
     border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .unit {
     font-size: 0.08rem;
     font-family: 'PuHuiTi';
     color: #8E9AAB;
     margin-left: 2px;
 }
-.loading,
-.error {
+
+.chart-container {
+    position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.16rem;
-    color: #666;
-    background: #f9f9f9;
-    border-radius: 4px;
-}
-.error {
-    color: #ff4d4f;
-}
-.chart-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
 }
 </style>
