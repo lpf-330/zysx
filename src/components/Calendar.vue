@@ -12,10 +12,7 @@ const selectedDay = ref(today.getDate());
 const showYearPicker = ref(false);
 const events = ref([]);
 
-import useUserInfoStore from '../stores/user';
-import { storeToRefs } from 'pinia';
-
-const { user_id } = storeToRefs(useUserInfoStore())
+const user_id = localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null;
 
 const fetchEvents = async () => {
     try {
@@ -140,13 +137,8 @@ onMounted(() => {
         <div v-if="showYearPicker" class="year-picker-overlay" @click.self="toggleYearPicker">
             <div class="year-picker">
                 <div class="year-grid">
-                    <span
-                        v-for="year in yearOptions"
-                        :key="year"
-                        class="year-option"
-                        :class="{ 'active': year === currentYear }"
-                        @click="selectYear(year)"
-                    >
+                    <span v-for="year in yearOptions" :key="year" class="year-option"
+                        :class="{ 'active': year === currentYear }" @click="selectYear(year)">
                         {{ year }}
                     </span>
                 </div>
@@ -158,22 +150,12 @@ onMounted(() => {
                 <span v-for="day in weekDays" :key="day" class="week-day">{{ day }}</span>
             </div>
             <div class="days-grid">
-                <span
-                    v-for="i in firstDayOfMonth"
-                    :key="'empty-' + i"
-                    class="day-cell empty"
-                ></span>
-                <span
-                    v-for="day in daysInMonth"
-                    :key="day"
-                    class="day-cell"
-                    :class="{
-                        'today': isToday(day),
-                        'selected': isSelected(day),
-                        'has-event': hasEvent(day)
-                    }"
-                    @click="selectDay(day)"
-                >
+                <span v-for="i in firstDayOfMonth" :key="'empty-' + i" class="day-cell empty"></span>
+                <span v-for="day in daysInMonth" :key="day" class="day-cell" :class="{
+                    'today': isToday(day),
+                    'selected': isSelected(day),
+                    'has-event': hasEvent(day)
+                }" @click="selectDay(day)">
                     {{ day }}
                 </span>
             </div>
@@ -267,7 +249,7 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 0.08rem;
     z-index: 10;
     display: flex;
@@ -281,7 +263,7 @@ onMounted(() => {
     border: 1px solid rgba(45, 87, 45, 0.1);
     border-radius: 0.08rem;
     padding: 0.12rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .year-grid {

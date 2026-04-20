@@ -8,10 +8,7 @@ import { getTodosByDate, updateTodoStatusMS } from '../api/user';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 
-import useUserInfoStore from '../stores/user';
-import { storeToRefs } from 'pinia';
-
-const { user_id } = storeToRefs(useUserInfoStore())
+const user_id = ref(localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null);
 
 const selectedDate = ref(null);
 

@@ -1,11 +1,12 @@
+// stores/calendarSelection.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 export const useCalendarSelectionStore = defineStore('calendarSelection', () => {
   const selectedDate = ref(null);
-  const selectedWeek = ref(null);
-  const selectedMonth = ref(null);
-  const selectedYear = ref(null);
+  const selectedWeek = ref(null); // {startDate: Date, endDate: Date}
+  const selectedMonth = ref(null); // {year: Number, month: Number}
+  const selectedYear = ref(null); // Number
 
   const setSelectedDate = (date) => {
     selectedDate.value = date;
@@ -62,6 +63,4 @@ export const useCalendarSelectionStore = defineStore('calendarSelection', () => 
     clearAllSelections,
     currentViewType,
   };
-}, {
-  persist: true
 });

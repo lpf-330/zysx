@@ -5,16 +5,9 @@ const httpService = axios.create({
     timeout: 5000
 })
 
-const getStoredToken = () => {
-    try {
-        const authData = JSON.parse(localStorage.getItem('auth'))
-        if (authData?.token) return authData.token
-    } catch (e) {}
-    return localStorage.getItem('token')
-}
-
+// 请求拦截器
 httpService.interceptors.request.use(config => {
-    const token = getStoredToken()
+    const token = localStorage.getItem('token');
     const isLoginRequest = config.url && (config.url.includes('/login') || config.url.includes('/userInfo'));
     if (token && !isLoginRequest) {
         config.headers.Authorization = `Bearer ${token}`;
