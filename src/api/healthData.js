@@ -231,6 +231,11 @@ const getPiDataByWeek = (userId, dateInWeek) => httpService.post('/api/api/healt
 const getPiDataByMonth = (userId, year, month) => httpService.post('/api/api/health-data-aggregated/pi-data-by-month', { userId, year, month });
 const getPiDataByYear = (userId, year) => httpService.post('/api/api/health-data-aggregated/pi-data-by-year', { userId, year });
 
+// 基础数据接口（用于获取所有数据，前端聚合）
+const getAllSleepData = (userId) => httpService.post('/api/sleepData', { user_id: userId });
+const getAllPiData = (userId) => httpService.post('/api/piData', { user_id: userId });
+const getAllOxygenData = (userId) => httpService.post('/api/oxygenData', { user_id: userId });
+
 export {
     // 原有导出
     getBloodData,
@@ -265,6 +270,10 @@ export {
     getPiDataByWeek,
     getPiDataByMonth,
     getPiDataByYear,
+    // 基础数据接口（前端聚合用）
+    getAllSleepData,
+    getAllPiData,
+    getAllOxygenData,
     // 用于实时数据订阅
     subscribeHeartData,
     subscribeBloodData,

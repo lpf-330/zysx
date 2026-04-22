@@ -28,13 +28,10 @@ import { useCalendarSelectionStore } from '../stores/calendarSelection'; // 导�
 import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 
-// 导入新的聚合API
+// 导入基础数据API（后端无聚合API，使用基础接口在前端聚合）
 import { 
-    getPiDataByDate, 
-    getPiDataByWeek, 
-    getPiDataByMonth, 
-    getPiDataByYear 
-} from '../api/healthData'; // 假设您已将这些函数添加到 healthData.js
+    getAllPiData
+} from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -75,7 +72,7 @@ const formatMonth = (year, month) => {
     return `${year}-${monthStr}`;
 };
 
-// --- 修改的代码 START: fetchAggregatedData 替代 fetchPiData ---
+// --- 修改的代码 START: fetchAggregatedData 使用基础数据接口 ---
 const fetchAggregatedData = async () => {
     if (!isMounted) {
         console.warn("PiDataClear 组件已卸载，停止数据获取");
@@ -88,95 +85,176 @@ const fetchAggregatedData = async () => {
         console.warn("用户ID无效，无法获取数据");
         data.value = [];
         formattedTime.value = [];
-        nowData.value = 0; // 无数据时显示0
+        nowData.value = 0;
         updateChart();
         return;
     }
 
-    const selection = calendarSelectionStore;
-    let response = null;
-
     try {
-        if (selection.selectedDate) {
-            const dateStr = formatDate(selection.selectedDate);
-            response = await getPiDataByDate(user_id, dateStr);
-            console.log(`获取单日灌注指数数据: ${dateStr}`, response);
-        } else if (selection.selectedWeek) {
-            const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
-            response = await getPiDataByWeek(user_id, dateInWeekStr);
-            console.log(`获取周灌注指数数据: ${dateInWeekStr}`, response);
-        } else if (selection.selectedMonth) {
-            response = await getPiDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
-            console.log(`获取月灌注指数数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
-        } else if (selection.selectedYear) {
-            response = await getPiDataByYear(user_id, selection.selectedYear);
-            console.log(`获取年灌注指数数据: ${selection.selectedYear}`, response);
-        } else {
-            console.log("当前无选中日期/周期");
-            data.value = [];
-            formattedTime.value = [];
-            nowData.value = 0; // 无数据时显示0
-            updateChart();
-            return;
-        }
-
-        // 检查组件是否已卸载
+        const response = await getAllPiData(user_id);
+        
         if (!isMounted) {
             console.warn("PiDataClear 组件在数据获取期间已卸载");
             return;
         }
 
-        const apiResponse = response.data; // 假设 httpService.post 返回 {  {...} }
-        const responseData = apiResponse.data; // 业务数据数组
+        const apiResponse = response.data;
+        let responseData;
+        if (Array.isArray(apiResponse)) {
+            responseData = apiResponse;
+        } else if (apiResponse && apiResponse.code === 200 && Array.isArray(apiResponse.data)) {
+            responseData = apiResponse.data;
+        } else {
+            responseData = null;
+        }
 
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            console.log(`响应${calendarSelectionStore.currentViewType}聚合灌注指数数据`, responseData);
-
+        if (responseData && responseData.length > 0) {
+            console.log('获取到灌注指数原始数据', responseData);
+            
+            const selection = calendarSelectionStore;
             let processedData = [];
             let processedTimes = [];
 
-            if (calendarSelectionStore.currentViewType === 'day') {
-                // 处理单日原始数据: [{"piData": 1.5, "recordTime": "2025-12-20 13:05:24"}]
-                processedData = responseData.map(item => item.piData);
-                processedTimes = responseData.map(item => dateFormatter.Formatter(item.recordTime)); // 使用您的格式化工具
+            // 获取日期部分（兼容 ISO 格式 '2024-01-15T21:00:00' 和普通格式 '2024-01-15 21:00:00'）
+            const getDatePart = (recordTime) => {
+                if (!recordTime) return '';
+                return recordTime.split('T')[0].split(' ')[0];
+            };
+
+            if (selection.selectedDate) {
+                const targetDate = formatDate(selection.selectedDate);
+                const dayData = responseData.filter(item => {
+                    const recordDate = getDatePart(item.recordTime);
+                    return recordDate === targetDate;
+                });
+                processedData = dayData.map(item => item.piData || 0);
+                processedTimes = dayData.map(item => dateFormatter.Formatter(item.recordTime));
+            } else if (selection.selectedWeek) {
+                const weekStart = new Date(selection.selectedWeek.startDate);
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                const weekData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const recordDate = new Date(getDatePart(item.recordTime));
+                    return recordDate >= weekStart && recordDate <= weekEnd;
+                });
+                
+                const dailyMap = new Map();
+                weekData.forEach(item => {
+                    const dateKey = getDatePart(item.recordTime);
+                    if (!dailyMap.has(dateKey)) {
+                        dailyMap.set(dateKey, []);
+                    }
+                    dailyMap.get(dateKey).push(item.piData || 0);
+                });
+                
+                dailyMap.forEach((values, dateKey) => {
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 100) / 100);
+                    processedTimes.push(dateKey);
+                });
+                processedTimes.sort();
+                processedData = processedTimes.map(d => {
+                    const vals = dailyMap.get(d);
+                    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100;
+                });
+            } else if (selection.selectedMonth) {
+                const targetYear = selection.selectedMonth.year;
+                const targetMonth = selection.selectedMonth.month;
+                
+                const monthData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const parts = getDatePart(item.recordTime).split('-');
+                    return parseInt(parts[0]) === targetYear && parseInt(parts[1]) === targetMonth;
+                });
+                
+                const dailyMap = new Map();
+                monthData.forEach(item => {
+                    const dateKey = getDatePart(item.recordTime);
+                    if (!dailyMap.has(dateKey)) {
+                        dailyMap.set(dateKey, []);
+                    }
+                    dailyMap.get(dateKey).push(item.piData || 0);
+                });
+                
+                dailyMap.forEach((values, dateKey) => {
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 100) / 100);
+                    processedTimes.push(dateKey);
+                });
+                processedTimes.sort();
+                processedData = processedTimes.map(d => {
+                    const vals = dailyMap.get(d);
+                    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100;
+                });
+            } else if (selection.selectedYear) {
+                const targetYear = selection.selectedYear;
+                
+                const yearData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const year = parseInt(getDatePart(item.recordTime).split('-')[0]);
+                    return year === targetYear;
+                });
+                
+                const monthlyMap = new Map();
+                yearData.forEach(item => {
+                    const parts = getDatePart(item.recordTime).split('-');
+                    const monthKey = `${parts[0]}-${parts[1]}`;
+                    if (!monthlyMap.has(monthKey)) {
+                        monthlyMap.set(monthKey, []);
+                    }
+                    monthlyMap.get(monthKey).push(item.piData || 0);
+                });
+                
+                monthlyMap.forEach((values, monthKey) => {
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 100) / 100);
+                    processedTimes.push(monthKey);
+                });
+                processedTimes.sort();
+                processedData = processedTimes.map(m => {
+                    const vals = monthlyMap.get(m);
+                    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100;
+                });
             } else {
-                // 处理周/月/年聚合数据: [{"avgValue": 1.2, "date": "2025-12-20"}, ...]
-                processedData = responseData.map(item => item.avgValue);
-                processedTimes = responseData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+                console.log("当前无选中日期/周期，显示最近数据");
+                const sortedData = [...responseData].sort((a, b) => 
+                    new Date(b.recordTime) - new Date(a.recordTime)
+                );
+                const recentData = sortedData.slice(0, 50);
+                processedData = recentData.map(item => item.piData || 0);
+                processedTimes = recentData.map(item => dateFormatter.Formatter(item.recordTime));
             }
 
-            // --- 更新响应式变量 ---
             data.value = processedData;
             formattedTime.value = processedTimes;
-
-            // 更新 nowData 为最后一个数据点的值
             nowData.value = processedData[processedData.length - 1] || 0;
 
-            // 计算Y轴最大值
             if (processedData.length > 0) {
                 maxY.value = Math.floor((Math.max(...processedData) + 10) / 10) * 10;
             } else {
-                maxY.value = 100; // 设置一个默认值
+                maxY.value = 100;
             }
 
-            console.log('处理后的聚合灌注指数数据:', data.value);
-            console.log('处理后的聚合时间:', formattedTime.value);
+            console.log('处理后的灌注指数数据:', data.value);
+            console.log('处理后的时间:', formattedTime.value);
             console.log('最新灌注指数值:', nowData.value);
 
             updateChart();
         } else {
-            console.warn("API返回的灌注指数聚合数据格式不正确、为空数组或无数据", apiResponse);
+            console.warn("API返回的灌注指数数据格式不正确、为空数组或无数据", apiResponse);
             data.value = [];
             formattedTime.value = [];
-            nowData.value = 0; // 无数据时显示0
+            nowData.value = 0;
             updateChart();
         }
     } catch (error) {
-        console.error("获取灌注指数聚合数据失败", error);
-        if (!isMounted) return; // 检查组件是否已卸载
+        console.error("获取灌注指数数据失败", error);
+        if (!isMounted) return;
         data.value = [];
         formattedTime.value = [];
-        nowData.value = 0; // 错误时也显示0
+        nowData.value = 0;
         updateChart();
     }
 
@@ -322,8 +400,7 @@ watch(
     () => {
         console.log("PiDataClear: CalendarSelectionStore 状态变化，重新获取聚合数据");
         fetchAggregatedData();
-    },
-    { immediate: true } // 组件挂载时立即获取一次数据
+    }
 );
 
 onMounted(() => {

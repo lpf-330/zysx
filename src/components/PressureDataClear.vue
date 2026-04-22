@@ -3,18 +3,14 @@
         <div class="nowData">
             <div class="dataBox">
                 <span class="classTitle" style="color: rgb(255, 105, 35);">高压</span>
-                <div class="class">
-                    <span class="data">{{ latestSystolic.toFixed(1) }}</span>
-                    <span class="unit">mmHg</span>
-                </div>
+                <span class="data">{{ latestSystolic.toFixed(1) }}</span>
+                <span class="unit">mmHg</span>
             </div>
             <span class="title">当前血压</span>
             <div class="dataBox">
                 <span class="classTitle" style="color: rgba(35, 157, 250, 1);">低压</span>
-                <div class="class">
-                    <span class="data">{{ latestDiastolic.toFixed(1) }}</span>
-                    <span class="unit">mmHg</span>
-                </div>
+                <span class="data">{{ latestDiastolic.toFixed(1) }}</span>
+                <span class="unit">mmHg</span>
             </div>
         </div>
         
@@ -368,6 +364,14 @@ const fetchAggregatedData = async () => {
         
         // 健康数据分析
         analyzeHealthData(processedSystolic, processedDiastolic, rawTimes);
+        
+        // 如果实时数据未获取到，则从历史数据中获取最新值
+        if (latestSystolic.value === 0 && latestDiastolic.value === 0 && processedSystolic.length > 0) {
+          const lastIndex = processedSystolic.length - 1;
+          latestSystolic.value = processedSystolic[lastIndex] || 0;
+          latestDiastolic.value = processedDiastolic[lastIndex] || 0;
+          console.log(`从历史数据更新当前血压值: 高压=${latestSystolic.value}, 低压=${latestDiastolic.value}`);
+        }
       } else {
         console.warn("API返回的血压数据为空数组");
         resetData();
@@ -639,7 +643,7 @@ const initChart = () => {
       },
       grid: {
         top: '15%',
-        bottom: '15%',
+        bottom: '8%',
         left: '10%',
         right: '5%',
         containLabel: true
@@ -647,6 +651,7 @@ const initChart = () => {
       xAxis: {
         type: 'category',
         boundaryGap: false,
+        position: 'bottom',
         axisLine: {
           lineStyle: {
             color: '#333'
@@ -655,6 +660,7 @@ const initChart = () => {
         axisLabel: {
           color: '#666',
           fontSize: 12,
+          margin: 15,
           rotate: calendarSelectionStore.currentViewType === 'day' ? 45 : 0,
           formatter: function(value, index) {
             const viewType = calendarSelectionStore.currentViewType;
@@ -697,14 +703,6 @@ const initChart = () => {
         start: 0,
         end: 100,
         zoomLock: false
-      }, {
-        type: 'slider',
-        show: true,
-        bottom: 10,
-        start: 0,
-        end: 100,
-        height: 20,
-        borderColor: '#ddd'
       }],
       series: [
         {
@@ -1119,9 +1117,10 @@ onUnmounted(() => {
   width: 25%;
   height: 60px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   margin: 0 5px;
   border: 1px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);

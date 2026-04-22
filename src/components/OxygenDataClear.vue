@@ -18,7 +18,8 @@ import {
     TooltipComponent,
     GridComponent,
     DatasetComponent,
-    TransformComponent
+    TransformComponent,
+    LegendComponent
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -28,13 +29,10 @@ import { storeToRefs } from 'pinia';
 import dateFormatter from '../utils/dateFormatter';
 
 
-// 导入新的聚合API
+// 导入基础数据API（后端无聚合API，使用基础接口在前端聚合）
 import { 
-    getOxygenDataByDate, 
-    getOxygenDataByWeek, 
-    getOxygenDataByMonth, 
-    getOxygenDataByYear 
-} from '../api/healthData'; // 假设您已将这些函数添加到 healthData.js
+    getAllOxygenData
+} from '../api/healthData';
 
 echarts.use([
     LineChart,
@@ -43,6 +41,7 @@ echarts.use([
     GridComponent,
     DatasetComponent,
     TransformComponent,
+    LegendComponent,
     LabelLayout,
     UniversalTransition,
     CanvasRenderer
@@ -77,7 +76,7 @@ const formatMonth = (year, month) => {
     return `${year}-${monthStr}`;
 };
 
-// --- 修改的代码 START: fetchAggregatedData 替代 fetchOxygenData ---
+// --- 修改的代码 START: fetchAggregatedData 使用基础数据接口 ---
 const fetchAggregatedData = async () => {
     if (!isMounted) {
         console.warn("OxygenDataClear 组件已卸载，停止数据获取");
@@ -90,88 +89,171 @@ const fetchAggregatedData = async () => {
         console.warn("用户ID无效，无法获取数据");
         data.value = [];
         formattedTime.value = [];
-        nowData.value = 0; // 无数据时显示0
+        nowData.value = 0;
         updateChart();
         return;
     }
 
-    const selection = calendarSelectionStore;
-    let response = null;
-
     try {
-        if (selection.selectedDate) {
-            const dateStr = formatDate(selection.selectedDate);
-            response = await getOxygenDataByDate(user_id, dateStr);
-            console.log(`获取单日血氧数据: ${dateStr}`, response);
-        } else if (selection.selectedWeek) {
-            const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
-            response = await getOxygenDataByWeek(user_id, dateInWeekStr);
-            console.log(`获取周血氧数据: ${dateInWeekStr}`, response);
-        } else if (selection.selectedMonth) {
-            response = await getOxygenDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
-            console.log(`获取月血氧数据: ${selection.selectedMonth.year}-${selection.selectedMonth.month}`, response);
-        } else if (selection.selectedYear) {
-            response = await getOxygenDataByYear(user_id, selection.selectedYear);
-            console.log(`获取年血氧数据: ${selection.selectedYear}`, response);
-        } else {
-            console.log("当前无选中日期/周期");
-            data.value = [];
-            formattedTime.value = [];
-            nowData.value = 0; // 无数据时显示0
-            updateChart();
-            return;
-        }
-
-        // 检查组件是否已卸载
+        const response = await getAllOxygenData(user_id);
+        
         if (!isMounted) {
             console.warn("OxygenDataClear 组件在数据获取期间已卸载");
             return;
         }
 
-        const apiResponse = response.data; // 假设 httpService.post 返回 {  {...} }
-        const responseData = apiResponse.data; // 业务数据数组
+        const apiResponse = response.data;
+        let responseData;
+        if (Array.isArray(apiResponse)) {
+            responseData = apiResponse;
+        } else if (apiResponse && apiResponse.code === 200 && Array.isArray(apiResponse.data)) {
+            responseData = apiResponse.data;
+        } else {
+            responseData = null;
+        }
 
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            console.log(`响应${calendarSelectionStore.currentViewType}聚合血氧数据`, responseData);
-
+        if (responseData && responseData.length > 0) {
+            console.log('获取到血氧原始数据', responseData);
+            
+            const selection = calendarSelectionStore;
             let processedData = [];
             let processedTimes = [];
 
-            if (calendarSelectionStore.currentViewType === 'day') {
-                // 处理单日原始数据: [{"oxygenData": 98, "recordTime": "2025-12-20 13:05:24"}]
-                processedData = responseData.map(item => item.oxygenData);
-                processedTimes = responseData.map(item => dateFormatter.Formatter(item.recordTime)); // 使用您的格式化工具
+            // 获取日期部分（兼容 ISO 格式 '2024-01-15T21:00:00' 和普通格式 '2024-01-15 21:00:00'）
+            const getDatePart = (recordTime) => {
+                if (!recordTime) return '';
+                return recordTime.split('T')[0].split(' ')[0];
+            };
+
+            if (selection.selectedDate) {
+                const targetDate = formatDate(selection.selectedDate);
+                const dayData = responseData.filter(item => {
+                    const recordDate = getDatePart(item.recordTime);
+                    return recordDate === targetDate;
+                });
+                processedData = dayData.map(item => item.oxygenData || 0);
+                processedTimes = dayData.map(item => {
+                    if (item.recordTime) {
+                        return dateFormatter.Formatter(item.recordTime);
+                    }
+                    return '';
+                });
+            } else if (selection.selectedWeek) {
+                const weekStart = new Date(selection.selectedWeek.startDate);
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                const weekData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const recordDate = new Date(getDatePart(item.recordTime));
+                    return recordDate >= weekStart && recordDate <= weekEnd;
+                });
+                
+                const dailyMap = new Map();
+                weekData.forEach(item => {
+                    const dateKey = getDatePart(item.recordTime);
+                    if (!dailyMap.has(dateKey)) {
+                        dailyMap.set(dateKey, []);
+                    }
+                    dailyMap.get(dateKey).push(item.oxygenData || 0);
+                });
+                
+                const sortedDates = Array.from(dailyMap.keys()).sort();
+                sortedDates.forEach(dateKey => {
+                    const values = dailyMap.get(dateKey);
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 10) / 10);
+                    processedTimes.push(dateKey);
+                });
+            } else if (selection.selectedMonth) {
+                const targetYear = selection.selectedMonth.year;
+                const targetMonth = selection.selectedMonth.month;
+                
+                const monthData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const parts = getDatePart(item.recordTime).split('-');
+                    return parseInt(parts[0]) === targetYear && parseInt(parts[1]) === targetMonth;
+                });
+                
+                const dailyMap = new Map();
+                monthData.forEach(item => {
+                    const dateKey = getDatePart(item.recordTime);
+                    if (!dailyMap.has(dateKey)) {
+                        dailyMap.set(dateKey, []);
+                    }
+                    dailyMap.get(dateKey).push(item.oxygenData || 0);
+                });
+                
+                const sortedDates = Array.from(dailyMap.keys()).sort();
+                sortedDates.forEach(dateKey => {
+                    const values = dailyMap.get(dateKey);
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 10) / 10);
+                    processedTimes.push(dateKey);
+                });
+            } else if (selection.selectedYear) {
+                const targetYear = selection.selectedYear;
+                
+                const yearData = responseData.filter(item => {
+                    if (!item.recordTime) return false;
+                    const year = parseInt(getDatePart(item.recordTime).split('-')[0]);
+                    return year === targetYear;
+                });
+                
+                const monthlyMap = new Map();
+                yearData.forEach(item => {
+                    const parts = getDatePart(item.recordTime).split('-');
+                    const monthKey = `${parts[0]}-${parts[1]}`;
+                    if (!monthlyMap.has(monthKey)) {
+                        monthlyMap.set(monthKey, []);
+                    }
+                    monthlyMap.get(monthKey).push(item.oxygenData || 0);
+                });
+                
+                const sortedMonths = Array.from(monthlyMap.keys()).sort();
+                sortedMonths.forEach(monthKey => {
+                    const values = monthlyMap.get(monthKey);
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    processedData.push(Math.round(avg * 10) / 10);
+                    processedTimes.push(monthKey);
+                });
             } else {
-                // 处理周/月/年聚合数据: [{"avgValue": 96.5, "date": "2025-12-20"}, ...]
-                processedData = responseData.map(item => item.avgValue);
-                processedTimes = responseData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+                console.log("当前无选中日期/周期，显示最近数据");
+                const sortedData = [...responseData].sort((a, b) => 
+                    new Date(b.recordTime) - new Date(a.recordTime)
+                );
+                const recentData = sortedData.slice(0, 50);
+                processedData = recentData.map(item => item.oxygenData || 0);
+                processedTimes = recentData.map(item => {
+                    if (item.recordTime) {
+                        return dateFormatter.Formatter(item.recordTime);
+                    }
+                    return '';
+                });
             }
 
-            // --- 更新响应式变量 ---
             data.value = processedData;
             formattedTime.value = processedTimes;
-
-            // 更新 nowData 为最后一个数据点的值
             nowData.value = processedData[processedData.length - 1] || 0;
 
-            console.log('处理后的聚合血氧数据:', data.value);
-            console.log('处理后的聚合时间:', formattedTime.value);
+            console.log('处理后的血氧数据:', data.value);
+            console.log('处理后的时间:', formattedTime.value);
             console.log('最新血氧值:', nowData.value);
 
             updateChart();
         } else {
-            console.warn("API返回的血氧聚合数据格式不正确、为空数组或无数据", apiResponse);
+            console.warn("API返回的血氧数据格式不正确、为空数组或无数据", apiResponse);
             data.value = [];
             formattedTime.value = [];
-            nowData.value = 0; // 无数据时显示0
+            nowData.value = 0;
             updateChart();
         }
     } catch (error) {
-        console.error("获取血氧聚合数据失败", error);
-        if (!isMounted) return; // 检查组件是否已卸载
+        console.error("获取血氧数据失败", error);
+        if (!isMounted) return;
         data.value = [];
         formattedTime.value = [];
-        nowData.value = 0; // 错误时也显示0
+        nowData.value = 0;
         updateChart();
     }
 
@@ -263,10 +345,8 @@ const initChart = () => {
                     }
                 },
                 axisLabel: {
-                    textStyle: {
-                        color: '#666',
-                        fontSize: 16
-                    },
+                    color: '#666',
+                    fontSize: 16,
                     formatter: function (params) {
                         return params.split(' ')[0]
                     }
@@ -278,10 +358,8 @@ const initChart = () => {
                 offset: 20,
                 axisLabel: {
                     formatter: '{value}',
-                    textStyle: {
-                        color: 'black',
-                        fontSize: 16
-                    }
+                    color: 'black',
+                    fontSize: 16
                 },
                 splitLine: {
                     show: true,
@@ -357,15 +435,14 @@ watch(
     () => {
         console.log("OxygenDataClear: CalendarSelectionStore 状态变化，重新获取聚合数据");
         fetchAggregatedData();
-    },
-    { immediate: true } // 组件挂载时立即获取一次数据
+    }
 );
 
 onMounted(() => {
-    isMounted = true;
     console.log("=== OxygenDataClear.vue 组件已挂载 ===");
-    // fetchOxygenData(); // 移除旧的轮询获取
+    isMounted = true;
     initChart();
+    fetchAggregatedData();
     window.addEventListener('resize', () => {
         if (myChart && isMounted) {
             try {

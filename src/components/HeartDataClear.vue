@@ -11,13 +11,13 @@
             <div v-if="loading" class="loading-overlay">加载中...</div>
             <div v-else-if="error" class="error-overlay">数据加载失败</div>
         </div>
-        <ModernHealthAlert v-if="analysisResult && isMountedFlag" :analysis-result="analysisResult" data-type="heart"
+        <ModernHealthAlert v-if="analysisResult && isMountedFlag && chartInitialized" :analysis-result="analysisResult" data-type="heart"
             position="top-right" @export-data="handleExportData" />
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -72,124 +72,6 @@ const color = ["#FF0000", "#00CA69"];
 const loading = ref(false);
 const error = ref(false);
 let isFetching = false;
-
-const MAX_DISPLAY = 15;
-const INSERT_INTERVAL = 1000;
-const BATCH_SIZE_MIN = 5;
-const BATCH_SIZE_MAX = 10;
-const BATCH_DELAY_MIN = 3000;
-const BATCH_DELAY_MAX = 6000;
-
-let simulationTimer = null;
-let batchTimer = null;
-let simulationStartTime = null;
-let dataIndexCounter = 0;
-let isSimulating = false;
-
-const generateHeartRate = (prevValue) => {
-    const base = prevValue || 72;
-    const drift = (Math.random() - 0.5) * 3;
-    const noise = (Math.random() - 0.5) * 1.5;
-    let value = base + drift + noise;
-    if (Math.random() < 0.03) {
-        value += (Math.random() - 0.5) * 8;
-    }
-    return Math.round(Math.max(55, Math.min(110, value)));
-};
-
-const generateTimeLabel = (offsetMs) => {
-    const now = new Date(simulationStartTime.getTime() + offsetMs);
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    return `${h}:${m}:${s}`;
-};
-
-const generateBatch = () => {
-    const size = Math.floor(Math.random() * (BATCH_SIZE_MAX - BATCH_SIZE_MIN + 1)) + BATCH_SIZE_MIN;
-    const batch = [];
-    let prev = data.value.length > 0 ? data.value[data.value.length - 1] : null;
-    for (let i = 0; i < size; i++) {
-        dataIndexCounter++;
-        const value = generateHeartRate(prev);
-        const offsetMs = dataIndexCounter * 2000;
-        batch.push({
-            value,
-            timeLabel: generateTimeLabel(offsetMs),
-            timeRaw: new Date(simulationStartTime.getTime() + offsetMs).toISOString()
-        });
-        prev = value;
-    }
-    return batch;
-};
-
-const insertDataPoint = (item) => {
-    if (!isMountedFlag) return;
-    data.value.push(item.value);
-    formattedTime.value.push(item.timeLabel);
-    rawTimeData.value.push(item.timeRaw);
-    nowData.value = item.value;
-
-    if (data.value.length > MAX_DISPLAY) {
-        const overflow = data.value.length - MAX_DISPLAY;
-        data.value.splice(0, overflow);
-        formattedTime.value.splice(0, overflow);
-        rawTimeData.value.splice(0, overflow);
-    }
-
-    updateChartWithAnimation();
-};
-
-const startBatchInsert = (batch) => {
-    let index = 0;
-    const insertNext = () => {
-        if (!isMountedFlag || index >= batch.length) {
-            if (isMountedFlag && isSimulating) {
-                scheduleNextBatch();
-            }
-            return;
-        }
-        insertDataPoint(batch[index]);
-        index++;
-        simulationTimer = setTimeout(insertNext, INSERT_INTERVAL);
-    };
-    insertNext();
-};
-
-const scheduleNextBatch = () => {
-    if (!isMountedFlag || !isSimulating) return;
-    const delay = Math.floor(Math.random() * (BATCH_DELAY_MAX - BATCH_DELAY_MIN + 1)) + BATCH_DELAY_MIN;
-    batchTimer = setTimeout(() => {
-        if (!isMountedFlag || !isSimulating) return;
-        const batch = generateBatch();
-        startBatchInsert(batch);
-    }, delay);
-};
-
-const startSimulation = () => {
-    if (isSimulating) return;
-    isSimulating = true;
-    simulationStartTime = new Date();
-    dataIndexCounter = 0;
-    data.value = [];
-    formattedTime.value = [];
-    rawTimeData.value = [];
-
-    const initialBatch = generateBatch();
-    startBatchInsert(initialBatch);
-};
-
-const stopSimulation = () => {
-    isSimulating = false;
-    if (simulationTimer) {
-        clearTimeout(simulationTimer);
-        simulationTimer = null;
-    }
-    if (batchTimer) {
-        clearTimeout(batchTimer);
-        batchTimer = null;
-    }
-};
 
 const formatRecordTime = (timeStr, viewType = 'day') => {
     if (!timeStr) return 'N/A';
@@ -250,12 +132,6 @@ const fetchAggregatedData = async () => {
     const selection = calendarSelectionStore;
     const viewType = selection.currentViewType;
 
-    if (viewType === 'day') {
-        console.log("日视图使用模拟数据，跳过API请求");
-        isFetching = false;
-        return;
-    }
-
     if (!myChart || !chartInitialized) {
         console.warn("图表未初始化，尝试重新初始化");
         if (chart.value) {
@@ -268,7 +144,11 @@ const fetchAggregatedData = async () => {
     loading.value = true;
     error.value = false;
     try {
-        if (selection.selectedWeek) {
+        if (viewType === 'day' && selection.selectedDate) {
+            const dateStr = formatDate(selection.selectedDate);
+            response = await getHeartDataByDate(user_id, dateStr);
+            console.log(`获取日心率数据: ${dateStr}`, response);
+        } else if (selection.selectedWeek) {
             const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
             response = await getHeartDataByWeek(user_id, dateInWeekStr);
             console.log(`获取周心率数据: ${dateInWeekStr}`, response);
@@ -296,19 +176,40 @@ const fetchAggregatedData = async () => {
         console.log(`原始响应数据 (${viewType}视图):`, responseData);
 
         if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            const sortedData = responseData.sort((a, b) => {
-                const dateA = a.date || a.weekStart || a.month || a.yearMonth;
-                const dateB = b.date || b.weekStart || b.month || b.yearMonth;
-                return new Date(dateA) - new Date(dateB);
-            });
-
-            const processedData = sortedData.map(item => item.avgValue);
-            const rawTimes = sortedData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+            // 兼容两种数据格式：
+            // 1. 原始数据格式: {heartData: 82, recordTime: '2026-04-22 00:15:19'}
+            // 2. 聚合数据格式: {avgValue: 82, date: '2026-04-22'}
+            const isRawFormat = responseData[0].heartData !== undefined;
+            
+            let processedData, rawTimes;
+            
+            if (isRawFormat) {
+                // 原始数据格式处理
+                const sortedData = [...responseData].sort((a, b) => 
+                    new Date(a.recordTime) - new Date(b.recordTime)
+                );
+                processedData = sortedData.map(item => item.heartData);
+                rawTimes = sortedData.map(item => item.recordTime);
+            } else {
+                // 聚合数据格式处理
+                const sortedData = responseData.sort((a, b) => {
+                    const dateA = a.date || a.weekStart || a.month || a.yearMonth;
+                    const dateB = b.date || b.weekStart || b.month || b.yearMonth;
+                    return new Date(dateA) - new Date(dateB);
+                });
+                processedData = sortedData.map(item => item.avgValue);
+                rawTimes = sortedData.map(item => item.date || item.weekStart || item.month || item.yearMonth);
+            }
+            
             const processedTimes = rawTimes.map(time => formatRecordTime(time, viewType));
 
             data.value = processedData;
             formattedTime.value = processedTimes;
             rawTimeData.value = rawTimes;
+
+            if (processedData.length > 0) {
+                nowData.value = processedData[processedData.length - 1];
+            }
 
             console.log('处理后的数据详情:', {
                 viewType,
@@ -319,7 +220,11 @@ const fetchAggregatedData = async () => {
             });
 
             updateChartWithAnimation();
-            analyzeHealthData(processedData, rawTimes);
+            nextTick(() => {
+                if (isMountedFlag) {
+                    analyzeHealthData(processedData, rawTimes);
+                }
+            });
         } else {
             console.warn("API返回的心率聚合数据格式不正确、为空数组或无数据", apiResponse);
             resetData();
@@ -373,6 +278,14 @@ const updateChartWithAnimation = () => {
 };
 
 const doUpdateChart = () => {
+    if (!myChart || !chart.value || !isMountedFlag) {
+        console.warn("图表实例或DOM不存在，或组件已卸载，跳过更新");
+        return;
+    }
+    if (!document.body.contains(chart.value)) {
+        console.warn("DOM 元素已从文档中移除，跳过更新");
+        return;
+    }
     try {
         if (data.value.length === 0 || formattedTime.value.length === 0) {
             console.log("无数据可显示，显示空图表");
@@ -411,9 +324,9 @@ const doUpdateChart = () => {
         const totalPoints = displayData.length;
         let zoomStart = 0;
         let zoomEnd = 100;
-        if (totalPoints > MAX_DISPLAY) {
+        if (totalPoints > 15) {
             zoomEnd = 100;
-            zoomStart = ((totalPoints - MAX_DISPLAY) / totalPoints) * 100;
+            zoomStart = ((totalPoints - 15) / totalPoints) * 100;
         }
 
         const currentOption = myChart.getOption() || {};
@@ -618,7 +531,7 @@ const initChart = () => {
 };
 
 const analyzeHealthData = (dataPoints, timePoints) => {
-    if (dataPoints.length === 0 || !healthAnalyzer.HeartRateRules) {
+    if (!dataPoints || !Array.isArray(dataPoints) || dataPoints.length === 0 || !healthAnalyzer.HeartRateRules) {
         analysisResult.value = null;
         return;
     }
@@ -650,24 +563,24 @@ const handleExportData = () => {
     link.click();
 };
 
-onMounted(() => {
+onMounted(async () => {
     console.log("=== HeartDataClear.vue 组件开始挂载 ===");
     isMountedFlag = true;
+    await nextTick();
+    if (!isMountedFlag || !chart.value) {
+        console.warn("组件已卸载或DOM引用不存在，停止初始化");
+        return;
+    }
     setTimeout(() => {
         if (isMountedFlag && chart.value) {
             initChart();
             setTimeout(() => {
                 if (isMountedFlag) {
-                    const viewType = calendarSelectionStore.currentViewType;
-                    if (viewType === 'day' || viewType === null) {
-                        startSimulation();
-                    } else {
-                        fetchAggregatedData();
-                    }
+                    fetchAggregatedData();
                 }
-            }, 300);
+            }, 200);
         }
-    }, 100);
+    }, 50);
 
     const handleResize = () => {
         if (myChart && isMountedFlag) {
@@ -688,17 +601,10 @@ const debouncedFetchData = () => {
         return;
     }
     fetchTimeout = setTimeout(() => {
-        const viewType = calendarSelectionStore.currentViewType;
-        stopSimulation();
         data.value = [];
         formattedTime.value = [];
         rawTimeData.value = [];
-
-        if (viewType === 'day' || viewType === null) {
-            startSimulation();
-        } else {
-            fetchAggregatedData();
-        }
+        fetchAggregatedData();
     }, 150);
 };
 
@@ -728,7 +634,6 @@ onUnmounted(() => {
     console.log("=== HeartDataClear.vue 组件开始卸载 ===");
     isMountedFlag = false;
     chartInitialized = false;
-    stopSimulation();
     if (fetchTimeout) {
         clearTimeout(fetchTimeout);
         fetchTimeout = null;

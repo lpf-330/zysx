@@ -240,6 +240,13 @@ const fetchAggregatedData = async () => {
             
             // 分析健康数据
             analyzeHealthData(processedData, rawTimes);
+            
+            // 如果实时数据未获取到，则从历史数据中获取最新值
+            if (nowData.value === 0 && processedData.length > 0) {
+                const lastIndex = processedData.length - 1;
+                nowData.value = processedData[lastIndex] || 0;
+                console.log(`从历史数据更新当前血糖值: ${nowData.value}`);
+            }
         } else {
             console.warn("API返回的血糖聚合数据格式不正确、为空数组或无数据", apiResponse);
             resetData();
@@ -492,7 +499,7 @@ const initChart = () => {
             },
             grid: {
                 top: '10%',
-                bottom: '15%',
+                bottom: '20%',
                 left: '10%',
                 right: '5%',
                 containLabel: true
