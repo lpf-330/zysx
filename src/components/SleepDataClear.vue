@@ -1,20 +1,21 @@
 <!-- SleepDataClear.vue -->
 <template>
+  <div class="chart-container">
     <div class="nowData">
         <span class="title">平均时长</span>
         <div class="dataBox">
-            <!-- 关键修改：处理最新数据 -->
-            <span class="data">{{ Math.floor(data[data.length - 1] / 60) }}&nbsp;</span>
+            <span class="data">{{ Math.floor(latestData / 60) }}&nbsp;</span>
             <span class="unit">h&nbsp;</span>
-            <span class="data">{{ data[data.length - 1] % 60 }}&nbsp;</span>
+            <span class="data">{{ latestData % 60 }}&nbsp;</span>
             <span class="unit">min&nbsp;</span>
         </div>
     </div>
-    <div ref="chart" style="width: 100%; height: 100%;"></div>
+    <div ref="chart" style="width: 100%; flex: 1; min-height: 0;"></div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -55,9 +56,20 @@ const calendarSelectionStore = useCalendarSelectionStore(); // 获取新的 Stor
 // 数据
 const data = ref([]);
 const date = ref([]);
+const latestData = ref(0);
 const chart = ref(null);
 let myChart = null;
-let isMounted = false; // 添加挂载状态标志
+let isMounted = false;
+
+const handleResize = () => {
+    if (myChart && isMounted) {
+        try {
+            myChart.resize();
+        } catch (error) {
+            console.error("调整图表大小时出错:", error);
+        }
+    }
+};
 
 const formatDate = (dateObj) => {
     if (!(dateObj instanceof Date)) return '';
@@ -328,9 +340,10 @@ const updateChart = () => {
             }
         },
         grid: {
-            top: '2%',
-            bottom: '10%',
-            left: '10%',
+            top: '8%',
+            bottom: '8%',
+            left: '8%',
+            right: '3%',
             containLabel: true
         },
         xAxis: {
@@ -353,11 +366,10 @@ const updateChart = () => {
         yAxis: {
             type: 'value',
             name: '睡眠时长',
-            offset: 20,
             nameTextStyle: {
-                color: '#B5C5D4',
-                fontSize: 12,
-                padding: [0, 0, 0, -20]
+                color: '#666',
+                fontSize: 18,
+                padding: [0, 0, 5, 0]
             },
             axisTick: { show: false },
             axisLine: {
@@ -412,7 +424,7 @@ const updateChart = () => {
 // --- 修改的代码 END ---
 
 // --- 添加 watch 监听 Store 状态 ---
-watch(
+const stopCalendarWatch = watch(
     () => [
         calendarSelectionStore.selectedDate,
         calendarSelectionStore.selectedWeek,
@@ -420,40 +432,81 @@ watch(
         calendarSelectionStore.selectedYear
     ],
     () => {
+        if (!isMounted) return;
         console.log("SleepDataClear: CalendarSelectionStore 状态变化，重新获取聚合数据");
         fetchAggregatedData();
     }
 );
 
+const fetchLatestData = async () => {
+    if (!user_id || !isMounted) {
+        console.warn("用户ID无效或组件已卸载，无法获取最新数据");
+        latestData.value = 0;
+        return;
+    }
+
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时')), 3000);
+    });
+
+    try {
+        const response = await Promise.race([
+            getAllSleepData(user_id),
+            timeoutPromise
+        ]);
+        
+        if (!isMounted) return;
+        
+        const apiResponse = response.data;
+        let responseData;
+        if (Array.isArray(apiResponse)) {
+            responseData = apiResponse;
+        } else if (apiResponse && apiResponse.code === 200 && Array.isArray(apiResponse.data)) {
+            responseData = apiResponse.data;
+        } else {
+            responseData = null;
+        }
+
+        if (responseData && responseData.length > 0) {
+            const sortedData = [...responseData].sort((a, b) => 
+                new Date(b.recordTime) - new Date(a.recordTime)
+            );
+            latestData.value = sortedData[0].sleepData || 0;
+        } else {
+            latestData.value = 0;
+        }
+    } catch (error) {
+        if (error.message === '请求超时') {
+            console.log("获取最新睡眠数据请求超时");
+        } else {
+            console.error("获取最新睡眠数据失败", error);
+        }
+        if (isMounted) {
+            latestData.value = 0;
+        }
+    }
+};
+
 onMounted(() => {
     isMounted = true;
     console.log("=== SleepDataClear.vue 组件已挂载 ===");
-    // initChart(); // 在 watch 的 immediate: true 时会触发 fetchAggregatedData，进而调用 updateChart，此时图表实例还未初始化
-    initChart(); // 先初始化图表实例
-    fetchAggregatedData(); // 然后获取初始数据
-    window.addEventListener('resize', () => {
-        if (myChart && isMounted) {
-            try {
-                myChart.resize();
-            } catch (error) {
-                console.error("调整图表大小时出错:", error);
-            }
-        }
-    });
+    initChart();
+    fetchAggregatedData();
+    fetchLatestData();
+    window.addEventListener('resize', handleResize);
 });
 
-onUnmounted(() => {
-    console.log("=== SleepDataClear.vue 组件已卸载 ===");
+onBeforeUnmount(() => {
+    console.log("=== SleepDataClear.vue 组件开始卸载 ===");
     isMounted = false;
 
-    // 移除事件监听器
-    window.removeEventListener('resize', () => {
-        if (myChart && isMounted) {
-            myChart.resize();
-        }
-    });
+    if (stopCalendarWatch) {
+        stopCalendarWatch();
+        console.log("SleepDataClear: 已停止日历监听器");
+    }
 
-    // 销毁图表实例
+    window.removeEventListener('resize', handleResize);
+
     if (myChart) {
         try {
             myChart.dispose();
@@ -462,14 +515,23 @@ onUnmounted(() => {
         }
         myChart = null;
     }
+    console.log("=== SleepDataClear.vue 组件卸载完成 ===");
 });
 </script>
 
 <style scoped>
 /* 保持原始样式不变 */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 .nowData {
     height: 15%;
-    width: 40%;
+    width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -489,7 +551,7 @@ onUnmounted(() => {
 .dataBox {
     background-color: #fff;
     border-radius: 0.05rem;
-    width: 25%;
+    width: 14%;
     height: 60%;
     display: flex;
     flex-direction: row;

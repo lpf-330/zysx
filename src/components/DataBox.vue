@@ -64,7 +64,9 @@ const handleScroll = (e) => {
 let containerRef = null
 
 const setContainerRef = (el) => {
-    containerRef = el
+    if (el) {
+        containerRef = el
+    }
 }
 
 onMounted(() => {
@@ -368,8 +370,8 @@ onBeforeUnmount(() => {
     display: flex;
     position: relative;
     overflow: hidden;
-    gap: 0.3rem;
-    padding: 0;
+    gap: 0.15rem;
+    padding: 0 0.15rem 0 0.15rem;
 }
 
 .timeline-section {
@@ -378,15 +380,14 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     z-index: 40;
-    padding-left: 0.1rem;
     box-sizing: border-box;
+    padding-left: 0.15rem;
 }
 
 .timeline {
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
-    padding: 0.15rem 0;
 }
 
 .timeline-item {
@@ -450,10 +451,10 @@ onBeforeUnmount(() => {
     position: relative;
     z-index: 1;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 0 0 0.2rem 0.2rem;
+    /** border-radius: 0 0 0.2rem 0.2rem; **/
     padding: 0.15rem;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
-    overflow: visible;
+    overflow: hidden;
     margin: 0;
 }
 
@@ -467,9 +468,8 @@ onBeforeUnmount(() => {
 
 .stack-wrapper {
     position: relative;
-    width: 80%;
-    height: 80%;
-    transform: translate(-5%, -10%);
+    width: 90%;
+    height: 100%;
 }
 
 .stack-card {
@@ -486,11 +486,12 @@ onBeforeUnmount(() => {
     width: 100%;
     height: 100%;
     background: #ffffff;
-    border-radius: 0.15rem;
-    padding: 0.2rem;
+    /** border-radius:0 0 0.15rem 0.15rem; **/
+    padding: 0.12rem 0.15rem;
     display: flex;
     flex-direction: column;
     position: relative;
+    box-sizing: border-box;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     border: 1px solid rgba(0,0,0,0.08);
     transition: all 0.3s ease;
@@ -504,7 +505,6 @@ onBeforeUnmount(() => {
     right: 0;
     height: 0.04rem;
     background: var(--card-color);
-    border-radius: 0.15rem 0.15rem 0 0;
 }
 
 .card-content:hover {
@@ -535,9 +535,7 @@ onBeforeUnmount(() => {
 .chart-area {
     flex: 1;
     min-height: 0;
-    min-height: 0.5rem;
     margin: 0;
-    padding-bottom: 0.05rem;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -554,8 +552,8 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 0.08rem;
-    padding-top: 0.05rem;
+    margin-top: auto;
+    padding-top: 0.08rem;
     padding-left: 0.02rem;
     padding-right: 0.02rem;
     border-top: 1px solid rgba(0,0,0,0.08);

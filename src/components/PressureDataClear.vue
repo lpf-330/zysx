@@ -16,7 +16,7 @@
         
         <div v-if="loading" class="loading">加载中...</div>
         <div v-else-if="error" class="error">数据加载失败</div>
-        <div v-else ref="chart" style="width: 100%; height: 100%;"></div>
+        <div v-else ref="chart" style="width: 100%; flex: 1; min-height: 0;"></div>
         
         <!-- 添加警告组件 -->
         <ModernHealthAlert
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue';
 import * as echarts from 'echarts/core';
 import { LineChart, BarChart } from 'echarts/charts';
 import {
@@ -642,10 +642,10 @@ const initChart = () => {
         }
       },
       grid: {
-        top: '15%',
+        top: '8%',
         bottom: '8%',
-        left: '10%',
-        right: '5%',
+        left: '8%',
+        right: '3%',
         containLabel: true
       },
       xAxis: {
@@ -659,7 +659,7 @@ const initChart = () => {
         },
         axisLabel: {
           color: '#666',
-          fontSize: 12,
+          fontSize: 16,
           margin: 15,
           rotate: calendarSelectionStore.currentViewType === 'day' ? 45 : 0,
           formatter: function(value, index) {
@@ -680,7 +680,8 @@ const initChart = () => {
         name: '血压 (mmHg)',
         nameTextStyle: {
           color: '#666',
-          fontSize: 12
+          fontSize: 18,
+          padding: [0, 0, 5, 0]
         },
         axisLine: {
           lineStyle: {
@@ -689,7 +690,7 @@ const initChart = () => {
         },
         axisLabel: {
           color: '#666',
-          fontSize: 12
+          fontSize: 16
         },
         splitLine: {
           lineStyle: {
@@ -789,11 +790,21 @@ const initChart = () => {
 
 // --- 健康数据分析 ---
 const analyzeHealthData = (systolicPoints, diastolicPoints, timePoints) => {
+  if (!isMounted) {
+    console.warn("PressureDataClear 组件已卸载，跳过健康数据分析");
+    return;
+  }
   if (!systolicPoints || systolicPoints.length === 0 || 
       !diastolicPoints || diastolicPoints.length === 0 || 
       systolicPoints.length !== diastolicPoints.length) {
     console.warn("血压数据无效，无法进行分析");
-    analysisResult.value = null;
+    try {
+      if (isMounted) {
+        analysisResult.value = null;
+      }
+    } catch (e) {
+      console.warn("设置分析结果为空时出错:", e);
+    }
     return;
   }
   
@@ -807,13 +818,21 @@ const analyzeHealthData = (systolicPoints, diastolicPoints, timePoints) => {
     if (healthAnalyzer && healthAnalyzer.BloodPressureRules && 
         typeof healthAnalyzer.BloodPressureRules.analyzeComprehensive === 'function') {
       
-      analysisResult.value = healthAnalyzer.BloodPressureRules.analyzeComprehensive(
+      const result = healthAnalyzer.BloodPressureRules.analyzeComprehensive(
         systolicPoints, 
         diastolicPoints, 
         timePoints
       );
       
-      console.log('血压分析结果:', analysisResult.value);
+      console.log('血压分析结果:', result);
+      // 再次检查组件状态后再赋值
+      try {
+        if (isMounted) {
+          analysisResult.value = result;
+        }
+      } catch (e) {
+        console.warn("设置分析结果时出错:", e);
+      }
       
     } else {
       console.error('BloodPressureRules或analyzeComprehensive方法不存在');
@@ -861,33 +880,46 @@ const analyzeHealthData = (systolicPoints, diastolicPoints, timePoints) => {
         };
       });
       
-      analysisResult.value = {
-        singleAnalyses: basicAnalyses,
-        trendAnalysis: { trend: '稳定' },
-        summary: {
-          maxLevel,
-          severeCount: basicAnalyses.filter(a => a.level >= 2).length,
-          totalPoints,
-          abnormalPercentage: (basicAnalyses.filter(a => a.level >= 2).length / totalPoints * 100).toFixed(1),
-          avgSystolic,
-          avgDiastolic,
-          average: (avgSystolic + avgDiastolic) / 2,
-          overallRisk: maxLevel >= 2 ? 'medium' : 'low'
-        },
-        recommendations: [
-          {
-            type: maxLevel >= 2 ? 'check' : 'maintain',
-            message: maxLevel >= 2 ? '发现血压异常，请关注' : '血压正常，继续保持'
-          }
-        ]
-      };
+      // 再次检查组件状态后再赋值
+      try {
+        if (isMounted) {
+          analysisResult.value = {
+            singleAnalyses: basicAnalyses,
+            trendAnalysis: { trend: '稳定' },
+            summary: {
+              maxLevel,
+              severeCount: basicAnalyses.filter(a => a.level >= 2).length,
+              totalPoints,
+              abnormalPercentage: (basicAnalyses.filter(a => a.level >= 2).length / totalPoints * 100).toFixed(1),
+              avgSystolic,
+              avgDiastolic,
+              average: (avgSystolic + avgDiastolic) / 2,
+              overallRisk: maxLevel >= 2 ? 'medium' : 'low'
+            },
+            recommendations: [
+              {
+                type: maxLevel >= 2 ? 'check' : 'maintain',
+                message: maxLevel >= 2 ? '发现血压异常，请关注' : '血压正常，继续保持'
+              }
+            ]
+          };
+        }
+      } catch (e) {
+        console.warn("设置分析结果时出错:", e);
+      }
     }
   } catch (error) {
     console.error('血压分析失败:', error);
     console.error('错误详情:', error.message);
     
     // 分析失败时创建一个空的分析结果
-    analysisResult.value = null;
+    try {
+      if (isMounted) {
+        analysisResult.value = null;
+      }
+    } catch (e) {
+      console.warn("设置分析结果为空时出错:", e);
+    }
   }
 };
 
@@ -974,7 +1006,12 @@ const fetchRealTimeData = async () => {
 
 // --- 防抖逻辑 ---
 let fetchTimeout = null;
+let mountTimeout = null;
 const debouncedFetchData = () => {
+  if (!isMounted) {
+    console.log("PressureDataClear: 组件已卸载，跳过防抖数据获取");
+    return;
+  }
   if (fetchTimeout) {
     clearTimeout(fetchTimeout);
   }
@@ -985,12 +1022,16 @@ const debouncedFetchData = () => {
   }
   
   fetchTimeout = setTimeout(() => {
+    if (!isMounted) {
+      console.log("PressureDataClear: setTimeout 回调执行时组件已卸载，跳过");
+      return;
+    }
     fetchAggregatedData();
   }, 150);
 };
 
 // --- 监听日历选择变化 ---
-watch(
+const stopCalendarWatch = watch(
   () => [
     calendarSelectionStore.selectedDate,
     calendarSelectionStore.selectedWeek,
@@ -999,6 +1040,7 @@ watch(
     calendarSelectionStore.currentViewType
   ],
   (newVal, oldVal) => {
+    if (!isMounted) return;
     if (JSON.stringify(newVal) === JSON.stringify(oldVal)) {
       return;
     }
@@ -1019,15 +1061,19 @@ onMounted(() => {
   
   // 1. 初始化图表
   nextTick(() => {
-    if (isMounted && chart.value) {
-      initChart();
-      
-      // 2. 获取历史聚合数据用于图表
-      setTimeout(() => {
-        if (isMounted) {
-          fetchAggregatedData();
-        }
-      }, 300); // 延迟一点，确保图表初始化完成
+    try {
+      if (isMounted && chart.value) {
+        initChart();
+        
+        // 2. 获取历史聚合数据用于图表
+        mountTimeout = setTimeout(() => {
+          if (isMounted) {
+            fetchAggregatedData();
+          }
+        }, 300); // 延迟一点，确保图表初始化完成
+      }
+    } catch (e) {
+      console.warn("初始化图表时出错:", e);
     }
   });
 
@@ -1049,24 +1095,31 @@ onMounted(() => {
   window.__pressureChartResizeHandler = handleResize;
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   console.log("=== PressureDataClear.vue 组件开始卸载 ===");
   isMounted = false;
   isFetching = false;
   chartInitialized = false;
   
+  if (stopCalendarWatch) {
+    stopCalendarWatch();
+    console.log("PressureDataClear: 已停止日历监听器");
+  }
+  
   if (fetchTimeout) {
     clearTimeout(fetchTimeout);
     fetchTimeout = null;
   }
+  if (mountTimeout) {
+    clearTimeout(mountTimeout);
+    mountTimeout = null;
+  }
   
-  // 清理resize监听
   if (window.__pressureChartResizeHandler) {
     window.removeEventListener('resize', window.__pressureChartResizeHandler);
     delete window.__pressureChartResizeHandler;
   }
   
-  // 清理图表实例
   if (myChart) {
     try {
       myChart.dispose();
@@ -1076,6 +1129,7 @@ onUnmounted(() => {
       console.warn("清理血压图表实例时出错:", error);
     }
   }
+  console.log("=== PressureDataClear.vue 组件卸载完成 ===");
 });
 </script>
 

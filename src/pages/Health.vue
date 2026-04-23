@@ -1,7 +1,10 @@
 <script setup>
-import { RouterView } from 'vue-router';
-import { ref } from 'vue';
+import { RouterView, useRoute, useRouter } from 'vue-router';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import HistoricalData from '../components/HistoricalData.vue';
+
+const route = useRoute();
+const router = useRouter();
 
 const healthTabs = [
     { id: 'heartData', name: '心率', icon: '♥', color: '#E57373', desc: 'Heart Rate' },
@@ -15,15 +18,106 @@ const healthTabs = [
 const activeTab = ref('heartData');
 const showSidebar = ref(false);
 const hoveredTab = ref(null);
+let isMounted = false;
 
-const switchTab = (tabId) => {
+const updateActiveTabFromRoute = () => {
+    if (!isMounted) {
+        console.log('[Health.vue] updateActiveTabFromRoute: 组件未挂载，跳过');
+        return;
+    }
+    const path = route.path;
+    const tabId = path.split('/').pop();
+    console.log('[Health.vue] updateActiveTabFromRoute:', { path, tabId });
+    if (tabId && healthTabs.find(t => t.id === tabId)) {
+        activeTab.value = tabId;
+        console.log('[Health.vue] 激活标签页:', tabId);
+    }
+};
+
+const stopWatch = watch(() => route.path, (newPath, oldPath) => {
+    console.log('[Health.vue] 路由变化:', { oldPath, newPath });
+    updateActiveTabFromRoute();
+}, { immediate: true });
+
+onMounted(() => {
+    isMounted = true;
+    console.log('[Health.vue] 组件已挂载');
+    updateActiveTabFromRoute();
+});
+
+onBeforeUnmount(() => {
+    console.log('[Health.vue] 组件开始卸载');
+    isMounted = false;
+    if (stopWatch) {
+        stopWatch();
+        console.log('[Health.vue] 路由监听器已停止');
+    }
+    console.log('[Health.vue] 组件卸载完成');
+});
+
+const switchTab = async (tabId) => {
+    console.log('[Health.vue] switchTab 开始:', { tabId, isMounted });
+    
+    if (!isMounted) {
+        console.warn('[Health.vue] switchTab: 组件未挂载，跳过导航');
+        return;
+    }
+    
     activeTab.value = tabId;
     showSidebar.value = false;
-    window.location.hash = `/index/health/${tabId}`;
+    const targetPath = `/index/health/${tabId}`;
+    
+    console.log('[Health.vue] switchTab:', {
+        currentPath: route.path,
+        targetPath,
+        willNavigate: route.path !== targetPath
+    });
+    
+    if (route.path !== targetPath) {
+        try {
+            console.log('[Health.vue] 开始导航到:', targetPath);
+            console.log('[Health.vue] 当前路由状态:', {
+                name: route.name,
+                path: route.path,
+                params: route.params,
+                query: route.query,
+                matched: route.matched.map(r => r.path)
+            });
+            
+            await router.push(targetPath);
+            
+            console.log('[Health.vue] 导航成功:', targetPath);
+            console.log('[Health.vue] 导航后路由状态:', {
+                name: route.name,
+                path: route.path,
+                params: route.params,
+                query: route.query
+            });
+        } catch (err) {
+            console.error('[Health.vue] 导航错误详情:', {
+                name: err.name,
+                message: err.message,
+                stack: err.stack,
+                code: err.code,
+                type: err.type,
+                from: err.from,
+                to: err.to
+            });
+            
+            if (err.name !== 'NavigationDuplicated' && err.message !== 'Navigation cancelled') {
+                console.warn('[Health.vue] 路由导航错误:', err);
+            } else {
+                console.log('[Health.vue] 导航被取消或重复，这是正常行为');
+            }
+        }
+    } else {
+        console.log('[Health.vue] 目标路径与当前路径相同，跳过导航');
+    }
 };
 
 const toggleSidebar = () => {
     showSidebar.value = !showSidebar.value;
+    console.log('[Health.vue] 侧边栏切换:', showSidebar.value);
 };
 
 const getTabStyle = (tab) => {
@@ -92,7 +186,9 @@ const getTabStyle = (tab) => {
 
         <div class="mid">
             <div class="health">
-                <RouterView></RouterView>
+                <RouterView v-slot="{ Component }">
+                    <component :is="Component" :key="$route.fullPath" />
+                </RouterView>
             </div>
         </div>
 
@@ -490,5 +586,15 @@ const getTabStyle = (tab) => {
 
 .sidebar-toggle:hover .toggle-lines span {
     width: 0.2rem;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>

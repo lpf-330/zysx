@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 import useUserInfoStore from '../stores/user';
@@ -8,17 +8,52 @@ import { storeToRefs } from 'pinia';
 const siderMode = storeToRefs(useUserInfoStore()).siderMode
 const router = useRouter()
 const items = ['home', 'heartData', 'medicalQA', 'person']
+let isMounted = false
 
+onMounted(() => {
+    isMounted = true
+})
+
+onUnmounted(() => {
+    isMounted = false
+})
 
 const select = (i) => {
+    if (!isMounted) return
     siderMode.value = i
-    router.push({ name: items[i] })
+    // 使用 window.location.hash 强制页面刷新
+    // 这是临时解决方案，确保路由切换正常工作
+    const routeName = items[i]
+    const currentPath = window.location.hash.slice(1) // 移除 # 号
+    
+    // 根据路由名称构建路径
+    let targetPath
+    switch(routeName) {
+        case 'home':
+            targetPath = '/index/home'
+            break
+        case 'heartData':
+            targetPath = '/index/health/heartData'
+            break
+        case 'medicalQA':
+            targetPath = '/index/medicalQA'
+            break
+        case 'person':
+            targetPath = '/index/person'
+            break
+        default:
+            targetPath = '/index/home'
+    }
+    
+    if (currentPath !== targetPath) {
+        window.location.hash = targetPath
+    }
 }
 
 const exit = () => {
-    router.push('/')
+    if (!isMounted) return
+    window.location.hash = '/'
 }
-
 </script>
 
 <template>

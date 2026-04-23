@@ -1,10 +1,10 @@
 <template>
   <div class="chart-container">
     <div class="nowData">
-        <span class="title">血氧浓度</span>
+        <span class="title">灌注指数</span>
         <div class="dataBox">
-            <span class="data">{{ latestData }}&nbsp;</span>
-            <span class="unit">%</span>
+            <span class="data">{{ latestData }}</span>
+            <span class="unit">mmol/L</span>
         </div>
     </div>
     <div ref="chart" style="width: 100%; flex: 1; min-height: 0;">
@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'; 
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'; 
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -24,22 +24,19 @@ import {
     GridComponent,
     DatasetComponent,
     TransformComponent,
-    LegendComponent,
     DataZoomComponent
 } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import useUserInfoStore from '../stores/user'; 
-import { useCalendarSelectionStore } from '../stores/calendarSelection'; 
+import useUserInfoStore from '../stores/user';
+import { useCalendarSelectionStore } from '../stores/calendarSelection';
 import { storeToRefs } from 'pinia';
-import dateFormatter from '../utils/dateFormatter';
 
 import { 
-    getOxygenDataByDate,
-    getOxygenDataByWeek,
-    getOxygenDataByMonth,
-    getOxygenDataByYear,
-    getAllOxygenData
+    getPiDataByDate,
+    getPiDataByWeek,
+    getPiDataByMonth,
+    getPiDataByYear
 } from '../api/healthData';
 
 echarts.use([
@@ -49,7 +46,6 @@ echarts.use([
     GridComponent,
     DatasetComponent,
     TransformComponent,
-    LegendComponent,
     DataZoomComponent,
     LabelLayout,
     UniversalTransition,
@@ -60,24 +56,17 @@ const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
 const calendarSelectionStore = useCalendarSelectionStore();
 
-const nowData = ref(0);
 const latestData = ref(0);
 const data = ref([]);
 const formattedTime = ref([]);
+const loading = ref(false);
+const error = ref(false);
 const chart = ref(null);
 let myChart = null;
 let isMountedFlag = false;
-let chartInitialized = false;
-const loading = ref(false);
-const error = ref(false);
-let isFetching = false;
-
 let fetchTimeout = null;
-let mountTimeout1 = null;
-let mountTimeout2 = null;
-let latestDataAbortController = null;
-
-const color = ['rgba(0, 190, 250)', 'rgba(0,61,150)', 'rgba(0,0,225)'];
+let isFetching = false;
+const maxY = ref(100);
 
 const formatRecordTime = (timeStr, viewType = 'day') => {
     if (!timeStr) return 'N/A';
@@ -106,6 +95,7 @@ const formatRecordTime = (timeStr, viewType = 'day') => {
                 return date.toLocaleDateString('zh-CN');
         }
     } catch (e) {
+        console.error('时间格式化错误:', e);
         return timeStr;
     }
 };
@@ -118,67 +108,97 @@ const formatDate = (dateObj) => {
     return `${year}-${month}-${day}`;
 };
 
+const fetchLatestData = async () => {
+    if (!user_id || !isMountedFlag) {
+        console.warn("用户ID无效或组件已卸载，无法获取最新灌注指数数据");
+        return;
+    }
+    
+    try {
+        const today = new Date();
+        const todayStr = formatDate(today);
+        
+        const response = await getPiDataByDate(user_id, todayStr);
+        
+        if (!isMountedFlag) return;
+        
+        const apiResponse = response.data;
+        const responseData = apiResponse.data;
+        
+        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
+            const sortedData = [...responseData].sort((a, b) => 
+                new Date(b.recordTime) - new Date(a.recordTime)
+            );
+            latestData.value = sortedData[0].piData || sortedData[0].avgPi || sortedData[0].avgValue || 0;
+        } else {
+            latestData.value = 0;
+        }
+    } catch (err) {
+        console.error("获取最新灌注指数数据失败", err);
+        if (isMountedFlag) {
+            latestData.value = 0;
+        }
+    }
+};
+
 const fetchAggregatedData = async () => {
     if (!isMountedFlag) {
+        console.warn("PiDataClear 组件已卸载，停止数据获取");
         return;
     }
     
     isFetching = true;
+    console.log("=== PiDataClear 开始获取历史聚合数据 ===");
     
     if (!user_id) {
+        console.warn("用户ID无效，无法获取数据");
         if (isMountedFlag) {
             data.value = [];
             formattedTime.value = [];
-            nowData.value = 0;
-            updateChartWithAnimation();
+            updateChart();
         }
         isFetching = false;
         return;
     }
     
-    const selection = calendarSelectionStore;
-    const viewType = selection.currentViewType;
-
-    if (!myChart || !chartInitialized) {
-        if (chart.value) {
-            initChart();
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-    }
-
-    let response = null;
     if (isMountedFlag) {
         loading.value = true;
         error.value = false;
     }
     
     try {
+        const selection = calendarSelectionStore;
+        const viewType = selection.currentViewType;
+        
+        let response;
+        let responseData;
+        
         if (viewType === 'day' && selection.selectedDate) {
             const dateStr = formatDate(selection.selectedDate);
-            response = await getOxygenDataByDate(user_id, dateStr);
+            response = await getPiDataByDate(user_id, dateStr);
+            responseData = response.data.data;
         } else if (selection.selectedWeek) {
             const dateInWeekStr = formatDate(selection.selectedWeek.startDate);
-            response = await getOxygenDataByWeek(user_id, dateInWeekStr);
+            response = await getPiDataByWeek(user_id, dateInWeekStr);
+            responseData = response.data.data;
         } else if (selection.selectedMonth) {
-            response = await getOxygenDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
+            response = await getPiDataByMonth(user_id, selection.selectedMonth.year, selection.selectedMonth.month);
+            responseData = response.data.data;
         } else if (selection.selectedYear) {
-            response = await getOxygenDataByYear(user_id, selection.selectedYear);
+            response = await getPiDataByYear(user_id, selection.selectedYear);
+            responseData = response.data.data;
         } else {
-            resetData();
-            isFetching = false;
-            return;
+            response = await getPiDataByDate(user_id, formatDate(new Date()));
+            responseData = response.data.data;
         }
-
+        
         if (!isMountedFlag) {
-            isFetching = false;
+            console.warn("PiDataClear 组件在数据获取期间已卸载");
             return;
         }
-
-        const apiResponse = response.data;
-        const responseData = apiResponse.data;
-
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            const isRawFormat = responseData[0].oxygenData !== undefined;
+        
+        if (responseData && Array.isArray(responseData)) {
+            const isRawFormat = responseData[0] && responseData[0].piData !== undefined;
             
             let processedData, rawTimes;
             
@@ -186,7 +206,7 @@ const fetchAggregatedData = async () => {
                 const sortedData = [...responseData].sort((a, b) => 
                     new Date(a.recordTime) - new Date(b.recordTime)
                 );
-                processedData = sortedData.map(item => item.oxygenData);
+                processedData = sortedData.map(item => item.piData);
                 rawTimes = sortedData.map(item => item.recordTime);
             } else {
                 const sortedData = [...responseData].sort((a, b) => {
@@ -215,7 +235,7 @@ const fetchAggregatedData = async () => {
                     }
                     return dateA - dateB;
                 });
-                processedData = sortedData.map(item => item.avgOxygen || item.avgValue);
+                processedData = sortedData.map(item => item.avgPi || item.avgValue);
                 rawTimes = sortedData.map(item => {
                     if (item.date) return item.date;
                     if (item.weekStart) return item.weekStart;
@@ -227,123 +247,52 @@ const fetchAggregatedData = async () => {
             }
             
             const processedTimes = rawTimes.map(time => formatRecordTime(time, viewType));
-
+            
             if (!isMountedFlag) {
+                console.warn("PiDataClear 组件在数据处理期间已卸载");
                 return;
             }
-
+            
             data.value = processedData;
             formattedTime.value = processedTimes;
-
+            
             if (processedData.length > 0) {
-                nowData.value = processedData[processedData.length - 1];
+                maxY.value = Math.floor((Math.max(...processedData) + 10) / 10) * 10;
+            } else {
+                maxY.value = 100;
             }
-
-            updateChartWithAnimation();
+            
+            updateChart();
         } else {
-            resetData();
+            console.warn("API返回的灌注指数聚合数据格式不正确或为空", response.data);
+            if (isMountedFlag) {
+                data.value = [];
+                formattedTime.value = [];
+                updateChart();
+            }
         }
     } catch (err) {
+        console.error("获取灌注指数聚合数据失败", err);
         if (isMountedFlag) {
             error.value = true;
+            data.value = [];
+            formattedTime.value = [];
         }
-        resetData();
     } finally {
         if (isMountedFlag) {
             loading.value = false;
         }
         isFetching = false;
     }
+    console.log("=== PiDataClear 历史聚合数据获取完成 ===");
 };
 
-const fetchLatestData = async () => {
-    if (!user_id || !isMountedFlag) {
-        latestData.value = 0;
+const updateChart = () => {
+    if (!myChart || !isMountedFlag) {
+        console.warn("图表实例不存在或组件已卸载，跳过更新");
         return;
     }
     
-    if (latestDataAbortController) {
-        latestDataAbortController.abort();
-    }
-    latestDataAbortController = new AbortController();
-    
-    const timeoutId = setTimeout(() => {
-        if (latestDataAbortController) {
-            latestDataAbortController.abort();
-        }
-    }, 3000);
-    
-    try {
-        const today = new Date();
-        const todayStr = formatDate(today);
-        
-        const response = await getOxygenDataByDate(user_id, todayStr);
-        
-        if (!isMountedFlag) return;
-        
-        clearTimeout(timeoutId);
-        
-        const apiResponse = response.data;
-        const responseData = apiResponse.data;
-        
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
-            const sortedData = [...responseData].sort((a, b) => 
-                new Date(b.recordTime) - new Date(a.recordTime)
-            );
-            latestData.value = sortedData[0].oxygenData || sortedData[0].avgOxygen || sortedData[0].avgValue || 0;
-        } else {
-            latestData.value = 0;
-        }
-    } catch (err) {
-        if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
-            console.log("获取最新血氧数据请求被取消");
-        } else {
-            console.error("获取最新血氧数据失败", err);
-        }
-        if (isMountedFlag) {
-            latestData.value = 0;
-        }
-    } finally {
-        clearTimeout(timeoutId);
-        latestDataAbortController = null;
-    }
-};
-
-const resetData = () => {
-    if (!isMountedFlag) return;
-    data.value = [];
-    formattedTime.value = [];
-    nowData.value = 0;
-    updateChartWithAnimation();
-};
-
-const updateChartWithAnimation = () => {
-    if (!isMountedFlag) {
-        return;
-    }
-    if (!myChart || !chart.value) {
-        setTimeout(() => {
-            if (isMountedFlag && chart.value) {
-                initChart();
-                setTimeout(() => {
-                    if (myChart && isMountedFlag) {
-                        doUpdateChart();
-                    }
-                }, 50);
-            }
-        }, 100);
-        return;
-    }
-    doUpdateChart();
-};
-
-const doUpdateChart = () => {
-    if (!myChart || !chart.value || !isMountedFlag) {
-        return;
-    }
-    if (!document.body.contains(chart.value)) {
-        return;
-    }
     try {
         if (data.value.length === 0 || formattedTime.value.length === 0) {
             myChart.setOption({
@@ -369,13 +318,10 @@ const doUpdateChart = () => {
             });
             return;
         }
-
+        
         const displayData = data.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
         const displayTimes = formattedTime.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
-
-        const maxVal = Math.max(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
-        const yMax = Math.max(100, Math.ceil(maxVal * 1.05));
-
+        
         const totalPoints = displayData.length;
         let zoomStart = 0;
         let zoomEnd = 100;
@@ -383,66 +329,56 @@ const doUpdateChart = () => {
             zoomEnd = 100;
             zoomStart = ((totalPoints - 15) / totalPoints) * 100;
         }
-
-        const currentOption = myChart.getOption() || {};
+        
         myChart.setOption({
             title: { show: false },
-            animation: true,
-            animationDuration: 500,
-            animationEasing: 'cubicOut',
             xAxis: {
-                ...(currentOption.xAxis?.[0] || {}),
                 show: true,
-                data: displayTimes
+                data: displayTimes,
+                axisLabel: {
+                    rotate: displayTimes.length > 10 ? 30 : 0
+                }
             },
             yAxis: {
-                ...(currentOption.yAxis?.[0] || {}),
                 show: true,
-                max: yMax
+                max: maxY.value
             },
             dataZoom: [
                 { type: 'inside', start: zoomStart, end: zoomEnd, zoomLock: false }
             ],
             series: [{
-                ...(currentOption.series?.[0] || {}),
                 data: displayData
             }]
-        }, {
-            notMerge: false,
-            lazyUpdate: true
         });
-
+        
         setTimeout(() => {
             if (myChart && isMountedFlag) {
                 try {
                     myChart.resize();
-                } catch (e) {}
+                } catch (e) {
+                    console.error("图表重绘失败:", e);
+                }
             }
         }, 50);
+        
+        console.log("=== PiDataClear 图表更新完成 ===");
     } catch (e) {
-        if (isMountedFlag) {
-            setTimeout(() => {
-                initChart();
-            }, 200);
-        }
+        console.error('更新图表失败:', e);
     }
 };
 
 const initChart = () => {
+    console.log("=== PiDataClear 开始初始化图表 ===");
     if (!isMountedFlag || !chart.value) {
+        console.warn("PiDataClear 组件未挂载或DOM不存在，无法初始化图表");
         return;
     }
-    if (myChart && chartInitialized) {
-        try {
-            myChart.dispose();
-        } catch (e) {}
-    }
+    
     try {
         myChart = echarts.init(chart.value);
-        chartInitialized = true;
-
+        console.log("图表实例创建成功");
+        
         const option = {
-            color,
             title: { show: false },
             animation: true,
             animationDuration: 800,
@@ -453,14 +389,13 @@ const initChart = () => {
                 borderColor: '#ccc',
                 borderWidth: 1,
                 textStyle: { color: '#333', fontSize: 14 },
-                formatter: function (params) {
-                    if (!params || params.length === 0) return '';
+                formatter: (params) => {
                     const index = params[0].dataIndex;
                     const timeStr = formattedTime.value[index] || '';
                     const value = params[0].value;
                     return `
                         <div style="margin-bottom:5px; font-weight:bold;">${timeStr}</div>
-                        <div>${params[0].marker} 血氧: <span style="font-weight:bold; color:${color[0]}">${value} %</span></div>
+                        <div>${params[0].marker} 灌注指数: <span style="font-weight:bold; color:#5487FF">${value}</span></div>
                     `;
                 }
             },
@@ -473,45 +408,31 @@ const initChart = () => {
             },
             xAxis: {
                 type: 'category',
-                offset: 20,
                 boundaryGap: false,
-                axisLine: {
-                    lineStyle: {
-                        color: 'black'
-                    }
-                },
+                axisLine: { lineStyle: { color: '#333' } },
                 axisLabel: {
                     color: '#666',
                     fontSize: 16,
-                    formatter: function (params) {
-                        return params.split(' ')[0];
+                    rotate: 30,
+                    formatter: function (value, index) {
+                        if (formattedTime.value.length > 10) {
+                            return index % 2 === 0 ? value : '';
+                        }
+                        return value;
                     }
                 },
+                axisTick: { alignWithLabel: true },
                 data: formattedTime.value
             },
             yAxis: {
-                name: '浓度',
                 type: 'value',
-                min: 80,
-                max: 100,
+                name: '灌注指数',
                 nameTextStyle: { color: '#666', fontSize: 18, padding: [0, 0, 5, 0] },
-                axisLabel: {
-                    formatter: '{value}',
-                    color: 'black',
-                    fontSize: 16
-                },
-                splitLine: {
-                    show: true,
-                    lineStyle: {
-                        color: '#CCCCCC',
-                        type: 'dashed'
-                    }
-                },
-                axisLine: {
-                    lineStyle: {
-                        color: 'black'
-                    }
-                }
+                axisLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#666', fontSize: 16 },
+                splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+                min: 0,
+                max: maxY.value
             },
             dataZoom: [{
                 type: 'inside',
@@ -520,45 +441,53 @@ const initChart = () => {
                 zoomLock: false
             }],
             series: [{
-                name: '浓度',
+                name: '灌注指数',
                 type: 'line',
                 smooth: true,
                 symbol: 'circle',
                 symbolSize: 8,
+                showSymbol: true,
                 itemStyle: {
-                    color: color[0]
-                },
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(
-                        0, 0, 0, 1,
-                        [
-                            { offset: 0, color: 'rgba(0, 190, 250, 0.8)' },
-                            { offset: 1, color: 'rgba(0, 190, 250, 0.1)' }
-                        ]
-                    ),
+                    color: '#5487FF',
+                    borderColor: '#fff',
+                    borderWidth: 2
                 },
                 lineStyle: {
-                    width: 2,
-                    shadowBlur: 5,
-                    shadowColor: 'rgba(0, 190, 250, 0.3)',
-                    shadowOffsetY: 5
+                    color: '#5487FF',
+                    width: 2
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(84, 135, 255, 0.2)' },
+                        { offset: 1, color: 'rgba(84, 135, 255, 0.05)' }
+                    ])
                 },
                 emphasis: {
                     focus: 'series',
                     itemStyle: {
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                        shadowBlur: 10,
-                        shadowColor: color[0]
+                        borderWidth: 3,
+                        shadowBlur: 8,
+                        shadowColor: '#5487FF'
                     }
                 },
                 data: data.value
             }]
         };
-
+        
         myChart.setOption(option);
-    } catch (e) {
-        chartInitialized = false;
+        console.log("=== PiDataClear 图表初始化成功 ===");
+    } catch (error) {
+        console.error('初始化图表失败:', error);
+    }
+};
+
+const handleResize = () => {
+    if (myChart && isMountedFlag) {
+        try {
+            myChart.resize();
+        } catch (e) {
+            console.error("调整图表大小时出错:", e);
+        }
     }
 };
 
@@ -583,82 +512,53 @@ const stopCalendarWatch = watch(
         }
         fetchTimeout = setTimeout(() => {
             if (!isMountedFlag) {
-                console.log("OxygenDataClear: setTimeout 回调执行时组件已卸载，跳过");
+                console.log("PiDataClear: setTimeout 回调执行时组件已卸载，跳过");
                 return;
             }
-            data.value = [];
-            formattedTime.value = [];
             fetchAggregatedData();
         }, 150);
     },
     { deep: true }
 );
 
-onMounted(async () => {
+onMounted(() => {
+    console.log("=== PiDataClear 组件已挂载 ===");
     isMountedFlag = true;
+    
+    initChart();
+    fetchAggregatedData();
     fetchLatestData();
-    await nextTick();
-    if (!isMountedFlag || !chart.value) {
-        return;
-    }
-    mountTimeout1 = setTimeout(() => {
-        if (isMountedFlag && chart.value) {
-            initChart();
-            mountTimeout2 = setTimeout(() => {
-                if (isMountedFlag) {
-                    fetchAggregatedData();
-                }
-            }, 200);
-        }
-    }, 50);
-
-    const handleResize = () => {
-        if (myChart && isMountedFlag) {
-            try { myChart.resize(); } catch (e) {}
-        }
-    };
+    
     window.addEventListener('resize', handleResize);
 });
 
 onBeforeUnmount(() => {
-    console.log("=== OxygenDataClear.vue 组件开始卸载 ===");
+    console.log("=== PiDataClear 组件开始卸载 ===");
     isMountedFlag = false;
-    chartInitialized = false;
     isFetching = false;
     
     if (stopCalendarWatch) {
         stopCalendarWatch();
-        console.log("OxygenDataClear: 已停止日历监听器");
-    }
-    
-    if (latestDataAbortController) {
-        console.log("取消最新数据请求");
-        latestDataAbortController.abort();
-        latestDataAbortController = null;
+        console.log("PiDataClear: 已停止日历监听器");
     }
     
     if (fetchTimeout) {
         clearTimeout(fetchTimeout);
         fetchTimeout = null;
     }
-    if (mountTimeout1) {
-        clearTimeout(mountTimeout1);
-        mountTimeout1 = null;
-    }
-    if (mountTimeout2) {
-        clearTimeout(mountTimeout2);
-        mountTimeout2 = null;
-    }
+    
+    window.removeEventListener('resize', handleResize);
     
     if (myChart) {
         try {
             myChart.dispose();
             myChart = null;
+            console.log("=== PiDataClear 图表已销毁 ===");
         } catch (e) {
             console.warn("销毁图表实例时出错:", e);
         }
     }
-    console.log("=== OxygenDataClear.vue 组件卸载完成 ===");
+    console.log("=== PiDataClear 组件卸载完成 ===");
 });
 </script>
 
@@ -673,59 +573,48 @@ onBeforeUnmount(() => {
 
 .nowData {
     height: 15%;
-    width: 100%;
+    width: 35%;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
+    margin: auto;
 }
 
 .title {
     font-size: 0.18rem;
     font-family: 'PuHuiTi';
+    color: #333;
 }
 
 .data {
     font-size: 0.14rem;
     color: #F7819B;
+    font-weight: bold;
 }
 
 .dataBox {
     background-color: #fff;
     border-radius: 0.05rem;
-    width: 11%;
+    width: 25%;
     height: 60%;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     margin-left: 5%;
-}
-
-.unit {
-    font-size: 0.08rem;
-    font-family: 'PuHuiTi';
-    color: #8E9AAB;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .loading-overlay,
 .error-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     font-size: 0.16rem;
-    color: #666;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    z-index: 10;
-}
-
-.error-overlay {
-    color: #ff4d4f;
+    color: #999;
 }
 </style>

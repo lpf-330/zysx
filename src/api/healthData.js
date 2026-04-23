@@ -71,10 +71,6 @@ export const disconnectUserConnections = (userId) => {
 // 为每个数据获取函数添加清理机制
 const createDataFetcher = (dataType) => {
     return async (userId) => {
-        // 清理可能存在的旧消息监听器
-        wsService.off('message');
-        wsService.off('error');
-        
         await ensureWsConnected(dataType, userId);
         
         return new Promise((resolve, reject) => {
@@ -235,6 +231,7 @@ const getPiDataByYear = (userId, year) => httpService.post('/api/api/health-data
 const getAllSleepData = (userId) => httpService.post('/api/sleepData', { user_id: userId });
 const getAllPiData = (userId) => httpService.post('/api/piData', { user_id: userId });
 const getAllOxygenData = (userId) => httpService.post('/api/oxygenData', { user_id: userId });
+const getAllHeartData = (userId) => httpService.post('/api/heartData', { user_id: userId });
 
 export {
     // 原有导出
@@ -274,6 +271,7 @@ export {
     getAllSleepData,
     getAllPiData,
     getAllOxygenData,
+    getAllHeartData,
     // 用于实时数据订阅
     subscribeHeartData,
     subscribeBloodData,

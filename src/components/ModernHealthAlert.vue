@@ -120,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   analysisResult: Object,
@@ -426,7 +426,7 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 </script>

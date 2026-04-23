@@ -9,11 +9,11 @@
     </div>
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">数据加载失败</div>
-    <div v-else ref="chart" style="width: 100%; height: 100%;"></div>
+    <div v-else ref="chart" style="width: 100%; flex: 1; min-height: 0;"></div>
     
     <!-- 添加警告组件 -->
     <ModernHealthAlert
-      v-if="analysisResult && isMounted"
+      v-if="analysisResult && analysisResult.summary && isMounted"
       :analysis-result="analysisResult"
       data-type="blood"
       position="top-right"
@@ -23,10 +23,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import * as echarts from 'echarts/core';
-import { BarChart } from 'echarts/charts';
-import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components';
+import { BarChart, PictorialBarChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, GridComponent, GraphicComponent } from 'echarts/components';
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import useUserInfoStore from '../stores/user';
@@ -46,11 +46,29 @@ import healthAnalyzer from '../utils/healthAnalyzer';
 import ModernHealthAlert from './ModernHealthAlert.vue';
 
 // 注册 ECharts 组件
-echarts.use([BarChart, TitleComponent, TooltipComponent, GridComponent, LabelLayout, UniversalTransition, CanvasRenderer]);
+echarts.use([
+    BarChart, 
+    PictorialBarChart,
+    TitleComponent, 
+    TooltipComponent, 
+    GridComponent, 
+    GraphicComponent,
+    LabelLayout, 
+    UniversalTransition, 
+    CanvasRenderer
+]);
 
 const userInfoStore = storeToRefs(useUserInfoStore());
 const user_id = userInfoStore.user_id.value;
 const calendarSelectionStore = useCalendarSelectionStore();
+
+// 定时器变量 - 必须在 onMounted 之前定义
+let fetchTimeout = null;
+let mountTimeout1 = null;
+let mountTimeout2 = null;
+let updateTimeout1 = null;
+let updateTimeout2 = null;
+
 // nowData 用于显示实时血糖浓度
 const nowData = ref(0); 
 // 用于图表的历史数据
@@ -188,10 +206,19 @@ const fetchAggregatedData = async () => {
             return;
         }
         const apiResponse = response.data;
-        const responseData = apiResponse.data;
+        // 兼容两种响应格式：直接数组 或 {code: 200, data: [...]}
+        let responseData;
+        if (Array.isArray(apiResponse)) {
+            responseData = apiResponse;
+        } else if (apiResponse && apiResponse.code === 200 && Array.isArray(apiResponse.data)) {
+            responseData = apiResponse.data;
+        } else {
+            responseData = null;
+        }
+        
         console.log(`原始响应数据 (${viewType}视图):`, responseData);
         console.log(`数据长度: ${responseData ? responseData.length : 0}`);
-        if (apiResponse && apiResponse.code === 200 && Array.isArray(responseData) && responseData.length > 0) {
+        if (responseData && responseData.length > 0) {
             let processedData = [];
             let processedTimes = [];
             let rawTimes = [];
@@ -221,6 +248,11 @@ const fetchAggregatedData = async () => {
                     times: rawTimes,
                     values: processedData
                 });
+            }
+            // 检查组件是否仍然挂载
+            if (!isMounted) {
+                console.warn("BloodDataClear 组件在数据处理期间已卸载");
+                return;
             }
             // 更新响应式变量 (用于图表)
             data.value = processedData;
@@ -253,16 +285,21 @@ const fetchAggregatedData = async () => {
         }
     } catch (err) {
         console.error("获取血糖聚合数据失败", err);
-        error.value = true;
+        if (isMounted) {
+            error.value = true;
+        }
         resetData();
     } finally {
-        loading.value = false;
+        if (isMounted) {
+            loading.value = false;
+        }
         isFetching = false;
     }
     console.log("=== BloodDataClear 历史聚合数据获取完成 ===");
 };
 
 const resetData = () => {
+    if (!isMounted) return;
     data.value = [];
     formattedTime.value = [];
     rawTimeData.value = [];
@@ -286,11 +323,11 @@ const updateChart = () => {
     }
     if (!myChart || !chart.value) {
         console.warn("图表实例不存在或DOM未挂载，尝试重新初始化");
-        setTimeout(() => {
+        updateTimeout1 = setTimeout(() => {
             if (isMounted && chart.value) {
                 initChart();
-                setTimeout(() => {
-                    if (myChart) {
+                updateTimeout2 = setTimeout(() => {
+                    if (myChart && isMounted) {
                         doUpdateChart();
                     }
                 }, 50);
@@ -304,36 +341,44 @@ const updateChart = () => {
 // 实际的图表更新逻辑
 const doUpdateChart = () => {
     try {
-        if (data.value.length === 0 || formattedTime.value.length === 0) {
+        if (!data.value || !formattedTime.value || data.value.length === 0 || formattedTime.value.length === 0) {
             console.log("无数据可显示，显示空图表");
-            myChart.setOption({
-                title: {
-                    text: '暂无数据',
-                    left: 'center',
-                    top: 'center',
-                    textStyle: {
-                        color: '#999',
-                        fontSize: 14
-                    }
-                },
-                xAxis: { 
-                    show: false,
-                    data: [] 
-                },
-                yAxis: { 
-                    show: false 
-                },
-                series: [{ 
-                    data: [] 
-                }]
-            });
+            if (myChart) {
+                myChart.setOption({
+                    title: {
+                        text: '暂无数据',
+                        left: 'center',
+                        top: 'center',
+                        textStyle: {
+                            color: '#999',
+                            fontSize: 14
+                        }
+                    },
+                    xAxis: { 
+                        show: false,
+                        data: [] 
+                    },
+                    yAxis: { 
+                        show: false 
+                    },
+                    series: [{ 
+                        data: [] 
+                    }]
+                });
+            }
             return;
         }
         const displayData = data.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
         const displayTimes = formattedTime.value.slice(0, Math.min(data.value.length, formattedTime.value.length));
         
-        const maxDataValue = Math.max(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
-        const minDataValue = Math.min(...displayData.filter(d => typeof d === 'number' && !isNaN(d)));
+        const validData = displayData.filter(d => typeof d === 'number' && !isNaN(d));
+        if (validData.length === 0) {
+            console.log("无有效数据可显示");
+            return;
+        }
+        
+        const maxDataValue = Math.max(...validData);
+        const minDataValue = Math.min(...validData);
         
         const yMax = Math.max(10, Math.ceil(maxDataValue * 1.1));
         const yMin = Math.min(0, Math.floor(minDataValue * 0.9));
@@ -498,10 +543,10 @@ const initChart = () => {
                 formatter: getTooltipFormatter()
             },
             grid: {
-                top: '10%',
-                bottom: '20%',
-                left: '10%',
-                right: '5%',
+                top: '8%',
+                bottom: '8%',
+                left: '8%',
+                right: '3%',
                 containLabel: true
             },
             xAxis: {
@@ -513,7 +558,7 @@ const initChart = () => {
                 },
                 axisLabel: {
                     color: '#666',
-                    fontSize: 12,
+                    fontSize: 16,
                     rotate: 0
                 },
                 axisTick: {
@@ -528,7 +573,8 @@ const initChart = () => {
                 name: '血糖 (mmol/L)',
                 nameTextStyle: {
                     color: '#666',
-                    fontSize: 12
+                    fontSize: 18,
+                    padding: [0, 0, 5, 0]
                 },
                 axisLine: {
                     lineStyle: {
@@ -537,21 +583,12 @@ const initChart = () => {
                 },
                 axisLabel: {
                     color: '#666',
-                    fontSize: 12
+                    fontSize: 16
                 },
                 splitLine: {
                     lineStyle: {
                         color: '#f0f0f0',
                         type: 'dashed'
-                    }
-                },
-                splitArea: {
-                    show: true,
-                    areaStyle: {
-                        color: [
-                            'rgba(82, 196, 26, 0.05)', // 正常区域
-                            'rgba(255, 77, 79, 0.05)'  // 高血糖区域
-                        ]
                     }
                 }
             },
@@ -560,22 +597,12 @@ const initChart = () => {
                 start: 0,
                 end: 100,
                 zoomLock: false
-            }, {
-                type: 'slider',
-                show: true,
-                bottom: 10,
-                start: 0,
-                end: 100,
-                height: 20,
-                borderColor: '#ddd'
             }],
             series: [
                 {
                     name: '血糖',
                     type: 'bar',
                     barWidth: 20,
-                    showBackground: true,
-                    backgroundStyle: { color: 'rgba(21, 136, 209, 0.05)' },
                     itemStyle: {
                         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                             { offset: 1, color: 'rgb(127, 255, 212)' },
@@ -660,21 +687,44 @@ const initChart = () => {
 
 // --- 健康数据分析师 ---
 const analyzeHealthData = (dataPoints, timePoints) => {
-    if (dataPoints.length === 0 || !healthAnalyzer.BloodSugarRules) {
-        analysisResult.value = null;
+    if (!isMounted) {
+        console.warn("BloodDataClear 组件已卸载，跳过健康数据分析");
+        return;
+    }
+    if (!dataPoints || !Array.isArray(dataPoints) || dataPoints.length === 0 || !healthAnalyzer.BloodSugarRules) {
+        try {
+            if (isMounted) {
+                analysisResult.value = null;
+            }
+        } catch (e) {
+            console.warn("设置分析结果为空时出错:", e);
+        }
         return;
     }
     
     try {
-        analysisResult.value = healthAnalyzer.BloodSugarRules.analyzeComprehensive(dataPoints, timePoints);
-        console.log('血糖分析结果:', analysisResult.value);
-        
-        if (myChart && chartInitialized) {
-            updateChartWithAnalysis();
+        const result = healthAnalyzer.BloodSugarRules.analyzeComprehensive(dataPoints, timePoints);
+        console.log('血糖分析结果:', result);
+        // 再次检查组件状态后再赋值
+        try {
+            if (isMounted) {
+                analysisResult.value = result;
+                if (myChart && chartInitialized) {
+                    updateChartWithAnalysis();
+                }
+            }
+        } catch (e) {
+            console.warn("设置分析结果时出错:", e);
         }
     } catch (error) {
         console.error('血糖分析失败:', error);
-        analysisResult.value = null;
+        try {
+            if (isMounted) {
+                analysisResult.value = null;
+            }
+        } catch (e) {
+            console.warn("设置分析结果为空时出错:", e);
+        }
     }
 };
 
@@ -685,15 +735,15 @@ const updateChartWithAnalysis = () => {
     const singleAnalyses = analysisResult.value.singleAnalyses;
     const markPoints = [];
     
-    if (singleAnalyses) {
+    if (singleAnalyses && Array.isArray(singleAnalyses)) {
         singleAnalyses.forEach((analysis, index) => {
-            if (analysis.level >= 2) {
+            if (analysis && analysis.level >= 2) {
                 markPoints.push({
-                    name: analysis.message,
+                    name: analysis.message || '',
                     coord: [index, analysis.value],
                     symbolSize: 12,
                     itemStyle: {
-                        color: analysis.color,
+                        color: analysis.color || '#fa8c16',
                         opacity: 0.8
                     },
                     label: {
@@ -709,14 +759,15 @@ const updateChartWithAnalysis = () => {
     
     const rapidChanges = analysisResult.value.rapidChanges || [];
     rapidChanges.forEach(change => {
+        if (!change || !change.timestamp) return;
         const index = rawTimeData.value.findIndex(t => new Date(t).getTime() === new Date(change.timestamp).getTime());
         if (index !== -1) {
             markPoints.push({
-                name: change.message,
+                name: change.message || '',
                 coord: [index, data.value[index]],
                 symbolSize: 15,
                 itemStyle: {
-                    color: change.color,
+                    color: change.color || '#fa8c16',
                     opacity: 0.9
                 },
                 label: {
@@ -731,6 +782,7 @@ const updateChartWithAnalysis = () => {
     
     const sustainedAbnormal = analysisResult.value.sustainedAbnormal || [];
     sustainedAbnormal.forEach(period => {
+        if (!period || period.startIdx === undefined || period.endIdx === undefined) return;
         const startIndex = Math.max(0, period.startIdx - 1);
         const endIndex = Math.min(data.value.length - 1, period.endIdx + 1);
         
@@ -791,8 +843,11 @@ const handleExportData = () => {
 };
 
 // --- 防抖逻辑 ---
-let fetchTimeout = null;
 const debouncedFetchData = () => {
+    if (!isMounted) {
+        console.log("BloodDataClear: 组件已卸载，跳过防抖数据获取");
+        return;
+    }
     if (fetchTimeout) {
         clearTimeout(fetchTimeout);
     }
@@ -801,12 +856,16 @@ const debouncedFetchData = () => {
         return;
     }
     fetchTimeout = setTimeout(() => {
+        if (!isMounted) {
+            console.log("BloodDataClear: setTimeout 回调执行时组件已卸载，跳过");
+            return;
+        }
         fetchAggregatedData();
     }, 150);
 };
 
 // --- 监听日历选择变化 ---
-watch(
+const stopCalendarWatch = watch(
     () => [
         calendarSelectionStore.selectedDate,
         calendarSelectionStore.selectedWeek,
@@ -815,6 +874,7 @@ watch(
         calendarSelectionStore.currentViewType
     ],
     (newVal, oldVal) => {
+        if (!isMounted) return;
         if (JSON.stringify(newVal) === JSON.stringify(oldVal)) {
             return;
         }
@@ -832,11 +892,11 @@ watch(
 onMounted(() => {
     console.log("=== BloodDataClear.vue 组件开始挂载 ===");
     isMounted = true;
-    setTimeout(() => {
+    mountTimeout1 = setTimeout(() => {
         if (isMounted && chart.value) {
             console.log("开始初始化图表...");
             initChart();
-            setTimeout(() => {
+            mountTimeout2 = setTimeout(() => {
                 if (isMounted) {
                     console.log("开始获取历史聚合数据...");
                     fetchAggregatedData(); // 获取用于图表的历史数据
@@ -861,14 +921,36 @@ onMounted(() => {
     window.__bloodChartResizeHandler = handleResize;
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
     console.log("=== BloodDataClear.vue 组件开始卸载 ===");
     isMounted = false;
     isFetching = false;
     chartInitialized = false;
+    
+    if (stopCalendarWatch) {
+        stopCalendarWatch();
+        console.log("BloodDataClear: 已停止日历监听器");
+    }
+    
     if (fetchTimeout) {
         clearTimeout(fetchTimeout);
         fetchTimeout = null;
+    }
+    if (mountTimeout1) {
+        clearTimeout(mountTimeout1);
+        mountTimeout1 = null;
+    }
+    if (mountTimeout2) {
+        clearTimeout(mountTimeout2);
+        mountTimeout2 = null;
+    }
+    if (updateTimeout1) {
+        clearTimeout(updateTimeout1);
+        updateTimeout1 = null;
+    }
+    if (updateTimeout2) {
+        clearTimeout(updateTimeout2);
+        updateTimeout2 = null;
     }
     if (window.__bloodChartResizeHandler) {
         window.removeEventListener('resize', window.__bloodChartResizeHandler);
@@ -883,6 +965,7 @@ onUnmounted(() => {
             console.warn("清理图表实例时出错:", error);
         }
     }
+    console.log("=== BloodDataClear.vue 组件卸载完成 ===");
 });
 </script>
 
@@ -944,5 +1027,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 </style>

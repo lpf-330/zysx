@@ -57,8 +57,8 @@ const updateChart = () => {
         grid: {
             left: '5%',
             right: '10%',
-            bottom: '40%',
-            top: '40%',
+            bottom: '25%',
+            top: '20%',
             containLabel: true
         },
         xAxis: [{

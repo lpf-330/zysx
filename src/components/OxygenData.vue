@@ -57,7 +57,7 @@ const updateChart = () => {
             {
                 type: 'liquidFill',
                 radius: '78.1%',
-                center: ['40%', '50%'],
+                center: ['50%', '50%'],
                 color: [
                     {
                         type: 'linear',

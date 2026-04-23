@@ -145,22 +145,32 @@ onUnmounted(() => {
 
 <style scoped>
 .memo-content {
-  padding: 0.08rem 0.1rem;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 0.08rem;
-  min-height: 0.6rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.06rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  padding: 0.04rem 0 0.02rem 0;
+  border-top: 0.005rem solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  flex: 3;
 }
 
 .nearest-todo {
   display: flex;
   flex-direction: column;
   gap: 0.06rem;
+  flex: 7;
 }
 
 .nearest-card {
@@ -235,15 +245,6 @@ onUnmounted(() => {
   color: #a0aec0;
   padding: 0.15rem 0;
   font-size: 0.1rem;
-}
-
-.bottom-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.04rem 0;
-  border-top: 0.005rem solid rgba(0, 0, 0, 0.06);
-  margin-top: 0.02rem;
 }
 
 .view-all-link {

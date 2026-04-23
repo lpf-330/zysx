@@ -1,15 +1,15 @@
 <script setup>
 import Sider from '../components/Sider.vue';
-import { RouterView } from 'vue-router';
+import { RouterView, useRoute } from 'vue-router';
 
-
+const route = useRoute();
 </script>
 
 <template>
     <div class="background">
         <Sider></Sider>
         <div class="content">
-            <RouterView></RouterView>
+            <RouterView />
         </div>
     </div>
 </template>
