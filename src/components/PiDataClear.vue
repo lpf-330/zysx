@@ -117,7 +117,7 @@ const formatDate = (dateObj) => {
 
 const fetchLatestData = async () => {
     if (!user_id || !isMountedFlag) {
-        console.log("PiDataClear: 用户ID无效或组件已卸载，无法获取最新数据");
+        console.warn("用户ID无效或组件已卸载，无法获取最新灌注指数数据");
         return;
     }
     
@@ -136,12 +136,12 @@ const fetchLatestData = async () => {
             const sortedData = [...responseData].sort((a, b) => 
                 new Date(b.recordTime) - new Date(a.recordTime)
             );
-            latestData.value = sortedData[0].piData || sortedData[0].avgPi || sortedData[0].avgValue || 0;
+            latestData.value = sortedData[0].piData || 0;
         } else {
             latestData.value = 0;
         }
     } catch (err) {
-        console.error("PiDataClear: 获取最新数据失败", err);
+        console.error("获取最新灌注指数数据失败", err);
         if (isMountedFlag) {
             latestData.value = 0;
         }
@@ -285,10 +285,8 @@ const fetchAggregatedData = async () => {
             if (processedData.length > 0) {
                 const maxVal = Math.max(...processedData.filter(d => typeof d === 'number' && !isNaN(d)));
                 maxY.value = Math.max(10, Math.ceil(maxVal * 1.2));
-                latestData.value = processedData[processedData.length - 1];
             } else {
                 maxY.value = 10;
-                latestData.value = 0;
             }
             
             updateChart();
@@ -298,7 +296,6 @@ const fetchAggregatedData = async () => {
             if (isMountedFlag) {
                 data.value = [];
                 formattedTime.value = [];
-                latestData.value = 0;
                 updateChart();
             }
         }

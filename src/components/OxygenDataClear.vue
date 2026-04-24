@@ -38,8 +38,7 @@ import {
     getOxygenDataByDate,
     getOxygenDataByWeek,
     getOxygenDataByMonth,
-    getOxygenDataByYear,
-    getAllOxygenData
+    getOxygenDataByYear
 } from '../api/healthData';
 
 echarts.use([
@@ -75,7 +74,6 @@ let isFetching = false;
 let fetchTimeout = null;
 let mountTimeout1 = null;
 let mountTimeout2 = null;
-let latestDataAbortController = null;
 
 const color = ['rgba(0, 190, 250)', 'rgba(0,61,150)', 'rgba(0,0,225)'];
 
@@ -258,20 +256,10 @@ const fetchAggregatedData = async () => {
 
 const fetchLatestData = async () => {
     if (!user_id || !isMountedFlag) {
+        console.warn("用户ID无效或组件已卸载，无法获取最新血氧数据");
         latestData.value = 0;
         return;
     }
-    
-    if (latestDataAbortController) {
-        latestDataAbortController.abort();
-    }
-    latestDataAbortController = new AbortController();
-    
-    const timeoutId = setTimeout(() => {
-        if (latestDataAbortController) {
-            latestDataAbortController.abort();
-        }
-    }, 3000);
     
     try {
         const today = new Date();
@@ -281,8 +269,6 @@ const fetchLatestData = async () => {
         
         if (!isMountedFlag) return;
         
-        clearTimeout(timeoutId);
-        
         const apiResponse = response.data;
         const responseData = apiResponse.data;
         
@@ -290,22 +276,15 @@ const fetchLatestData = async () => {
             const sortedData = [...responseData].sort((a, b) => 
                 new Date(b.recordTime) - new Date(a.recordTime)
             );
-            latestData.value = sortedData[0].oxygenData || sortedData[0].avgOxygen || sortedData[0].avgValue || 0;
+            latestData.value = sortedData[0].oxygenData || 0;
         } else {
             latestData.value = 0;
         }
     } catch (err) {
-        if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
-            console.log("获取最新血氧数据请求被取消");
-        } else {
-            console.error("获取最新血氧数据失败", err);
-        }
+        console.error("获取最新血氧数据失败", err);
         if (isMountedFlag) {
             latestData.value = 0;
         }
-    } finally {
-        clearTimeout(timeoutId);
-        latestDataAbortController = null;
     }
 };
 
@@ -629,12 +608,6 @@ onBeforeUnmount(() => {
     if (stopCalendarWatch) {
         stopCalendarWatch();
         console.log("OxygenDataClear: 已停止日历监听器");
-    }
-    
-    if (latestDataAbortController) {
-        console.log("取消最新数据请求");
-        latestDataAbortController.abort();
-        latestDataAbortController = null;
     }
     
     if (fetchTimeout) {

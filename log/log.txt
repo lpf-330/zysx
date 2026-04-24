@@ -1,131 +1,142 @@
 	
-MonthView.vue:298 Monthview: 默认选中当前月份 2026-4
-PiDataClear.vue:158 === PiDataClear 开始获取数据 ===
+PiDataClear.vue:202 PiDataClear: getPiDataByDate 返回 = 
+{data: {…}, status: 200, statusText: 'OK', headers: AxiosHeaders, config: {…}, …}
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 5000, …}
+data
+: 
+code
+: 
+200
+data
+: 
+Array(10)
+0
+: 
+{piData: 1.57, recordTime: '2026-04-23 00:02:14'}
+1
+: 
+{piData: 3.26, recordTime: '2026-04-23 02:34:29'}
+2
+: 
+{piData: 7.98, recordTime: '2026-04-23 06:03:12'}
+3
+: 
+{piData: 9.49, recordTime: '2026-04-23 08:15:26'}
+4
+: 
+{piData: 9.66, recordTime: '2026-04-23 10:32:07'}
+5
+: 
+{piData: 1.25, recordTime: '2026-04-23 12:13:16'}
+6
+: 
+{piData: 2.07, recordTime: '2026-04-23 14:01:41'}
+7
+: 
+{piData: 9.05, recordTime: '2026-04-23 16:45:02'}
+8
+: 
+{piData: 9.81, recordTime: '2026-04-23 18:25:09'}
+9
+: 
+{piData: 3.36, recordTime: '2026-04-23 22:50:24'}
+length
+: 
+10
+[[Prototype]]
+: 
+Array(0)
+message
+: 
+"success"
+[[Prototype]]
+: 
+Object
+headers
+: 
+AxiosHeaders {access-control-allow-credentials: 'true', access-control-allow-origin: 'http://localhost:5173', cache-control: 'no-cache, no-store, max-age=0, must-revalidate', connection: 'close', content-type: 'application/json', …}
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 5000, withCredentials: false, upload: XMLHttpRequestUpload, …}
+status
+: 
+200
+statusText
+: 
+"OK"
+[[Prototype]]
+: 
+Object
+PiDataClear.vue:228 PiDataClear: responseData = 
+(10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+0
+: 
+{piData: 1.57, recordTime: '2026-04-23 00:02:14'}
+1
+: 
+{piData: 3.26, recordTime: '2026-04-23 02:34:29'}
+2
+: 
+{piData: 7.98, recordTime: '2026-04-23 06:03:12'}
+3
+: 
+{piData: 9.49, recordTime: '2026-04-23 08:15:26'}
+4
+: 
+{piData: 9.66, recordTime: '2026-04-23 10:32:07'}
+5
+: 
+{piData: 1.25, recordTime: '2026-04-23 12:13:16'}
+6
+: 
+{piData: 2.07, recordTime: '2026-04-23 14:01:41'}
+7
+: 
+{piData: 9.05, recordTime: '2026-04-23 16:45:02'}
+8
+: 
+{piData: 9.81, recordTime: '2026-04-23 18:25:09'}
+9
+: 
+{piData: 3.36, recordTime: '2026-04-23 22:50:24'}
+length
+: 
+10
+[[Prototype]]
+: 
+Array(0)
+PiDataClear.vue:229 PiDataClear: responseData 类型 = object , 是否数组 = true , 长度 = 10
+PiDataClear.vue:378 === PiDataClear 图表更新完成 ===
+PiDataClear.vue:302 === PiDataClear 数据获取完成 ===
 main.js:10 === Vue 全局错误 ===
 (匿名)	@	main.js:10
 Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:319
+await in (匿名)		
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:11 错误对象: TypeError: Cannot read properties of null (reading 'insertBefore')
 (匿名)	@	main.js:11
 Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:319
+await in (匿名)		
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:12 错误信息: Cannot read properties of null (reading 'insertBefore')
 (匿名)	@	main.js:12
 Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:13 错误堆栈: TypeError: Cannot read properties of null (reading 'insertBefore')
-    at insert (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:10509:12)
-    at mountElement (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6976:5)
-    at processElement (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6902:7)
-    at patch (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6770:11)
-    at patchBlockChildren (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:7136:7)
-    at patchElement (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:7054:7)
-    at processElement (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6913:7)
-    at patch (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6770:11)
-    at ReactiveEffect.componentUpdateFn [as fn] (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:7490:9)
-    at ReactiveEffect.run (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:481:19)
-(匿名)	@	main.js:13
-Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:14 组件实例: 
-Proxy(Object) {_pStores: {…}, …}
-(匿名)	@	main.js:14
-Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:15 错误信息: component update
-(匿名)	@	main.js:15
-Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:16 错误类型: TypeError
-(匿名)	@	main.js:16
-Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:17 完整错误: TypeError: Cannot read properties of null (reading 'insertBefore')
-(匿名)	@	main.js:17
-Promise.then		
-(匿名)	@	PiDataClear.vue:172
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-PiDataClear.vue:277 PiDataClear: API返回数据为空
-main.js:10 === Vue 全局错误 ===
-(匿名)	@	main.js:10
-Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:11 错误对象: TypeError: Cannot read properties of null (reading 'insertBefore')
-(匿名)	@	main.js:11
-Promise.then		
-(匿名)	@	PiDataClear.vue:291
-await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
-main.js:12 错误信息: Cannot read properties of null (reading 'insertBefore')
-(匿名)	@	main.js:12
-Promise.then		
-(匿名)	@	PiDataClear.vue:291
-await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
-Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:13 错误堆栈: TypeError: Cannot read properties of null (reading 'insertBefore')
     at insert (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:10509:12)
     at processCommentNode (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:6843:7)
@@ -139,56 +150,46 @@ main.js:13 错误堆栈: TypeError: Cannot read properties of null (reading 'ins
     at ReactiveEffect.runIfDirty (http://localhost:5173/node_modules/.vite/deps/chunk-UQWBJQZ5.js?v=88165aca:519:12)
 (匿名)	@	main.js:13
 Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:14 组件实例: 
 Proxy(Object) {_pStores: {…}, …}
 (匿名)	@	main.js:14
 Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:15 错误信息: component update
 (匿名)	@	main.js:15
 Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:16 错误类型: TypeError
 (匿名)	@	main.js:16
 Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
 main.js:17 完整错误: TypeError: Cannot read properties of null (reading 'insertBefore')
 (匿名)	@	main.js:17
 Promise.then		
-(匿名)	@	PiDataClear.vue:291
+(匿名)	@	PiDataClear.vue:319
 await in (匿名)		
-(匿名)	@	PiDataClear.vue:506
-setTimeout		
-(匿名)	@	PiDataClear.vue:501
+(匿名)	@	PiDataClear.vue:544
 Promise.then		
-selectView	@	HistoricalData.vue:71
-(匿名)	@	HistoricalData.vue:18
+(匿名)	@	Health.vue:87
+(匿名)	@	Health.vue:162
