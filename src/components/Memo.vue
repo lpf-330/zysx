@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import { getTodosByDate } from '../api/user';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
+const user_id = computed(() => userInfoStore.user_id.value);
 
 const props = defineProps({
   selectedDate: {
@@ -35,7 +35,7 @@ const fetchTodosByDate = async (date) => {
   if (!date) return;
   try {
     const start_date = formatDate(date);
-    const response = await getTodosByDate(start_date, user_id);
+    const response = await getTodosByDate(start_date, user_id.value);
     items.value = response.data.map(todo => ({
       id: todo.id,
       event: todo.eventName,
@@ -153,6 +153,7 @@ onUnmounted(() => {
   gap: 0.06rem;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .bottom-bar {
@@ -163,14 +164,14 @@ onUnmounted(() => {
   padding: 0.04rem 0 0.02rem 0;
   border-top: 0.005rem solid rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
-  flex: 3;
 }
 
 .nearest-todo {
   display: flex;
   flex-direction: column;
   gap: 0.06rem;
-  flex: 7;
+  flex: 1;
+  min-height: 0;
 }
 
 .nearest-card {

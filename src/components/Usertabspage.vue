@@ -4,7 +4,7 @@
       <template #label>
         <span class="family-history-label" id="tab1">家族遗传病史</span>
       </template>
-      <el-scrollbar height="3.5rem">
+      <el-scrollbar class="tab-scrollbar">
         <div class="Family_genetic_disease_history">
           <div class="derection">
             <div class="decoration1"><img width="100%" height="100%"
@@ -32,7 +32,7 @@
       <template #label>
         <span class="History-of-allergies-label" id="tab2">过敏史</span>
       </template>
-      <el-scrollbar height="3.5rem">
+      <el-scrollbar class="tab-scrollbar">
         <div class="History of allergies">
           <div class="derection">
             <div class="decoration1"><img width="100%" height="100%"
@@ -58,7 +58,7 @@
       <template #label>
         <span class="Past-medical-history" id="tab3">既往病史</span>
       </template>
-      <el-scrollbar height="3.5rem">
+      <el-scrollbar class="tab-scrollbar">
         <div class="Past medical history">
           <div class="derection">
             <div class="decoration1"><img width="100%" height="100%"
@@ -83,7 +83,7 @@
       <template #label>
         <span class="History-of-surgery" id="tab4">手术史</span>
       </template>
-      <el-scrollbar height="3.5rem">
+      <el-scrollbar class="tab-scrollbar">
         <div class="History of surgery">
           <div class="derection">
             <div class="decoration1"><img width="100%" height="100%"
@@ -157,12 +157,33 @@ onMounted(() => {
 
 <style scoped>
 .demo-tabs {
-  width: 5.5rem;
+  width: 100%;
+  height: 100%;
   background-color: #fff;
   border-radius: 0.2rem;
   padding: 2%;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  /* transition: all 0.8s ease-in-out; */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-tabs :deep(.el-tabs__header) {
+  flex-shrink: 0;
+}
+
+.demo-tabs :deep(.el-tabs__content) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-tabs :deep(.el-tab-pane) {
+  height: 100%;
+}
+
+.tab-scrollbar {
+  height: 100%;
 }
 
 /* .demo-tabs:hover{

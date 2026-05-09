@@ -37,15 +37,18 @@ const openEditDrawer = () => {
 .person {
     height: 100%;
     width: 98%;
+    display: flex;
+    flex-direction: column;
+    padding: 0.15rem 0;
+    box-sizing: border-box;
 }
 
 .top-row {
     display: flex;
     gap: 0.2rem;
-    margin-bottom: 0.15rem;
     width: 93%;
-    margin: auto;
-    margin-top: 2%;
+    margin: 0 auto 0.15rem auto;
+    flex-shrink: 0;
 }
 
 .user-details-flex {
@@ -56,26 +59,31 @@ const openEditDrawer = () => {
     width: 2.3rem;
     height: 1.4rem;
     flex-shrink: 0;
-    margin-top: 2%;
 }
 
 .user-info {
-    margin: auto;
-    margin-top: 2%;
-    height: 3.4rem;
+    margin: 0 auto;
+    flex: 1;
+    min-height: 0;
     width: 93%;
     display: flex;
+    gap: 0.2rem;
 }
 
 .demo-tabs {
-    width: 93%;
-    height: 94%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
 }
 
 .MAD {
     display: flex;
     justify-content: flex-end;
     width: 3rem;
-    height: 3.55rem;
+    flex-shrink: 0;
+    max-height: 100%;
+    overflow: hidden;
 }
 </style>

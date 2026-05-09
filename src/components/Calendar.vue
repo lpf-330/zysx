@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { getTodosByDate } from '../api/user';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
 const emit = defineEmits(['date-selected']);
 
@@ -8,11 +10,16 @@ const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 const today = new Date();
 const currentYear = ref(today.getFullYear());
 const currentMonth = ref(today.getMonth() + 1);
-const selectedDay = ref(today.getDate());
+const selectedDate = ref({
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    day: today.getDate()
+});
 const showYearPicker = ref(false);
 const events = ref([]);
 
-const user_id = localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null;
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = computed(() => userInfoStore.user_id.value);
 
 const fetchEvents = async () => {
     try {
@@ -24,7 +31,7 @@ const fetchEvents = async () => {
         for (let day = 1; day <= lastDay; day++) {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             try {
-                const response = await getTodosByDate(dateStr, user_id);
+                const response = await getTodosByDate(dateStr, user_id.value);
                 const todos = response.data || [];
                 if (todos && todos.length > 0) {
                     eventsMap[day] = todos;
@@ -93,7 +100,11 @@ const toggleYearPicker = () => {
 };
 
 const selectDay = (day) => {
-    selectedDay.value = day;
+    selectedDate.value = {
+        year: currentYear.value,
+        month: currentMonth.value,
+        day: day
+    };
     const date = new Date(currentYear.value, currentMonth.value - 1, day);
     emit('date-selected', date);
 };
@@ -105,7 +116,9 @@ const isToday = (day) => {
 };
 
 const isSelected = (day) => {
-    return day === selectedDay.value;
+    return day === selectedDate.value.day &&
+        currentMonth.value === selectedDate.value.month &&
+        currentYear.value === selectedDate.value.year;
 };
 
 const hasEvent = (day) => {
@@ -149,7 +162,7 @@ onMounted(() => {
             <div class="week-header">
                 <span v-for="day in weekDays" :key="day" class="week-day">{{ day }}</span>
             </div>
-            <div class="days-grid">
+            <div class="days-grid" :key="`${currentYear}-${currentMonth}`">
                 <span v-for="i in firstDayOfMonth" :key="'empty-' + i" class="day-cell empty"></span>
                 <span v-for="day in daysInMonth" :key="day" class="day-cell" :class="{
                     'today': isToday(day),
@@ -172,7 +185,10 @@ onMounted(() => {
     border: 1px solid rgba(45, 87, 45, 0.08);
     position: relative;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .calendar-header {
@@ -295,12 +311,15 @@ onMounted(() => {
 
 .calendar-grid {
     width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .week-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 0.02rem;
+    flex-shrink: 0;
 }
 
 .week-day {
@@ -314,55 +333,90 @@ onMounted(() => {
 .days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
     gap: 0.01rem;
+    flex: 1;
 }
 
 .day-cell {
-    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'DIN Alternate', 'Roboto', sans-serif;
-    font-size: 0.1rem;
+    font-size: 0.09rem;
     color: #333;
-    border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.day-cell::before {
+    content: '';
+    position: absolute;
+    width: 0.22rem;
+    height: 0.22rem;
+    border-radius: 50%;
+    z-index: -1;
+    transition: background 0.2s ease;
+}
+
+.day-cell::before {
+    content: '';
+    position: absolute;
+    width: 0.22rem;
+    height: 0.22rem;
+    border-radius: 50%;
+    z-index: -1;
 }
 
 .day-cell:not(.empty):hover {
-    background: rgba(45, 87, 45, 0.08);
     color: #2D572D;
 }
 
+.day-cell:not(.empty):hover::before {
+    background: rgba(45, 87, 45, 0.08);
+}
+
 .day-cell.today {
-    color: #D32F2F;
+    color: #fff;
     font-weight: 600;
 }
 
-.day-cell.selected {
+.day-cell.today::before {
     background: #2D572D;
+}
+
+.day-cell.selected {
+    color: #2D572D;
+}
+
+.day-cell.selected::before {
+    background: rgba(129, 199, 132, 0.4);
+}
+
+.day-cell.today.selected {
     color: #fff;
+}
+
+.day-cell.today.selected::before {
+    background: #2D572D;
 }
 
 .day-cell.empty {
     cursor: default;
 }
 
-.day-cell.has-event {
-    position: relative;
-}
-
 .day-cell.has-event::after {
     content: '';
     position: absolute;
-    bottom: 2px;
+    bottom: 15%;
     left: 50%;
     transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
     background: #4CAF50;
     border-radius: 50%;
+    z-index: 0;
 }
 
 .day-cell.selected.has-event::after {

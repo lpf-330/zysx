@@ -5,10 +5,13 @@ import Memo from '../components/Memo.vue';
 import GlobalReminder from '../components/GlobalReminder.vue';
 import TodoManagment from '../components/TodoManagment.vue';
 import { getTodosByDate, updateTodoStatusMS } from '../api/user';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
+import useUserInfoStore from '../stores/user';
+import { storeToRefs } from 'pinia';
 
-const user_id = ref(localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null);
+const userInfoStore = storeToRefs(useUserInfoStore());
+const user_id = computed(() => userInfoStore.user_id.value);
 
 const selectedDate = ref(null);
 
@@ -165,6 +168,9 @@ const closeTodoManagement = () => {
     padding: 0.15rem 0.3rem 0.15rem 0.3rem;
     box-sizing: border-box;
     gap: 0.3rem;
+    overflow: hidden;
+    min-height: 920px;
+    min-width: 1280px;
 }
 
 .left-section {
@@ -172,17 +178,20 @@ const closeTodoManagement = () => {
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
-    height: 100%;
+    min-height: 0;
+    flex-shrink: 0;
 }
 
 .calendar-card {
     flex-shrink: 0;
     width: 100%;
+    height: 2.8rem;
+    overflow: hidden;
 }
 
 .memo-card {
     flex: 1;
-    min-height: 0;
+    min-height: 1.2rem;
     max-height: none;
     cursor: pointer;
     display: flex;
@@ -219,6 +228,8 @@ const closeTodoManagement = () => {
     flex-direction: column;
     gap: 0.25rem;
     position: relative;
+    min-height: 0;
+    flex-shrink: 0;
 }
 
 .header-section {
@@ -226,6 +237,7 @@ const closeTodoManagement = () => {
     justify-content: flex-end;
     align-items: center;
     height: 1rem;
+    flex-shrink: 0;
 }
 
 .logo-container {

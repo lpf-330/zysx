@@ -706,6 +706,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import useChildUserStore from '../stores/childUser'
+import { useAuthStore } from '../stores/authStore'
 import {
   getHeartData, getBloodData, getOxygenData, getPiData, getPreData, getSlpData,
   subscribeHeartData, subscribeBloodData, subscribeOxygenData, subscribePiData, subscribePreData, subscribeSlpData,
@@ -722,6 +723,7 @@ import { HeartRateRules, BloodSugarRules, BloodPressureRules, BloodOxygenRules, 
 
 const router = useRouter()
 const childUserStore = useChildUserStore()
+const authStore = useAuthStore()
 
 const parents = computed(() => childUserStore.parents)
 const selectedParentIndex = ref(-1)
@@ -857,7 +859,7 @@ function goToSettings() {
 
 function handleLogout() {
   showUserMenu.value = false
-  childUserStore.fullReset()
+  authStore.logout()
   router.push('/login')
 }
 

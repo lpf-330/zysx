@@ -11,7 +11,7 @@ import { storeToRefs } from 'pinia';
 import { ElMessage } from 'element-plus';
 
 const userInfoStore = storeToRefs(useUserInfoStore());
-const user_id = userInfoStore.user_id.value;
+const user_id = computed(() => userInfoStore.user_id.value);
 
 const query = ref('');
 const QAList = ref([]);
@@ -35,7 +35,7 @@ const scrollToBottom = async () => {
 
 // 修改：只要有用户ID且不在生成过程中就可以生成报告
 const canGenerateReport = computed(() => {
-    return user_id && !isBusy.value;
+    return user_id.value && !isBusy.value;
 });
 
 const postQuery = async () => {
@@ -68,7 +68,7 @@ const postQuery = async () => {
     scrollToBottom();
 
     try {
-        const { reader } = await streamQuery(user_id, sessionId.value, question);
+        const { reader } = await streamQuery(user_id.value, sessionId.value, question);
         const decoder = new TextDecoder();
         let buffer = '';
         let accumulatedAnswer = '';
@@ -146,7 +146,7 @@ const postQuery = async () => {
 
 const generateReport = async () => {
     if (!canGenerateReport.value) {
-        if (!user_id) {
+        if (!user_id.value) {
             ElMessage.warning('请先登录后再生成健康报告');
         }
         return;
@@ -165,7 +165,7 @@ const generateReport = async () => {
     scrollToBottom();
 
     try {
-        const { reader } = await apiGenerateHealthReport(user_id);
+        const { reader } = await apiGenerateHealthReport(user_id.value);
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
         let accumulatedReport = '';
@@ -231,7 +231,7 @@ const generateReport = async () => {
 
         // 自动保存报告到数据库
         try {
-            await saveHealthReport(user_id, accumulatedReport);
+            await saveHealthReport(user_id.value, accumulatedReport);
             ElMessage.success('健康报告生成并保存成功');
         } catch (saveError) {
             console.error('保存健康报告失败:', saveError);
@@ -373,7 +373,7 @@ onBeforeUnmount(() => {
 <style scoped>
 /* 整体容器：居中 + 渐变背景 */
 .container {
-    height: 100vh;
+    height: 100%;
     width: 80%;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f0f7f0 100%);
     display: flex;
@@ -460,11 +460,12 @@ onBeforeUnmount(() => {
     max-width: 1400px;
     flex: 1;
     margin-top: 12px;
-    margin-bottom: 100px;
+    margin-bottom: 12px;
     padding: 0;
     box-sizing: border-box;
     display: flex;
     gap: 16px;
+    min-height: 0;
 }
 
 /* 左侧对话容器 */

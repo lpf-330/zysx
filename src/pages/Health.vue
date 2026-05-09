@@ -525,10 +525,12 @@ const getTabStyle = (tab) => {
     position: relative;
     z-index: 1;
     padding-left: 0.5rem;
+    min-width: 0;
 }
 
 .health {
     flex: 1;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;

@@ -77,6 +77,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/alerts.js'
+import { useAuthStore } from '@/stores/authStore'
 import { formatTime } from '@/utils/formatters'
 import {
   Bell,
@@ -90,6 +91,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
+const authStore = useAuthStore()
 
 const breadcrumbs = computed(() => {
   const matched = route.matched.filter(record => record.meta.title)
@@ -130,8 +132,9 @@ const handleCommand = (command) => {
 
 const handleUserCommand = (command) => {
   if (command === 'logout') {
-    // 退出登录逻辑
-    console.log('退出登录')
+    // 退出登录
+    authStore.logout()
+    router.push('/login')
   } else if (command === 'profile') {
     // 个人资料
     console.log('个人资料')

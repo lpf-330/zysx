@@ -7,6 +7,7 @@ import { storeToRefs } from 'pinia';
 
 const siderMode = storeToRefs(useUserInfoStore()).siderMode
 const router = useRouter()
+const authStore = useAuthStore()
 const items = ['home', 'heartData', 'medicalQA', 'person']
 let isMounted = false
 
@@ -25,7 +26,7 @@ const select = (i) => {
     // 这是临时解决方案，确保路由切换正常工作
     const routeName = items[i]
     const currentPath = window.location.hash.slice(1) // 移除 # 号
-    
+
     // 根据路由名称构建路径
     let targetPath
     switch(routeName) {
@@ -44,7 +45,7 @@ const select = (i) => {
         default:
             targetPath = '/index/home'
     }
-    
+
     if (currentPath !== targetPath) {
         window.location.hash = targetPath
     }
@@ -52,7 +53,10 @@ const select = (i) => {
 
 const exit = () => {
     if (!isMounted) return
-    window.location.hash = '/'
+    // 清除登录状态
+    authStore.logout()
+    // 跳转到登录页
+    router.push('/login')
 }
 </script>
 

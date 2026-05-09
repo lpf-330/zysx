@@ -103,24 +103,49 @@ const router = createRouter({
 router.beforeEach(async (to, from) => {
     const authStore = useAuthStore()
 
-    // 访问根路径时强制退出
+    // 检查并恢复登录状态（从 localStorage）
+    authStore.checkAuthState()
+
+    // 访问根路径时重定向到登录页并清除登录状态
     if (to.path === '/') {
         authStore.logout()
         return '/login'
     }
 
-    // 访问登录页时触发退出逻辑
+    // 访问登录页或注册页时
     if (to.path === '/login' || to.path === '/register') {
-        authStore.logout()
-        return true // 允许访问登录页
+        // 用户主动导航到登录页（非页面刷新），清除登录状态
+        // 判断方式：from.path 不为空说明是导航而非刷新
+        if (from.path && from.path !== '/' && from.path !== to.path) {
+            authStore.logout()
+        }
+        // 允许访问登录页
+        return true
     }
 
-    // // 检查其他页面是否登录
-    // if (!authStore.token) {
-    //     return '/login'
-    // }
+    // 监护人端页面保护
+    if (to.path.startsWith('/childHome') || to.path.startsWith('/alerts')) {
+        if (!authStore.isAuthenticated) {
+            return '/login'
+        }
+        if (authStore.loginType !== 'child') {
+            return '/index/home'
+        }
+        return true
+    }
 
-    // 已登录用户正常访问
+    // 用户端页面保护
+    if (to.path.startsWith('/index')) {
+        if (!authStore.isAuthenticated) {
+            return '/login'
+        }
+        if (authStore.loginType !== 'user') {
+            return '/childHome'
+        }
+        return true
+    }
+
+    // 其他页面正常访问
     return true
 })
 

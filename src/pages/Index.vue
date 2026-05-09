@@ -27,6 +27,8 @@ const route = useRoute();
     flex: 1;
     display: flex;
     flex-direction: row;
-    overflow: hidden;
+    overflow-y: auto;
+    /* overflow-x: hidden; */
+    min-height: 0;
 }
 </style>

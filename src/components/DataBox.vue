@@ -5,7 +5,7 @@ import PiData from './PiData.vue';
 import OxygenData from './OxygenData.vue';
 import SleepData from './SleepData.vue';
 import PressureData from './PressureData.vue';
-import { ref, onBeforeMount, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onBeforeMount, onMounted, onBeforeUnmount } from 'vue';
 import router from '../router';
 import useUserInfoStore from '../stores/user';
 import { storeToRefs } from 'pinia';
@@ -33,7 +33,7 @@ const sleepData = ref([])
 const pressureData = ref([])
 
 const userInfoStore = storeToRefs(useUserInfoStore())
-const user_id = userInfoStore.user_id.value
+const user_id = computed(() => userInfoStore.user_id.value)
 
 const cards = [
     { id: 'heart', name: '心率', icon: '♥', unit: 'bpm', color: '#E57373', key: 'heartData' },
@@ -96,12 +96,12 @@ const fetchData = async () => {
       pressureResponse,
       oxygenResponse
     ] = await Promise.allSettled([
-      getHeartData(user_id),
-      getPiData(user_id),
-      getSlpData(user_id),
-      getBloodData(user_id),
-      getPreData(user_id),
-      getOxygenData(user_id)
+      getHeartData(user_id.value),
+      getPiData(user_id.value),
+      getSlpData(user_id.value),
+      getBloodData(user_id.value),
+      getPreData(user_id.value),
+      getOxygenData(user_id.value)
     ]);
 
     if (heartResponse.status === 'fulfilled') {
@@ -164,9 +164,9 @@ const fetchData = async () => {
 };
 
 const startRealTimeSubscriptions = () => {
-  unsubscribeUserAllRealTimeData(user_id);
+  unsubscribeUserAllRealTimeData(user_id.value);
 
-  subscribeHeartData(user_id, (data) => {
+  subscribeHeartData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const heartCount = Math.min(4, data.length);
       const latestHeartUnprocessed = data.slice(0, heartCount);
@@ -175,7 +175,7 @@ const startRealTimeSubscriptions = () => {
     }
   });
 
-  subscribeBloodData(user_id, (data) => {
+  subscribeBloodData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const bloodCount = Math.min(7, data.length);
       const latestBloodUnprocessed = data.slice(0, bloodCount);
@@ -184,7 +184,7 @@ const startRealTimeSubscriptions = () => {
     }
   });
 
-  subscribePiData(user_id, (data) => {
+  subscribePiData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const piCount = Math.min(4, data.length);
       const latestPiUnprocessed = data.slice(0, piCount);
@@ -193,14 +193,14 @@ const startRealTimeSubscriptions = () => {
     }
   });
 
-  subscribeOxygenData(user_id, (data) => {
+  subscribeOxygenData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const latestOxygen = data[0];
       oxygenData.value = Number(latestOxygen.oxygenData) * 0.01;
     }
   });
 
-  subscribeSlpData(user_id, (data) => {
+  subscribeSlpData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const sleepCount = Math.min(4, data.length);
       const latestSleepUnprocessed = data.slice(0, sleepCount);
@@ -209,7 +209,7 @@ const startRealTimeSubscriptions = () => {
     }
   });
 
-  subscribePreData(user_id, (data) => {
+  subscribePreData(user_id.value, (data) => {
     if (Array.isArray(data) && data.length > 0) {
       const latestBP = data[0];
       pressureData.value = [
@@ -226,7 +226,7 @@ onBeforeMount(() => {
 });
 
 onBeforeUnmount(() => {
-  unsubscribeUserAllRealTimeData(user_id);
+  unsubscribeUserAllRealTimeData(user_id.value);
 });
 </script>
 
@@ -319,6 +319,7 @@ onBeforeUnmount(() => {
 .data-container {
     width: 100%;
     height: 100%;
+    min-height: 2rem;
     display: flex;
     flex-direction: column;
     overflow: hidden;

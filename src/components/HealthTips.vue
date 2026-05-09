@@ -68,6 +68,7 @@ const tips = ref([
   flex-direction: column;
   gap: 0.08rem;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .tip-item {
