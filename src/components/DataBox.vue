@@ -319,6 +319,7 @@ onBeforeUnmount(() => {
 .data-container {
     width: 100%;
     height: 100%;
+    max-height: 100%;
     min-height: 2rem;
     display: flex;
     flex-direction: column;
@@ -377,6 +378,7 @@ onBeforeUnmount(() => {
 
 .timeline-section {
     width: 120px;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -388,14 +390,16 @@ onBeforeUnmount(() => {
 .timeline {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    height: 100%;
+    justify-content: space-evenly;
+    align-items: flex-start;
 }
 
 .timeline-item {
     display: flex;
     align-items: center;
     gap: 0.15rem;
-    padding: 0.08rem 0;
+    padding: 0;
     border-radius: 0.06rem;
     cursor: pointer;
     transition: all 0.3s ease;

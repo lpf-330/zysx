@@ -180,6 +180,8 @@ const closeTodoManagement = () => {
     gap: 0.15rem;
     min-height: 0;
     flex-shrink: 0;
+    max-height: 100%;
+    overflow: hidden;
 }
 
 .calendar-card {
@@ -192,7 +194,7 @@ const closeTodoManagement = () => {
 .memo-card {
     flex: 1;
     min-height: 1.2rem;
-    max-height: none;
+    max-height: calc(100% - 2.95rem);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -200,6 +202,7 @@ const closeTodoManagement = () => {
     border-radius: 0.08rem;
     padding: 0.08rem 0.1rem;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .memo-card:hover {
@@ -229,7 +232,9 @@ const closeTodoManagement = () => {
     gap: 0.25rem;
     position: relative;
     min-height: 0;
+    max-height: 100%;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .header-section {

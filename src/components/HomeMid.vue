@@ -16,6 +16,8 @@ import DataBox from './DataBox.vue';
     width: 100%;
     display: flex;
     flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
 }
 
 .DataBox {
@@ -25,5 +27,7 @@ import DataBox from './DataBox.vue';
     align-items: center;
     justify-content: center;
     min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
 }
 </style>
